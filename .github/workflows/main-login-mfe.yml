@@ -1,0 +1,122 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Pipeline: Login MFE — Equipo main
+#
+# IMPORTANTE: Este pipeline es INDEPENDIENTE del backend.
+# Un cambio en auth-service NO activa este pipeline.
+# Un cambio en login-mfe NO activa el pipeline de api-gateway.
+#
+# Deploy target: S3 o Vercel (controlado por secret DEPLOY_TARGET)
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: "[Frontend] Login MFE"
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "teams/main/frontend/login-mfe/**"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "teams/main/frontend/login-mfe/**"
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: teams/main/frontend/login-mfe
+
+jobs:
+  # ────────────────────────────────────────────────────────────────────────────
+  # Job 1: Tests
+  # ────────────────────────────────────────────────────────────────────────────
+  test:
+    name: "Test"
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: teams/main/frontend/login-mfe/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Ejecutar tests
+        run: npm test -- --passWithNoTests
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Job 2: Build + Deploy
+  # ────────────────────────────────────────────────────────────────────────────
+  build-and-deploy:
+    name: "Build & Deploy"
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: teams/main/frontend/login-mfe/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Build de producción
+        run: npm run build
+        env:
+          VITE_API_GATEWAY_URL: ${{ secrets.API_GATEWAY_URL }}
+          VITE_CONSUMER_APP_URL: ${{ secrets.CONSUMER_APP_URL }}
+
+      # ── Opción A: Deploy a S3 ────────────────────────────────────────────
+      - name: Deploy a S3 (DEV)
+        if: github.ref == 'refs/heads/main' && secrets.DEPLOY_TARGET == 's3'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+        run: |
+          aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_LOGIN_MFE_DEV }} \
+            --delete \
+            --cache-control "max-age=31536000,immutable" \
+            --exclude "index.html"
+          # index.html no se cachea (siempre fresco)
+          aws s3 cp dist/index.html s3://${{ secrets.S3_BUCKET_LOGIN_MFE_DEV }}/index.html \
+            --cache-control "no-cache,no-store,must-revalidate"
+
+      - name: Deploy a S3 (PROD)
+        if: startsWith(github.ref, 'refs/tags/v') && secrets.DEPLOY_TARGET == 's3'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+        run: |
+          aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_LOGIN_MFE_PROD }} --delete
+
+      # ── Opción B: Deploy a Vercel ────────────────────────────────────────
+      - name: Deploy a Vercel (DEV)
+        if: github.ref == 'refs/heads/main' && secrets.DEPLOY_TARGET == 'vercel'
+        run: |
+          npm install -g vercel
+          vercel --token=${{ secrets.VERCEL_TOKEN }} --yes
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_LOGIN_MFE }}
+
+      - name: Deploy a Vercel (PROD)
+        if: startsWith(github.ref, 'refs/tags/v') && secrets.DEPLOY_TARGET == 'vercel'
+        run: |
+          npm install -g vercel
+          vercel --token=${{ secrets.VERCEL_TOKEN }} --prod --yes
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_LOGIN_MFE }}

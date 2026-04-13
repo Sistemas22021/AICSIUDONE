@@ -1,0 +1,59 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# docker-compose.consumer.yml
+#
+# Levanta el proyecto de prueba del equipo main:
+#   - Login MFE    (Micro-frontend de autenticación)
+#   - Consumer App (Aplicación de prueba con rutas protegidas)
+#
+# Este archivo EXTIENDE docker-compose.common.yml.
+# Usar el siguiente comando para levantar TODO el ecosistema:
+#
+#   docker compose \
+#     -f docker/docker-compose.common.yml \
+#     -f docker/docker-compose.consumer.yml \
+#     up
+#
+# Para bajar todo:
+#   docker compose \
+#     -f docker/docker-compose.common.yml \
+#     -f docker/docker-compose.consumer.yml \
+#     down
+# ─────────────────────────────────────────────────────────────────────────────
+
+include:
+  - docker-compose.common.yml  # Importa todos los servicios comunes
+
+services:
+
+  # ─── Login MFE ───────────────────────────────────────────────────────────────
+  login-mfe:
+    build:
+      context: ../teams/main/frontend/login-mfe
+      dockerfile: Dockerfile
+    image: sso/login-mfe:local
+    container_name: sso-login-mfe
+    ports:
+      - "3000:80"  # nginx sirve el build de React en el puerto 80 del contenedor
+    environment:
+      # URL del API Gateway (el frontend llama a este, no directamente al auth-service)
+      - VITE_API_GATEWAY_URL=http://localhost:8090
+      # URL de la Consumer App (para la redirección post-login)
+      - VITE_CONSUMER_APP_URL=http://localhost:3001
+    networks:
+      - sso-network
+
+  # ─── Consumer App ─────────────────────────────────────────────────────────────
+  consumer-app:
+    build:
+      context: ../teams/main/frontend/consumer-app
+      dockerfile: Dockerfile
+    image: sso/consumer-app:local
+    container_name: sso-consumer-app
+    ports:
+      - "3001:80"
+    environment:
+      - VITE_API_GATEWAY_URL=http://localhost:8090
+      # URL del Login MFE (hacia donde redirigir si no hay sesión)
+      - VITE_LOGIN_MFE_URL=http://localhost:3000
+    networks:
+      - sso-network

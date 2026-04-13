@@ -1,0 +1,45 @@
+# ─── Secretos y variables de entorno ─────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ─── Java / Maven ────────────────────────────────────────────────────────────
+target/
+*.class
+*.jar
+*.war
+*.ear
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**
+!**/src/test/**
+
+# ─── Node.js / Frontend ───────────────────────────────────────────────────────
+node_modules/
+dist/
+build/
+.npm
+
+# ─── IntelliJ IDEA ───────────────────────────────────────────────────────────
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# ─── VS Code ─────────────────────────────────────────────────────────────────
+.vscode/
+!.vscode/extensions.json
+
+# ─── OS ──────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ─── Terraform / Terragrunt ───────────────────────────────────────────────────
+**/.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfplan
+.terragrunt-cache/
+
+# ─── Logs ────────────────────────────────────────────────────────────────────
+*.log
+logs/

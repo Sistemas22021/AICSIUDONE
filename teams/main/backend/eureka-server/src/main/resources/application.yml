@@ -1,0 +1,35 @@
+server:
+  port: 8761  # Puerto estándar de Eureka Server
+
+spring:
+  application:
+    name: eureka-server
+
+eureka:
+  instance:
+    hostname: localhost
+  client:
+    # Modo standalone: Eureka no intenta registrarse en sí mismo
+    register-with-eureka: false
+    fetch-registry: false
+    service-url:
+      defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
+  server:
+    # En producción, esperar a tener al menos N instancias antes de
+    # considerar el servidor "listo". Para desarrollo, 0 evita mensajes de warning.
+    wait-time-in-ms-when-sync-empty: 0
+    enable-self-preservation: false  # Deshabilitado en local para evitar confusión
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.netflix.eureka: WARN
+    com.netflix.discovery: WARN
