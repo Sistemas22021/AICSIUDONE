@@ -416,10 +416,26 @@ Los commits están separados según el tipo de cambio:
 
 ## Documentación Adicional
 
-- 📄 [ADR-001: Arquitectura Hexagonal](docs/adr/ADR-001-hexagonal-architecture.md)
-- 📄 [ADR-002: Estrategia JWT Híbrida](docs/adr/ADR-002-jwt-hybrid-token-strategy.md)
-- 📄 [Diagrama del Flujo SSO](docs/diagrams/auth-flow.md)
+### Architecture Decision Records (ADR)
+
+| ADR | Título | Status |
+|---|---|---|
+| [ADR-001](docs/adr/ADR-001-hexagonal-architecture.md) | Arquitectura Hexagonal en el Auth Service | ✅ Aceptado |
+| [ADR-002](docs/adr/ADR-002-jwt-hybrid-token-strategy.md) | Estrategia JWT Híbrida (Memoria + HttpOnly Cookie) | ✅ Aceptado |
+| [ADR-003](docs/adr/ADR-003-monorepo-team-structure.md) | Monorepo con separación por equipos | ✅ Aceptado |
+| [ADR-004](docs/adr/ADR-004-mfe-url-routing.md) | MFE Integration via URL Routing | ✅ Aceptado |
+| [ADR-005](docs/adr/ADR-005-database-strategy.md) | Base de Datos — Neon/Supabase → RDS | ✅ Aceptado |
+| [ADR-006](docs/adr/ADR-006-aws-free-tier-infrastructure.md) | Infraestructura AWS con Free Tier | ✅ Aceptado |
+| [ADR-007](docs/adr/ADR-007-independent-pipelines.md) | CI/CD — Pipeline independiente por proyecto | ✅ Aceptado |
+| [ADR-008](docs/adr/ADR-008-tdd-methodology.md) | TDD con metodología Kent Beck | ✅ Aceptado |
+
+### Tareas y Sesiones de Trabajo
+
+| Task | Descripción |
+|---|---|
+| [TASK-000](docs/tasks/TASK-000-initial-boilerplate.md) | Sesión fundacional — Diseño e implementación del boilerplate completo |
 
 ---
 
 *SSO Boilerplate — Proyecto educativo de código abierto. MIT License.*
+

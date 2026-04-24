@@ -1,94 +1,125 @@
 import { getAccessToken } from '../services/tokenService';
 
 /**
- * WelcomePage — Página de bienvenida de la Consumer App.
+ * WelcomePage — Página de bienvenida con estética Dashboard Premium.
  *
- * Solo se renderiza si el AuthGuard verificó que hay una sesión válida.
- * Muestra el estado de la sesión y cómo se integra con el ecosistema SSO.
+ * Mejoras:
+ * - Layout espacioso y moderno.
+ * - Iconografía refinada.
+ * - Visualización clara del estado de los tokens.
+ * - Step-by-step con indicadores de éxito.
  */
 export function WelcomePage() {
   const token = getAccessToken();
-  // Decodificar el payload del JWT para mostrar el username
-  // NOTA: Esto es solo para visualización. NUNCA confiar en el payload sin verificar en el servidor.
   const username = token ? decodeJwtUsername(token) : 'Usuario';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl">
+    <div className="min-h-screen bg-[#020617] text-slate-200 relative overflow-hidden">
+      
+      {/* Fondo Mesh sutil */}
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[120px]" />
+      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px]" />
 
-        {/* Header de éxito */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-emerald-500/20
-                          border border-emerald-500/30 rounded-3xl mb-6 shadow-lg shadow-emerald-500/20">
-            <svg className="w-10 h-10 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <h1 className="text-4xl font-bold text-white tracking-tight">
-            ¡Bienvenido, {username}! 🎉
-          </h1>
-          <p className="text-slate-400 mt-3 text-lg">
-            Autenticación SSO exitosa
-          </p>
-        </div>
-
-        {/* Card de información */}
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl space-y-6">
-
-          {/* Estado de la sesión */}
+      <div className="relative z-10 max-w-5xl mx-auto px-6 py-12 lg:py-20">
+        
+        {/* Header Section */}
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-16 animate-fade-in">
           <div>
-            <h2 className="text-white font-semibold mb-3 flex items-center gap-2">
-              <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-              Estado de la sesión
-            </h2>
-            <div className="space-y-2">
-              <InfoRow label="Access Token" value="✅ En memoria (15 min)" />
-              <InfoRow label="Refresh Token" value="✅ HttpOnly Cookie (7 días)" />
-              <InfoRow label="Usuario" value={username} />
+            <div className="flex items-center gap-3 mb-4">
+              <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold tracking-wider uppercase">
+                Sesión Activa
+              </span>
+            </div>
+            <h1 className="text-5xl font-bold text-white tracking-tight mb-4">
+              Hola de nuevo, <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-violet-400">{username}</span>
+            </h1>
+            <p className="text-slate-400 text-lg max-w-xl">
+              Has iniciado sesión exitosamente en el ecosistema SSO. Todos los servicios están sincronizados.
+            </p>
+          </div>
+          
+          {/* Avatar / User Card */}
+          <div className="satin-glass p-6 rounded-[2rem] flex items-center gap-4 border-white/5 shadow-2xl">
+            <div className="w-14 h-14 bg-gradient-to-tr from-indigo-600 to-violet-500 rounded-2xl flex items-center justify-center text-white text-xl font-bold shadow-lg">
+              {username.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <p className="text-white font-bold">{username}</p>
+              <p className="text-slate-500 text-sm italic">Usuario autenticado</p>
             </div>
           </div>
+        </header>
 
-          <hr className="border-white/10" />
-
-          {/* Flujo SSO explicado */}
-          <div>
-            <h2 className="text-white font-semibold mb-3">🔄 Flujo SSO completado</h2>
-            <ol className="space-y-2 text-sm text-slate-300">
-              {[
-                'Consumer App detectó que no había token en memoria',
-                'Redirigió al Login MFE con ?redirect=<esta-url>',
-                'Login MFE autenticó las credenciales contra el Auth Service',
-                'Auth Service generó Access Token (JWT) y Refresh Token (Cookie)',
-                'Login MFE redirigió de vuelta con ?token=<jwt>',
-                'Consumer App guardó el token en memoria y limpió la URL',
-              ].map((step, i) => (
-                <li key={i} className="flex items-start gap-3">
-                  <span className="shrink-0 w-5 h-5 bg-indigo-600 text-white text-xs rounded-full
-                                   flex items-center justify-center font-bold mt-0.5">
-                    {i + 1}
-                  </span>
-                  {step}
-                </li>
-              ))}
-            </ol>
+        <div className="grid lg:grid-cols-3 gap-8 items-start">
+          
+          {/* Main Info Cards */}
+          <div className="lg:col-span-2 space-y-8 animate-slide-up">
+            
+            {/* SSO Flow Visualizer */}
+            <section className="premium-card">
+              <h2 className="text-xl font-bold text-white mb-8 flex items-center gap-3">
+                <svg className="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+                Flujo de Autenticación Realizado
+              </h2>
+              
+              <div className="relative pl-8 border-l-2 border-white/5 space-y-10">
+                {[
+                  { title: 'Detección de Sesión', desc: 'La Consumer App identificó la ausencia de un token válido.' },
+                  { title: 'Redirección Segura', desc: 'Transferencia al Portal SSO Centralizado via URL callback.' },
+                  { title: 'Validación de Credenciales', desc: 'El Auth Service autenticó tu identidad con éxito.' },
+                  { title: 'Emisión de Tokens', desc: 'Sincronización de JWT (Memoria) y Refresh Token (HttpOnly).' }
+                ].map((item, i) => (
+                  <div key={i} className="relative group">
+                    <div className="absolute -left-[41px] top-1 w-4 h-4 rounded-full bg-slate-900 border-2 border-indigo-500 group-hover:bg-indigo-500 transition-colors duration-300" />
+                    <h3 className="text-white font-semibold mb-1 group-hover:text-indigo-400 transition-colors">{item.title}</h3>
+                    <p className="text-slate-400 text-sm leading-relaxed">{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
           </div>
 
+          {/* Sidebar / Token Info */}
+          <aside className="space-y-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+            
+            <section className="premium-card">
+              <h2 className="text-lg font-bold text-white mb-6">Estado Técnico</h2>
+              <div className="space-y-4">
+                <TechBadge label="Access Token" status="Memoria" />
+                <TechBadge label="Refresh Token" status="HttpOnly" />
+                <TechBadge label="Provider" status="Central SSO" />
+              </div>
+              
+              <button className="w-full mt-8 py-4 bg-white/5 hover:bg-red-500/10 border border-white/10 hover:border-red-500/30 text-slate-300 hover:text-red-400 rounded-2xl font-bold transition-all duration-300 flex items-center justify-center gap-2 group">
+                <svg className="w-5 h-5 group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Cerrar Sesión
+              </button>
+            </section>
+
+          </aside>
         </div>
 
-        <p className="text-center text-slate-500 text-xs mt-6">
-          Consumer App — SSO Boilerplate Educativo
-        </p>
+        <footer className="mt-20 pt-8 border-t border-white/5 flex items-center justify-between text-slate-500 text-sm">
+          <p>© 2026 SSO Boilerplate Centralizado</p>
+          <div className="flex gap-6">
+            <button className="hover:text-white transition-colors">Documentación</button>
+            <button className="hover:text-white transition-colors">Soporte</button>
+          </div>
+        </footer>
       </div>
     </div>
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function TechBadge({ label, status }: { label: string; status: string }) {
   return (
-    <div className="flex items-center justify-between text-sm">
-      <span className="text-slate-400">{label}</span>
-      <span className="text-slate-200 font-medium">{value}</span>
+    <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5">
+      <span className="text-slate-400 text-sm font-medium">{label}</span>
+      <span className="text-white text-sm font-bold">{status}</span>
     </div>
   );
 }

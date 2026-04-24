@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: users-maintainer
+  config:
+    import: "optional:configserver:${CONFIG_SERVER_URL:http://localhost:8888}"
+
+  datasource:
+    url: ${DATASOURCE_URL:jdbc:postgresql://ep-gentle-shape-anxltemn-pooler.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require}
+    username: ${DATASOURCE_USERNAME:neondb_owner}
+    password: ${DATASOURCE_PASSWORD:npg_H3Eiz8CeBXnF}
+
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:update}
+    show-sql: false
+
+server:
+  port: 8085
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://${EUREKA_HOST:localhost}:8761/eureka/
+  instance:
+    prefer-ip-address: true
+
+sso:
+  auth:
+    jwt-secret: ${JWT_SECRET:este-es-un-secreto-de-desarrollo-cambiar-en-produccion-32chars}
+
+aws:
+  sns:
+    enabled: ${AWS_SNS_ENABLED:false}
+    topic:
+      user-events-arn: ${AWS_SNS_TOPIC_ARN:arn:aws:sns:us-east-1:000000000000:user-events}
+    region: ${AWS_REGION:us-east-1}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+

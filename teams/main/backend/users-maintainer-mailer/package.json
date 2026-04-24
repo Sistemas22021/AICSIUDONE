@@ -1,0 +1,18 @@
+{
+  "name": "users-maintainer-mailer",
+  "version": "1.0.0",
+  "description": "AWS Lambda to send emails based on SNS events",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@aws-sdk/client-ses": "^3.540.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.136",
+    "@types/node": "^20.11.30",
+    "typescript": "^5.4.3"
+  }
+}

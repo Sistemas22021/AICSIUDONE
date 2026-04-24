@@ -1,19 +1,18 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 
 /**
  * Configuración de Vite para el Login MFE.
- *
- * Puntos clave:
- * - Las variables de entorno con prefijo VITE_ están disponibles en el cliente
- * - El proxy /api evita problemas de CORS en desarrollo local
+ * Tailwind v4 usa un plugin nativo de Vite, sin PostCSS.
  */
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    tailwindcss(),
+    react(),
+  ],
   server: {
     port: 3000,
-    // Proxy: en local, redirige las peticiones /api al Gateway
-    // Esto evita CORS errors en desarrollo
     proxy: {
       '/api': {
         target: process.env.VITE_API_GATEWAY_URL || 'http://localhost:8090',
@@ -23,9 +22,8 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: true, // Para debugging en producción (opcional)
+    sourcemap: true,
   },
-  // Las variables VITE_ se inyectan en el build
   define: {
     __APP_VERSION__: JSON.stringify('1.0.0'),
   },

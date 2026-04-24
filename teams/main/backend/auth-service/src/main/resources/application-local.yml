@@ -1,0 +1,21 @@
+spring:
+  config:
+    import: "optional:configserver:http://localhost:8888"
+  
+  datasource:
+    url: jdbc:postgresql://ep-gentle-shape-anxltemn-pooler.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+    username: neondb_owner
+    password: npg_H3Eiz8CeBXnF
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+sso:
+  auth:
+    jwt-secret: este-es-un-secreto-de-desarrollo-cambiar-en-produccion-32chars
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
