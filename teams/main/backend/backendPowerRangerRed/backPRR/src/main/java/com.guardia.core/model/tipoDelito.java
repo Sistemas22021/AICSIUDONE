@@ -5,20 +5,18 @@ import lombok.*;
 
 
 @Entity
-@Table(name = "tipo delito")
+@Table(name = "delito")
 @Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 
-public class tipoDelito {
+public class TipoDelito {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, length = 50)
     private String nombre;
-
-    private String descripcion;
 }

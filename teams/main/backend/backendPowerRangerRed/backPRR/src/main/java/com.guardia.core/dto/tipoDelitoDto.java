@@ -1,12 +1,6 @@
 package com.guardia.core.dto;
 
-import jakarta.validation.constraints.NotBlank;
-import lombok.Data;
+public record TipoDelitoDto(int id, String nombre) {
 
-
-@Data
-public class tipoDelitoDto {
-    @NotBlank(message = "El nombre del delito es obligatorio")
-    private String nombre;
-    private String descripcion;
 }
+
