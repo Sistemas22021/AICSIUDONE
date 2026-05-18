@@ -1,0 +1,26 @@
+package com.guardia.core.service;
+
+import com.guardia.core.dto.request.ExpedienteRequest;
+import com.guardia.core.dto.response.ExpedienteResponse;
+import com.guardia.core.model.enums.EstadoExpediente;
+
+import java.util.List;
+
+public interface ExpedienteService {
+    ExpedienteResponse crear(ExpedienteRequest request);
+    ExpedienteResponse obtenerPorId(Long id);
+    ExpedienteResponse obtenerPorFolio(String folio);
+    List<ExpedienteResponse> obtenerTodos();
+    List<ExpedienteResponse> obtenerPorEstado(EstadoExpediente estado);
+    List<ExpedienteResponse> obtenerPorCreador(Long usuarioId);
+    ExpedienteResponse actualizar(Long id, ExpedienteRequest request);
+    void eliminar(Long id);
+
+    // Métodos del diagrama
+    ExpedienteResponse sellar(Long id, Long agenteSelladorId);
+    ExpedienteResponse cambiarEstado(Long id, EstadoExpediente nuevoEstado);
+    ExpedienteResponse asignarInvestigador(Long id, Long investigadorId);
+    ExpedienteResponse vincularEscena(Long id, Long escenaId);
+    ExpedienteResponse asignarFechaHecho(Long id, String fecha);
+    boolean validarDatos(Long id);
+}
