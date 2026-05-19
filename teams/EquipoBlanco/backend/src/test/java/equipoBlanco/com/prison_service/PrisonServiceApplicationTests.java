@@ -1,10 +1,10 @@
-package com.Equipoblanco.proyectoControlDeRegistroPenitenciario;
+package equipoBlanco.com.prison_service;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class ProyectoControlDeRegistroPenitenciarioApplicationTests {
+class PrisonServiceApplicationTests {
 
 	@Test
 	void contextLoads() {
