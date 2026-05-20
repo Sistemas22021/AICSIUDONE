@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react'
 import { CheckCircle, XCircle, X } from 'lucide-react'
 
+// ─── Tipos ────────────────────────────────────────────────────────────────────
+
 type ToastVariant = 'success' | 'error'
 
 interface ToastState {
@@ -10,14 +12,18 @@ interface ToastState {
     visible: boolean
 }
 
+// ─── Hook ─────────────────────────────────────────────────────────────────────
+
 export function useNeonToast(duration = 4000) {
     const [toasts, setToasts] = useState<ToastState[]>([])
 
     const showToast = useCallback((message: string, variant: ToastVariant = 'success') => {
         const id = Date.now()
 
+        // Agrega el toast con visible=false para que el CSS lo anime al entrar
         setToasts(prev => [...prev, { id, message, variant, visible: false }])
 
+        // Un tick después lo ponemos visible para disparar la transición de entrada
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
                 setToasts(prev =>
@@ -26,6 +32,7 @@ export function useNeonToast(duration = 4000) {
             })
         })
 
+        // Inicia el fade-out antes de removerlo
         setTimeout(() => {
             setToasts(prev =>
                 prev.map(t => (t.id === id ? { ...t, visible: false } : t)),
@@ -60,6 +67,8 @@ export function useNeonToast(duration = 4000) {
 
     return { showToast, ToastContainer }
 }
+
+// ─── Item individual ──────────────────────────────────────────────────────────
 
 interface NeonToastItemProps {
     toast: ToastState
@@ -112,11 +121,13 @@ function NeonToastItem({ toast, onDismiss }: NeonToastItemProps) {
                 ].join(' ')}
                 style={{ boxShadow: colors.glow }}
             >
+                {/* Barra lateral de color */}
                 <div
                     className={['absolute left-0 top-0 bottom-0 w-[3px] rounded-l-lg', colors.bar].join(' ')}
                     style={{ boxShadow: colors.barGlow }}
                 />
 
+                {/* Ícono */}
                 <div className="mt-0.5 shrink-0">
                     {isSuccess
                         ? <CheckCircle size={16} className={colors.icon} style={{ filter: colors.iconGlow }} />
@@ -124,10 +135,12 @@ function NeonToastItem({ toast, onDismiss }: NeonToastItemProps) {
                     }
                 </div>
 
+                {/* Mensaje */}
                 <p className={['flex-1 text-[12px] font-medium leading-snug', colors.text].join(' ')}>
                     {toast.message}
                 </p>
 
+                {/* Botón cerrar */}
                 <button
                     onClick={onDismiss}
                     className={['ml-1 p-0.5 rounded transition-colors', colors.dismiss].join(' ')}

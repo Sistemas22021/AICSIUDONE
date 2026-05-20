@@ -7,66 +7,87 @@ import type { DelitoTipo } from '../types/api.types'
  * Cuando el endpoint GET /api/v1/delitos/categorias esté listo,
  * estos datos se reemplazarán automáticamente por la respuesta real.
  *
+ * Estructura basada en el Código Penal venezolano (Art. 1 CP):
+ *   - Delitos Graves       (pena > 8 años de prisión)
+ *   - Delitos Menos Graves (pena ≤ 8 años)
+ *   - Faltas               (Libro III CP)
+ *
  * Formato esperado del backend:
  * [
- *   { "value": "homicidio", "label": "HOMICIDIO", "subtipos": [...] },
+ *   { "value": "delitos_graves", "label": "DELITOS GRAVES", "subtipos": [...] },
  *   ...
  * ]
  */
 const MOCK_DELITO_TYPES: DelitoTipo[] = [
+  // ── DELITOS GRAVES ─────────────────────────────────────────
   {
-    value: 'homicidio',
-    label: 'HOMICIDIO',
+    value: 'graves_contra_nacion',
+    label: 'DELITOS GRAVES — CONTRA LA NACIÓN',
     subtipos: [
-      { value: 'intencional', label: 'INTENCIONAL' },
-      { value: 'calificado', label: 'CALIFICADO' },
-      { value: 'culposo', label: 'CULPOSO' },
-      { value: 'femicidio', label: 'FEMICIDIO' },
+      { value: 'espionaje',                      label: 'Espionaje' },
+      { value: 'conspiracion_potencias',         label: 'Conspiración con Potencias Extranjeras' },
     ],
   },
   {
-    value: 'robo',
-    label: 'ROBO',
+    value: 'graves_contra_personas',
+    label: 'DELITOS GRAVES — CONTRA LAS PERSONAS',
     subtipos: [
-      { value: 'persona_a_persona', label: 'PERSONA A PERSONA' },
-      { value: 'vivienda', label: 'VIVIENDA' },
-      { value: 'comercio', label: 'COMERCIO' },
-      { value: 'agravado', label: 'AGRAVADO' },
+      { value: 'homicidio_calificado_agravado',  label: 'Homicidio Calificado / Agravado' },
+      { value: 'violacion',                      label: 'Violación' },
+      { value: 'secuestro',                      label: 'Secuestro' },
     ],
   },
   {
-    value: 'hurto',
-    label: 'HURTO',
+    value: 'graves_contra_propiedad',
+    label: 'DELITOS GRAVES — CONTRA LA PROPIEDAD',
     subtipos: [
-      { value: 'simple', label: 'SIMPLE' },
-      { value: 'agravado', label: 'AGRAVADO' },
-      { value: 'vehiculo', label: 'VEHÍCULO' },
+      { value: 'robo_mano_armada_agravado',      label: 'Robo a Mano Armada Agravado' },
+      { value: 'extorsion',                      label: 'Extorsión' },
     ],
   },
   {
-    value: 'danos',
-    label: 'DAÑOS',
+    value: 'graves_fe_publica',
+    label: 'DELITOS GRAVES — CONTRA LA FE PÚBLICA',
     subtipos: [
-      { value: 'propiedad_publica', label: 'PROPIEDAD PÚBLICA' },
-      { value: 'propiedad_privada', label: 'PROPIEDAD PRIVADA' },
+      { value: 'falsificacion_moneda',           label: 'Falsificación de Moneda Nacional' },
     ],
   },
   {
-    value: 'delitos_sexuales',
-    label: 'DELITOS SEXUALES',
+    value: 'graves_leyes_especiales',
+    label: 'DELITOS GRAVES — LEYES ESPECIALES',
     subtipos: [
-      { value: 'violacion', label: 'VIOLACIÓN' },
-      { value: 'abuso_menor_13', label: 'ABUSO <13 AÑOS' },
-      { value: 'abuso_13_16', label: 'ABUSO 13-16 AÑOS' },
-      { value: 'actos_lascivos', label: 'ACTOS LASCIVOS' },
+      { value: 'narcotrafico',                   label: 'Narcotráfico (Ley Orgánica de Drogas)' },
+      { value: 'terrorismo_financiamiento',      label: 'Terrorismo y Financiamiento del Terrorismo' },
+      { value: 'asociacion_delinquir',           label: 'Asociación para Delinquir' },
+      { value: 'femicidio',                      label: 'Femicidio' },
+      { value: 'corrupcion_grave',               label: 'Corrupción Grave (Peculado, Malversación)' },
     ],
   },
+
+  // ── DELITOS MENOS GRAVES (pena ≤ 8 años) ───────────────────────────────────
   {
-    value: 'extorsion',
-    label: 'EXTORSIÓN',
+    value: 'menos_graves',
+    label: 'DELITOS MENOS GRAVES',
     subtipos: [
-      { value: 'simple', label: 'SIMPLE' },
-      { value: 'agravada', label: 'AGRAVADA' },
+      { value: 'hurto_simple',                   label: 'Hurto Simple' },
+      { value: 'hurto_calificado',               label: 'Hurto Calificado' },
+      { value: 'robo_simple',                    label: 'Robo Simple' },
+      { value: 'estafa',                         label: 'Estafa' },
+      { value: 'lesiones_personales',            label: 'Lesiones Personales' },
+      { value: 'usurpacion',                     label: 'Usurpación' },
+      { value: 'falsedad_documentos_privados',   label: 'Falsedad de Documentos Privados' },
+    ],
+  },
+
+  // ── FALTAS (Libro III CP — multa o arresto breve) ──────────────────────────
+  {
+    value: 'faltas',
+    label: 'FALTAS (LIBRO III CP)',
+    subtipos: [
+      { value: 'falta_orden_publico',            label: 'Contra el Orden Público' },
+      { value: 'falta_seguridad_publica',        label: 'Contra la Seguridad Pública' },
+      { value: 'falta_moralidad_publica',        label: 'Contra la Moralidad Pública' },
+      { value: 'falta_proteccion_propiedad',     label: 'Contra la Protección de la Propiedad' },
     ],
   },
 ]

@@ -1,8 +1,7 @@
 // Estado y lógica del array de delitos
-// Hook local que gestiona la lista de delitos con sus validaciones de hora
 import { useState } from 'react'
 
-// ─── Tipos ────────────────────────────────────────
+// ─── Tipos ────────────────────────────────────────────────────────────────────
 
 export interface DelitoEntry {
     id: string
@@ -19,7 +18,7 @@ export interface DelitoEntry {
     tiempoErrorMsg: string
 }
 
-// ─── Factory ──────────────────────────────────────
+// ─── Factory ──────────────────────────────────────────────────────────────────
 
 function makeDelitoEntry(): DelitoEntry {
     return {
@@ -38,7 +37,8 @@ function makeDelitoEntry(): DelitoEntry {
     }
 }
 
-// ─── Hook ──────────────────────────────────────────────────
+// ─── Hook ─────────────────────────────────────────────────────────────────────
+
 export function useDelitoList() {
     const [delitos, setDelitos] = useState<DelitoEntry[]>([makeDelitoEntry()])
 
@@ -73,6 +73,6 @@ export function useDelitoList() {
 
         updateDelito(id, { tiempoError: error, tiempoErrorMsg: msg })
     }
-    const resetDelitos = () => setDelitos([makeDelitoEntry()])
-    return { delitos, updateDelito, addDelito, removeDelito, validateTiempos, resetDelitos  }
+
+    return { delitos, updateDelito, addDelito, removeDelito, validateTiempos }
 }

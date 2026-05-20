@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { FormProvider } from './context/FormContext'
 import { Header } from './components/Header'
 import { TabNavigation } from './components/TabNavigation'
-import { RegistroDelHecho } from './components/sections/RegistroDelHechoNew'
+import { RegistroDelHecho } from './components/sections/RegistroDelHecho'
 import { NeonPanel } from './components/ui/NeonPanel'
 
 type ActiveTab = 'registro' | 'escena' | 'inteligencia'
