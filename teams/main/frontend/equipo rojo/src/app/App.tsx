@@ -1,3 +1,4 @@
+// Componente raíz: gestiona la tab activa y renderiza cada sección
 import { useState } from 'react'
 import { FormProvider } from './context/FormContext'
 import { Header } from './components/Header'

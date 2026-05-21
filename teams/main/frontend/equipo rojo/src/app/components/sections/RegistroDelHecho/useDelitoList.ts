@@ -1,4 +1,5 @@
 // Estado y lógica del array de delitos
+// Hook local que gestiona la lista de delitos con sus validaciones de hora
 import { useState } from 'react'
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-
+// Estado global del formulario: involucrados, ubicación, denunciante, tipo de registro
 import { createContext, useContext, useState, type ReactNode } from 'react'
 
 // ─── Tipo de Registro ─────────────────────────────────────────────────────────
@@ -70,6 +70,10 @@ export interface FormData {
   // ── Involucrados ────────────────────────────────────────────────────────────
   involucrados: Involucrado[]
 
+  // ── Clasificación del delito ────────────────────────────────────────────────
+  tipoDelito: string
+  subTipo:    string
+
   // ── Descripción del hecho ───────────────────────────────────────────────────
   descripcion: string
 
@@ -129,6 +133,8 @@ const initialFormData: FormData = {
     },
   ],
 
+  tipoDelito: '',
+  subTipo:    '',
   descripcion: '',
 
   municipio:          '',

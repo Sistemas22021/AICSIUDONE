@@ -1,6 +1,7 @@
 /**
  * Tipos compartidos para la capa de API.
  * Reflejan la estructura de respuesta del backend (incident-service).
+ * Tipos TypeScript de todos los objetos que viajan entre el front y el back
  */
 
 // ─── Catálogo de delitos ──────────────────────────────────────────────────────
