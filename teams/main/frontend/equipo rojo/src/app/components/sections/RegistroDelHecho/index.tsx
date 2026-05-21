@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { MapPin, Plus, X, AlertTriangle, Clock, AlignLeft } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { MapPin, Plus, X, AlertTriangle, Clock, AlignLeft, ChevronDown, FileText } from 'lucide-react'
 import { NeonPanel }    from '../../ui/NeonPanel'
 import { NeonInput }    from '../../ui/NeonInput'
 import { NeonSelect }   from '../../ui/NeonSelect'
@@ -8,13 +8,32 @@ import { NeonButton }   from '../../ui/NeonButton'
 import { NeonRadio }    from '../../ui/NeonRadio'
 import { NeonCheckbox } from '../../ui/NeonCheckbox'
 import { useNeonToast } from '../../ui/NeonToast'
-import { useFormContext }                        from '../../../context/FormContext'
-import { TIPOS_INVOLUCRADO, type TipoInvolucrado } from '../../../context/FormContext'
-import { useDelitoCategories }                  from '../../../hooks/useDelitoCategories'
-import { useDelitoList }                        from './useDelitoList'
-import { crearPayloadIncidente }                from './crearPayloadIncidente'
-import { apiClient }                            from '../../../services/api'
+import {
+    useFormContext,
+    TIPOS_INVOLUCRADO,
+    TIPOS_REGISTRO,
+    TIPOS_REQUIEREN_DENUNCIANTE,
+    type TipoInvolucrado,
+    type TipoRegistro,
+} from '../../../context/FormContext'
+import { useDelitoCategories }   from '../../../hooks/useDelitoCategories'
+import { useDelitoList }         from './useDelitoList'
+import { crearPayloadIncidente } from './crearPayloadIncidente'
+import { apiClient }             from '../../../services/api'
 
+// ─── Colores por tipo de registro ─────────────────────────────────────────────
+
+const TIPO_REGISTRO_COLORS: Record<TipoRegistro, string> = {
+    denuncia_formal:    'border-cyan-400    bg-cyan-400/15    text-cyan-300',
+    denuncia_anonima:   'border-cyan-400/60 bg-cyan-400/8     text-cyan-400',
+    de_oficio:          'border-blue-400    bg-blue-400/15    text-blue-300',
+    llamada_emergencia: 'border-red-400     bg-red-400/15     text-red-300',
+    reporte_ciudadano:  'border-amber-400   bg-amber-400/15   text-amber-300',
+    flagrancia:         'border-orange-400  bg-orange-400/15  text-orange-300',
+    '':                 'border-cyan-400/30 bg-transparent    text-cyan-500',
+}
+
+// ─── Componente principal ─────────────────────────────────────────────────────
 
 export const RegistroDelHecho = () => {
     const { showToast } = useNeonToast()
@@ -29,80 +48,82 @@ export const RegistroDelHecho = () => {
     const { tipos, loading: loadingTipos, warning: tiposWarning } = useDelitoCategories()
     const { delitos, updateDelito, addDelito, removeDelito, validateTiempos } = useDelitoList()
 
-    const [gpsMode, setGpsMode]               = useState<'actual' | 'none'>('actual')
-    const [isFormalComplaint, setIsFormal]    = useState(false)
+    // ── Dropdown "Tipo de Registro" ────────────────────────────────────────────
+    const [dropdownOpen, setDropdownOpen] = useState(false)
+    const dropdownRef = useRef<HTMLDivElement>(null)
 
-    // ─── Modo Cronología ───────────────────────────────────────────────────────
+    useEffect(() => {
+        if (!dropdownOpen) return
+        const handler = (e: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node))
+                setDropdownOpen(false)
+        }
+        document.addEventListener('mousedown', handler)
+        return () => document.removeEventListener('mousedown', handler)
+    }, [dropdownOpen])
 
-    interface MomentoEntry {
-        id: string
-        hora: string
-        texto: string
-    }
+    // Derivado: ¿este tipo obliga a registrar datos del denunciante?
+    const requiresDenunciante = TIPOS_REQUIEREN_DENUNCIANTE.includes(formData.tipoRegistro)
 
+    // ── GPS ───────────────────────────────────────────────────────────────────
+    const [gpsMode, setGpsMode] = useState<'actual' | 'none'>('actual')
+
+    // ── Modo Cronología ───────────────────────────────────────────────────────
+    interface MomentoEntry { id: string; hora: string; texto: string }
     const [modoCronologia, setModoCronologia] = useState(false)
     const [momentos, setMomentos] = useState<MomentoEntry[]>([
         { id: crypto.randomUUID(), hora: '', texto: '' },
     ])
 
-    const addMomento = () =>
+    const addMomento    = () =>
         setMomentos(prev => [...prev, { id: crypto.randomUUID(), hora: '', texto: '' }])
-
     const removeMomento = (id: string) =>
         setMomentos(prev => prev.length > 1 ? prev.filter(m => m.id !== id) : prev)
-
     const updateMomento = (id: string, patch: Partial<MomentoEntry>) =>
-        setMomentos(prev => {
-            const updated = prev.map(m => (m.id === id ? { ...m, ...patch } : m))
-            return [...updated].sort((a, b) => {
-                if (!a.hora && !b.hora) return 0
-                if (!a.hora) return 1
-                if (!b.hora) return -1
-                return a.hora.localeCompare(b.hora)
-            })
-        })
-
-    const momentosToTexto = (): string =>
+        setMomentos(prev =>
+            [...prev.map(m => m.id === id ? { ...m, ...patch } : m)]
+                .sort((a, b) => {
+                    if (!a.hora && !b.hora) return 0
+                    if (!a.hora) return 1
+                    if (!b.hora) return -1
+                    return a.hora.localeCompare(b.hora)
+                }),
+        )
+    const momentosToTexto = () =>
         momentos
             .filter(m => m.hora || m.texto)
             .map(m => `[${m.hora || '--:--'}] ${m.texto}`)
             .join('\n')
 
-    // ─── Submit ────────────────────────────────────────────────────────────────
-
+    // ── Submit ────────────────────────────────────────────────────────────────
     const handleGuardar = async () => {
-        // Si está en modo cronología, serializa los momentos como descripción
-        const descripcionFinal = modoCronologia
-            ? momentosToTexto()
-            : formData.descripcion
-
+        const descripcionFinal = modoCronologia ? momentosToTexto() : formData.descripcion
         const payload = crearPayloadIncidente({
             formData: { ...formData, descripcion: descripcionFinal },
             delitos,
-            isFormalComplaint,
             gpsMode,
         })
         try {
             await apiClient.post('/incidentes', payload)
             showToast('Incidente guardado correctamente')
-        } catch (err) {
+        } catch {
             showToast('Ocurrió un error al guardar el incidente', 'error')
         }
     }
 
-    // ─── Opciones estáticas ────────────────────────────────────────────────────
-
+    // ── Opciones estáticas ────────────────────────────────────────────────────
     const tipoInvolucradoOptions = [
         { value: '', label: '— Seleccione —' },
         ...TIPOS_INVOLUCRADO.map(t => ({ value: t.value, label: t.label })),
     ]
 
-    // ─── Render ────────────────────────────────────────────────────────────────
+    const selectedTipoLabel = TIPOS_REGISTRO.find(t => t.value === formData.tipoRegistro)?.label
 
+    // ─── Render ───────────────────────────────────────────────────────────────
     return (
         <div className="pb-6 space-y-4">
 
-            {/* Aviso cuando el backend no está disponible */}
+            {/* Aviso de backend no disponible */}
             {tiposWarning && (
                 <div className="flex items-center gap-2 px-3 py-2 border border-amber-400/40 rounded bg-amber-400/5 text-[10px] uppercase tracking-wider text-amber-400">
                     <AlertTriangle size={12} style={{ filter: 'drop-shadow(0 0 4px rgba(255,170,0,0.6))' }} />
@@ -112,28 +133,85 @@ export const RegistroDelHecho = () => {
 
             <NeonPanel title="CAPTURA DEL HECHO" className="space-y-6">
 
-                {/* ── Geolocalización ─────────────────────────────────────── */}
+                {/* ══ TIPO DE REGISTRO ══════════════════════════════════════ */}
                 <div>
                     <div className="text-[11px] uppercase tracking-[0.12em] text-cyan-400 mb-3 font-medium">
-                        Geolocalización
+                        Tipo de Registro <span className="text-red-400">*</span>
                     </div>
-                    <div className="space-y-2">
-                        <NeonRadio
-                            label="Capturar GPS Actual"
-                            name="gps"
-                            checked={gpsMode === 'actual'}
-                            onChange={() => setGpsMode('actual')}
-                        />
-                        <NeonRadio
-                            label="Sin coordenadas"
-                            name="gps"
-                            checked={gpsMode === 'none'}
-                            onChange={() => setGpsMode('none')}
-                        />
+
+                    <div className="relative w-full sm:w-72" ref={dropdownRef}>
+                        {/* Botón principal */}
+                        <button
+                            onClick={() => setDropdownOpen(v => !v)}
+                            className={[
+                                'w-full flex items-center justify-between gap-3',
+                                'px-4 py-2.5 border-2 rounded',
+                                'text-[11px] uppercase tracking-[0.12em] font-medium',
+                                'transition-all duration-300',
+                                formData.tipoRegistro
+                                    ? TIPO_REGISTRO_COLORS[formData.tipoRegistro]
+                                    : 'border-cyan-400/30 text-cyan-500 hover:border-cyan-400/60 hover:text-cyan-400',
+                            ].join(' ')}
+                            style={formData.tipoRegistro ? {
+                                boxShadow: '0 2px 12px rgba(51,153,255,0.25), inset 0 1px 3px rgba(51,153,255,0.08)',
+                            } : undefined}
+                        >
+                            <span className="flex items-center gap-2">
+                                <FileText size={14} />
+                                {selectedTipoLabel ?? 'Seleccionar tipo de registro…'}
+                            </span>
+                            <ChevronDown
+                                size={14}
+                                className={`transition-transform duration-300 flex-shrink-0 ${dropdownOpen ? 'rotate-180' : ''}`}
+                                style={{ filter: 'drop-shadow(0 0 3px rgba(51,153,255,0.5))' }}
+                            />
+                        </button>
+
+                        {/* Dropdown */}
+                        {dropdownOpen && (
+                            <div
+                                className="absolute top-full left-0 right-0 mt-1.5 z-50 border-2 border-cyan-400/60 bg-[#060B10]/98 backdrop-blur-sm rounded overflow-hidden"
+                                style={{ boxShadow: '0 4px 20px rgba(51,153,255,0.4), 0 8px 40px rgba(51,153,255,0.2)' }}
+                            >
+                                {TIPOS_REGISTRO.map((tipo, i) => (
+                                    <button
+                                        key={tipo.value}
+                                        onClick={() => {
+                                            updateFormData({ tipoRegistro: tipo.value })
+                                            setDropdownOpen(false)
+                                        }}
+                                        className={[
+                                            'w-full text-left px-4 py-2.5',
+                                            'text-[11px] uppercase tracking-[0.12em]',
+                                            'transition-all duration-200',
+                                            i < TIPOS_REGISTRO.length - 1 ? 'border-b border-cyan-400/20' : '',
+                                            formData.tipoRegistro === tipo.value
+                                                ? 'bg-cyan-400/15 text-cyan-300'
+                                                : 'text-cyan-400 hover:bg-cyan-400/10 hover:text-cyan-300',
+                                        ].join(' ')}
+                                    >
+                                        {tipo.label}
+                                        {/* Etiqueta "requiere denunciante" */}
+                                        {TIPOS_REQUIEREN_DENUNCIANTE.includes(tipo.value) && (
+                                            <span className="ml-2 text-[9px] text-emerald-400/70 normal-case tracking-normal">
+                                                (requiere denunciante)
+                                            </span>
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
+
+                    {/* Aviso si no se ha seleccionado */}
+                    {!formData.tipoRegistro && (
+                        <p className="mt-2 text-[10px] text-cyan-600 tracking-wide">
+                            Seleccione el tipo de registro antes de continuar.
+                        </p>
+                    )}
                 </div>
 
-                {/* ── Involucrados ─────────────────────────────────────────── */}
+                {/* ══ INVOLUCRADOS ═════════════════════════════════════════ */}
                 <div>
                     <div className="text-[11px] uppercase tracking-[0.12em] text-cyan-400 mb-3 font-medium">
                         Involucrados
@@ -260,7 +338,7 @@ export const RegistroDelHecho = () => {
                     </div>
                 </div>
 
-                {/* ── Detalles del Delito ──────────────────────────────────── */}
+                {/* ══ DETALLES DEL DELITO ══════════════════════════════════ */}
                 <div>
                     <div className="text-[11px] uppercase tracking-[0.12em] text-cyan-400 mb-3 font-medium">
                         Detalles del Delito
@@ -274,7 +352,6 @@ export const RegistroDelHecho = () => {
                                 { value: '', label: loadingTipos ? 'Cargando…' : '— Seleccione —' },
                                 ...tipos.map(t => ({ value: t.value, label: t.label })),
                             ]
-
                             const subtipoOpts = [
                                 {
                                     value: '',
@@ -303,11 +380,9 @@ export const RegistroDelHecho = () => {
                                         </>
                                     )}
 
-                                    {/* Tipo y subtipo */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         <NeonSelect
-                                            label="Tipo de Delito"
-                                            required
+                                            label="Tipo de Delito" required
                                             options={tipoOpts}
                                             disabled={loadingTipos}
                                             value={delito.tipoValue}
@@ -315,16 +390,13 @@ export const RegistroDelHecho = () => {
                                                 const val   = e.target.value
                                                 const label = tipos.find(t => t.value === val)?.label ?? ''
                                                 updateDelito(delito.id, {
-                                                    tipoValue:    val,
-                                                    tipoLabel:    label,
-                                                    subtipoValue: '',
-                                                    subtipoLabel: '',
+                                                    tipoValue: val, tipoLabel: label,
+                                                    subtipoValue: '', subtipoLabel: '',
                                                 })
                                             }}
                                         />
                                         <NeonSelect
-                                            label="Subtipo"
-                                            required
+                                            label="Subtipo" required
                                             options={subtipoOpts}
                                             disabled={!delito.tipoValue || loadingTipos}
                                             value={delito.subtipoValue}
@@ -336,12 +408,9 @@ export const RegistroDelHecho = () => {
                                         />
                                     </div>
 
-                                    {/* Fecha del hecho */}
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         <NeonInput
-                                            label="Fecha del Hecho"
-                                            required
-                                            type="date"
+                                            label="Fecha del Hecho" required type="date"
                                             value={delito.fechaHecho}
                                             error={delito.fechaError}
                                             onChange={e => {
@@ -351,21 +420,15 @@ export const RegistroDelHecho = () => {
                                             }}
                                         />
                                     </div>
-
                                     {delito.fechaError && (
-                                        <div
-                                            className="text-[10px] text-red-400 px-2 py-1 border border-red-400/40 rounded inline-block"
-                                            style={{ textShadow: '0 0 5px rgba(255,75,75,0.5)' }}
-                                        >
+                                        <div className="text-[10px] text-red-400 px-2 py-1 border border-red-400/40 rounded inline-block" style={{ textShadow: '0 0 5px rgba(255,75,75,0.5)' }}>
                                             ⚠ La fecha del hecho no puede ser futura
                                         </div>
                                     )}
 
-                                    {/* Horas */}
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         <NeonInput
-                                            label="Hora de Inicio *"
-                                            type="time"
+                                            label="Hora de Inicio *" type="time"
                                             value={delito.horaInicio}
                                             error={delito.tiempoError && !delito.horaInicio}
                                             onChange={e => {
@@ -374,8 +437,7 @@ export const RegistroDelHecho = () => {
                                             }}
                                         />
                                         <NeonInput
-                                            label="Hora de Finalización"
-                                            type="time"
+                                            label="Hora de Finalización" type="time"
                                             value={delito.horaFin}
                                             disabled={delito.hechoEnCurso}
                                             error={delito.tiempoError && !delito.horaFin && !delito.hechoEnCurso}
@@ -394,12 +456,8 @@ export const RegistroDelHecho = () => {
                                             validateTiempos(delito.id, delito.horaInicio, '', e.target.checked)
                                         }}
                                     />
-
                                     {delito.tiempoError && (
-                                        <div
-                                            className="text-[10px] text-red-400 px-2 py-1 border border-red-400/40 rounded inline-block"
-                                            style={{ textShadow: '0 0 5px rgba(255,75,75,0.5)' }}
-                                        >
+                                        <div className="text-[10px] text-red-400 px-2 py-1 border border-red-400/40 rounded inline-block" style={{ textShadow: '0 0 5px rgba(255,75,75,0.5)' }}>
                                             ⚠ {delito.tiempoErrorMsg}
                                         </div>
                                     )}
@@ -412,14 +470,12 @@ export const RegistroDelHecho = () => {
                         </NeonButton>
                     </div>
 
-                    {/* Descripción general — una sola por incidente */}
+                    {/* Descripción del hecho */}
                     <div className="mt-4">
-
-                        {/* Cabecera: label + toggle Modo Cronología */}
                         <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[11px] uppercase tracking-[0.1em] text-cyan-400 font-medium">
-                Descripción del Hecho <span className="text-red-400">*</span>
-              </span>
+                            <span className="text-[11px] uppercase tracking-[0.1em] text-cyan-400 font-medium">
+                                Descripción del Hecho <span className="text-red-400">*</span>
+                            </span>
                             <button
                                 type="button"
                                 onClick={() => setModoCronologia(v => !v)}
@@ -435,7 +491,6 @@ export const RegistroDelHecho = () => {
                             </button>
                         </div>
 
-                        {/* ── Modo texto normal ── */}
                         {!modoCronologia && (
                             <NeonTextarea
                                 label=""
@@ -449,7 +504,6 @@ export const RegistroDelHecho = () => {
                             />
                         )}
 
-                        {/* ── Modo cronología ── */}
                         {modoCronologia && (
                             <div className="space-y-2">
                                 {momentos.map((momento, idx) => (
@@ -458,38 +512,20 @@ export const RegistroDelHecho = () => {
                                         className="flex items-center gap-2 p-2 border border-cyan-400/20 rounded bg-[#050F1C]/40"
                                         style={{ boxShadow: 'inset 0 1px 3px rgba(51,153,255,0.04)' }}
                                     >
-                                        {/* Número de orden */}
-                                        <span className="text-[10px] text-cyan-600/60 w-4 text-right shrink-0">
-                      {idx + 1}
-                    </span>
-
-                                        {/* Campo hora */}
+                                        <span className="text-[10px] text-cyan-600/60 w-4 text-right shrink-0">{idx + 1}</span>
                                         <input
                                             type="time"
                                             value={momento.hora}
                                             onChange={e => updateMomento(momento.id, { hora: e.target.value })}
-                                            className={[
-                                                'bg-transparent border border-cyan-400/30 rounded px-2 py-1.5',
-                                                'text-[12px] text-cyan-200 w-[7rem] shrink-0',
-                                                'focus:outline-none focus:border-cyan-400/70',
-                                                '[color-scheme:dark]',
-                                            ].join(' ')}
+                                            className="bg-transparent border border-cyan-400/30 rounded px-2 py-1.5 text-[12px] text-cyan-200 w-[7rem] shrink-0 focus:outline-none focus:border-cyan-400/70 [color-scheme:dark]"
                                         />
-
-                                        {/* Campo descripción del momento */}
                                         <input
                                             type="text"
                                             value={momento.texto}
                                             onChange={e => updateMomento(momento.id, { texto: e.target.value })}
                                             placeholder="Descripción del momento…"
-                                            className={[
-                                                'flex-1 bg-transparent border border-cyan-400/30 rounded px-2 py-1.5',
-                                                'text-[12px] text-cyan-100 placeholder-cyan-700',
-                                                'focus:outline-none focus:border-cyan-400/70',
-                                            ].join(' ')}
+                                            className="flex-1 bg-transparent border border-cyan-400/30 rounded px-2 py-1.5 text-[12px] text-cyan-100 placeholder-cyan-700 focus:outline-none focus:border-cyan-400/70"
                                         />
-
-                                        {/* Botón eliminar */}
                                         <button
                                             type="button"
                                             onClick={() => removeMomento(momento.id)}
@@ -509,15 +545,14 @@ export const RegistroDelHecho = () => {
                                     <Plus size={12} /> Agregar momento
                                 </button>
 
-                                {/* Vista previa del texto que se guardará */}
                                 {momentos.some(m => m.hora || m.texto) && (
                                     <div className="mt-2 p-3 border border-cyan-400/15 rounded bg-[#020810]/60">
                                         <div className="text-[9px] uppercase tracking-wider text-cyan-600 mb-1.5 flex items-center gap-1">
                                             <AlignLeft size={9} /> Vista previa
                                         </div>
                                         <pre className="text-[11px] text-cyan-300/70 whitespace-pre-wrap font-mono leading-relaxed">
-                      {momentosToTexto()}
-                    </pre>
+                                            {momentosToTexto()}
+                                        </pre>
                                     </div>
                                 )}
                             </div>
@@ -525,33 +560,45 @@ export const RegistroDelHecho = () => {
                     </div>
                 </div>
 
-                {/* ── Cronología del Reporte ───────────────────────────────── */}
+                {/* ══ CRONOLOGÍA DEL REPORTE ═══════════════════════════════ */}
                 <div>
                     <div className="text-[11px] uppercase tracking-[0.12em] text-cyan-400 mb-3 font-medium">
                         Cronología del Reporte
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <NeonInput
-                            label="Fecha del Reporte"
-                            required
-                            type="date"
+                            label="Fecha del Reporte" required type="date"
                             value={formData.fechaReporte}
                             onChange={e => updateFormData({ fechaReporte: e.target.value })}
                         />
                         <NeonInput
-                            label="Hora del Reporte"
-                            required
-                            type="time"
+                            label="Hora del Reporte" required type="time"
                             value={formData.horaReporte}
                             onChange={e => updateFormData({ horaReporte: e.target.value })}
                         />
                     </div>
                 </div>
 
-                {/* ── Ubicación y Mapa ─────────────────────────────────────── */}
+                {/* ══ UBICACIÓN Y MAPA ═════════════════════════════════════ */}
                 <div>
                     <div className="text-[11px] uppercase tracking-[0.12em] text-cyan-400 mb-3 flex items-center gap-2 font-medium">
                         <MapPin size={14} /> Ubicación y Mapa
+                    </div>
+
+                    {/* Selector de modo GPS — ahora vive aquí */}
+                    <div className="flex gap-6 mb-4">
+                        <NeonRadio
+                            label="Capturar GPS Actual"
+                            name="gps"
+                            checked={gpsMode === 'actual'}
+                            onChange={() => setGpsMode('actual')}
+                        />
+                        <NeonRadio
+                            label="Ingresar manualmente"
+                            name="gps"
+                            checked={gpsMode === 'none'}
+                            onChange={() => setGpsMode('none')}
+                        />
                     </div>
 
                     {gpsMode === 'actual' ? (
@@ -559,46 +606,37 @@ export const RegistroDelHecho = () => {
                             className="p-4 border-2 border-cyan-400/50 rounded bg-cyan-400/5 flex items-center justify-center gap-2"
                             style={{ boxShadow: '0 2px 12px rgba(51,153,255,0.25), inset 0 1px 3px rgba(51,153,255,0.1)' }}
                         >
-                            <MapPin
-                                size={16}
-                                className="text-cyan-400"
-                                style={{ filter: 'drop-shadow(0 0 3px rgba(51,153,255,0.7))' }}
-                            />
+                            <MapPin size={16} className="text-cyan-400" style={{ filter: 'drop-shadow(0 0 3px rgba(51,153,255,0.7))' }} />
                             <span className="text-xs text-cyan-300 uppercase tracking-[0.12em]">
-                Ubicación obtenida por GPS — Coordenadas automáticas
-              </span>
+                                Ubicación obtenida por GPS — Coordenadas automáticas
+                            </span>
                         </div>
                     ) : (
                         <div className="space-y-3">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <NeonInput
-                                    label="Municipio"
-                                    placeholder="Nombre del municipio…"
+                                    label="Municipio" placeholder="Nombre del municipio…"
                                     value={formData.municipio ?? ''}
                                     onChange={e => updateFormData({ municipio: e.target.value })}
                                 />
                                 <NeonInput
-                                    label="Sector"
-                                    placeholder="Calle, avenida…"
+                                    label="Sector" placeholder="Calle, avenida…"
                                     value={formData.sector ?? ''}
                                     onChange={e => updateFormData({ sector: e.target.value })}
                                 />
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <NeonInput
-                                    label="Dirección"
-                                    placeholder="Ej: Avenida…"
+                                    label="Dirección" placeholder="Ej: Avenida…"
                                     value={formData.ubicacionDireccion ?? ''}
                                     onChange={e => updateFormData({ ubicacionDireccion: e.target.value })}
                                 />
                                 <NeonInput
-                                    label="Referencia"
-                                    placeholder="Ej: Frente al parque Central"
+                                    label="Referencia" placeholder="Ej: Frente al parque Central"
                                     value={formData.referencia ?? ''}
                                     onChange={e => updateFormData({ referencia: e.target.value })}
                                 />
                             </div>
-
                             <div
                                 className="h-48 border-2 border-cyan-400/50 rounded bg-[#020818] flex items-center justify-center relative overflow-hidden"
                                 style={{ boxShadow: '0 2px 12px rgba(51,153,255,0.25), inset 0 1px 5px rgba(51,153,255,0.1)' }}
@@ -622,24 +660,19 @@ export const RegistroDelHecho = () => {
                     )}
                 </div>
 
-                {/* ── ¿Denuncia formal? ────────────────────────────────────── */}
-                <div className="pt-2">
-                    <NeonCheckbox
-                        label="ES UNA DENUNCIA FORMAL"
-                        checked={isFormalComplaint}
-                        onChange={e => setIsFormal(e.target.checked)}
-                    />
-                </div>
-
-                {/* ── Datos del Denunciante (condicional) ──────────────────── */}
-                {isFormalComplaint && (
+                {/* ══ DATOS DEL DENUNCIANTE ════════════════════════════════ */}
+                {/* Aparece automáticamente para Denuncia Formal y Reporte Ciudadano */}
+                {requiresDenunciante && (
                     <div
                         className="border-2 border-emerald-400/40 rounded p-4 bg-emerald-400/5 animate-fade-in"
                         style={{ boxShadow: '0 2px 12px rgba(0,255,136,0.25), inset 0 1px 3px rgba(0,255,136,0.08)' }}
                     >
-                        <div className="text-[11px] uppercase tracking-[0.12em] text-emerald-400 mb-3 font-medium">
+                        <div className="text-[11px] uppercase tracking-[0.12em] text-emerald-400 mb-1 font-medium">
                             Datos del Denunciante
                         </div>
+                        <p className="text-[10px] text-emerald-500/60 mb-3 tracking-wide">
+                            Requerido para este tipo de registro. El denunciante puede tener además un rol de Involucrado.
+                        </p>
                         <div className="space-y-3">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <NeonInput
@@ -685,10 +718,17 @@ export const RegistroDelHecho = () => {
                     </div>
                 )}
 
-                {/* ── Acciones ─────────────────────────────────────────────── */}
+                {/* ══ ACCIONES ════════════════════════════════════════════ */}
                 <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
                     <NeonButton variant="outline">Cancelar</NeonButton>
-                    <NeonButton variant="primary" onClick={handleGuardar}>Guardar</NeonButton>
+                    <NeonButton
+                        variant="primary"
+                        onClick={handleGuardar}
+                        disabled={!formData.tipoRegistro}
+                        title={!formData.tipoRegistro ? 'Seleccione el tipo de registro primero' : undefined}
+                    >
+                        Guardar
+                    </NeonButton>
                 </div>
 
             </NeonPanel>

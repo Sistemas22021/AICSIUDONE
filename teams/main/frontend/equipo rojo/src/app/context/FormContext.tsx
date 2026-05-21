@@ -1,6 +1,33 @@
+
 import { createContext, useContext, useState, type ReactNode } from 'react'
 
-// ─── Tipos de involucrado ─────────────────────────────────────────────────────
+// ─── Tipo de Registro ─────────────────────────────────────────────────────────
+
+export type TipoRegistro =
+    | 'denuncia_formal'
+    | 'denuncia_anonima'
+    | 'de_oficio'
+    | 'llamada_emergencia'
+    | 'reporte_ciudadano'
+    | 'flagrancia'
+    | ''
+
+export const TIPOS_REGISTRO: { value: TipoRegistro; label: string }[] = [
+  { value: 'denuncia_formal',     label: 'Denuncia Formal' },
+  { value: 'denuncia_anonima',    label: 'Denuncia Anónima' },
+  { value: 'de_oficio',           label: 'De Oficio' },
+  { value: 'llamada_emergencia',  label: 'Llamada de Emergencia' },
+  { value: 'reporte_ciudadano',   label: 'Reporte Ciudadano' },
+  { value: 'flagrancia',          label: 'Flagrancia' },
+]
+
+// Los tipos que obligan a registrar datos del denunciante
+export const TIPOS_REQUIEREN_DENUNCIANTE: TipoRegistro[] = [
+  'denuncia_formal',
+  'reporte_ciudadano',
+]
+
+// ─── Tipo de Involucrado ──────────────────────────────────────────────────────
 
 export type TipoInvolucrado =
     | 'victima'
@@ -23,27 +50,23 @@ export const TIPOS_INVOLUCRADO: { value: TipoInvolucrado; label: string }[] = [
   { value: 'detenido_arrestado',  label: 'Detenido / Arrestado' },
 ]
 
-// ─── Involucrado ──────────────────────────────────────────────────────────────
+// ─── Interfaces ───────────────────────────────────────────────────────────────
 
 export interface Involucrado {
-  id: number
+  id:              number
   tipoInvolucrado: TipoInvolucrado
-  nombre: string
-  identificacion: string
-  nacionalidad: string
-  telefono: string
-  direccion: string
-  foto: File | null
+  nombre:          string
+  identificacion:  string
+  nacionalidad:    string
+  telefono:        string
+  direccion:       string
+  foto:            File | null
 }
 
-// ─── FormData ─────────────────────────────────────────────────────────────────
-//
-// Los campos de delito (tipoDelito, subTipo, horaInicioHecho, horaFinHecho,
-// hechoEnCurso) estan en useDelitoList como un
-// array de DelitoEntry, para poder registrar múltiples delitos por
-// incidente.
-
 export interface FormData {
+  // ── Tipo de registro ────────────────────────────────────────────────────────
+  tipoRegistro: TipoRegistro
+
   // ── Involucrados ────────────────────────────────────────────────────────────
   involucrados: Involucrado[]
 
@@ -66,7 +89,7 @@ export interface FormData {
   agenteRegistrador: string
   investigador:      string
 
-  // ── Denuncia formal ─────────────────────────────────────────────────────────
+  // ── Datos del denunciante (obligatorio para denuncia_formal y reporte_ciudadano) ──
   denuncianteNombre:         string
   denuncianteTelefono:       string
   denuncianteIdentificacion: string
@@ -78,7 +101,7 @@ export interface FormData {
 // ─── Contexto ─────────────────────────────────────────────────────────────────
 
 interface FormContextType {
-  formData: FormData
+  formData:          FormData
   updateFormData:    (data: Partial<FormData>) => void
   addInvolucrado:    () => void
   removeInvolucrado: (id: number) => void
@@ -91,16 +114,18 @@ const FormContext = createContext<FormContextType | undefined>(undefined)
 // ─── Estado inicial ───────────────────────────────────────────────────────────
 
 const initialFormData: FormData = {
+  tipoRegistro: '',
+
   involucrados: [
     {
-      id: 1,
+      id:              1,
       tipoInvolucrado: 'victima',
-      nombre: '',
-      identificacion: '',
-      nacionalidad: '',
-      telefono: '',
-      direccion: '',
-      foto: null,
+      nombre:          '',
+      identificacion:  '',
+      nacionalidad:    '',
+      telefono:        '',
+      direccion:       '',
+      foto:            null,
     },
   ],
 
@@ -142,14 +167,14 @@ export const FormProvider = ({ children }: { children: ReactNode }) => {
       involucrados: [
         ...prev.involucrados,
         {
-          id: newId,
+          id:              newId,
           tipoInvolucrado: 'victima',
-          nombre: '',
-          identificacion: '',
-          nacionalidad: '',
-          telefono: '',
-          direccion: '',
-          foto: null,
+          nombre:          '',
+          identificacion:  '',
+          nacionalidad:    '',
+          telefono:        '',
+          direccion:       '',
+          foto:            null,
         },
       ],
     }))
@@ -171,14 +196,7 @@ export const FormProvider = ({ children }: { children: ReactNode }) => {
 
   return (
       <FormContext.Provider
-          value={{
-            formData,
-            updateFormData,
-            addInvolucrado,
-            removeInvolucrado,
-            updateInvolucrado,
-            resetForm,
-          }}
+          value={{ formData, updateFormData, addInvolucrado, removeInvolucrado, updateInvolucrado, resetForm }}
       >
         {children}
       </FormContext.Provider>
