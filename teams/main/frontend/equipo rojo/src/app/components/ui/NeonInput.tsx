@@ -24,6 +24,7 @@ export const NeonInput = forwardRef<HTMLInputElement, NeonInputProps>(
           transition-all duration-300
           hover:border-cyan-400/60
           input-glow
+          [color-scheme:dark]
           ${error ? 'error-glow' : ''}
           ${className}
         `}
