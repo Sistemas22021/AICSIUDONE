@@ -1,8 +1,14 @@
 package com.azulcian.GestionIncidentesPatrullas.incident.service;
 
+import com.azulcian.GestionIncidentesPatrullas.assignment.model.Assignment;
+import com.azulcian.GestionIncidentesPatrullas.assignment.repository.AssignmentRepository;
 import com.azulcian.GestionIncidentesPatrullas.incident.dto.IncidentSummaryDTO;
 import com.azulcian.GestionIncidentesPatrullas.incident.model.Incident;
+import com.azulcian.GestionIncidentesPatrullas.incident.model.IncidentStatus;
 import com.azulcian.GestionIncidentesPatrullas.incident.repository.IncidentRepository;
+import com.azulcian.GestionIncidentesPatrullas.patrol.model.Patrol;
+import com.azulcian.GestionIncidentesPatrullas.patrol.model.PatrolStatus;
+import com.azulcian.GestionIncidentesPatrullas.patrol.repository.PatrolRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -11,16 +17,24 @@ import java.util.List;
 public class IncidentService {
 
     private final IncidentRepository incidentRepository;
+    private final AssignmentRepository assignmentRepository;
+    private final PatrolRepository patrolRepository;
 
-    public IncidentService(IncidentRepository incidentRepository) {
+    public IncidentService(
+            IncidentRepository incidentRepository,
+            AssignmentRepository assignmentRepository,
+            PatrolRepository patrolRepository
+    ) {
         this.incidentRepository = incidentRepository;
+        this.assignmentRepository = assignmentRepository;
+        this.patrolRepository = patrolRepository;
     }
 
     // =========================================
     // CREATE INCIDENT
     // =========================================
     public Incident createIncident(Incident incident) {
-        incident.setStatus("ACTIVE");
+        incident.setStatus(IncidentStatus.ACTIVE);
         return incidentRepository.save(incident);
     }
 
@@ -51,10 +65,17 @@ public class IncidentService {
         int closed = 0;
 
         for (Incident incident : incidents) {
-            switch (incident.getStatus()) {
-                case "ACTIVE" -> active++;
-                case "IN_PROGRESS" -> inProgress++;
-                case "CLOSED" -> closed++;
+
+            if (incident.getStatus() == IncidentStatus.ACTIVE) {
+                active++;
+            }
+
+            else if (incident.getStatus() == IncidentStatus.IN_PROGRESS) {
+                inProgress++;
+            }
+
+            else if (incident.getStatus() == IncidentStatus.CLOSED) {
+                closed++;
             }
         }
 
@@ -69,17 +90,48 @@ public class IncidentService {
     // =========================================
     // UPDATE STATUS
     // =========================================
-    public Incident updateStatus(Long id, String newStatus) {
+    public Incident updateStatus(Long id, IncidentStatus newStatus) {
 
         Incident incident = getIncidentById(id);
 
-        if (!newStatus.equals("ACTIVE") &&
-                !newStatus.equals("IN_PROGRESS") &&
-                !newStatus.equals("CLOSED")) {
-            throw new RuntimeException("Invalid status");
+        incident.setStatus(newStatus);
+
+        return incidentRepository.save(incident);
+    }
+
+    // =========================================
+    // CLOSE INCIDENT (CORE OPERATIVO)
+    // =========================================
+    public Incident closeIncident(Long id) {
+
+        // 1. Buscar incidente
+        Incident incident = getIncidentById(id);
+
+        // 2. Validar estado
+        if (incident.getStatus() != IncidentStatus.IN_PROGRESS) {
+            throw new RuntimeException(
+                    "Only IN_PROGRESS incidents can be closed"
+            );
         }
 
-        incident.setStatus(newStatus);
+        // 3. Buscar assignment relacionado
+        Assignment assignment = assignmentRepository
+                .findByIncident(incident)
+                .orElseThrow(() ->
+                        new RuntimeException("Assignment not found")
+                );
+
+        // 4. Obtener patrulla
+        Patrol patrol = assignment.getPatrol();
+
+        // 5. Liberar patrulla
+        patrol.setStatus(PatrolStatus.AVAILABLE);
+
+        // 6. Cerrar incidente
+        incident.setStatus(IncidentStatus.CLOSED);
+
+        // 7. Guardar cambios
+        patrolRepository.save(patrol);
 
         return incidentRepository.save(incident);
     }

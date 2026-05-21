@@ -1,8 +1,9 @@
 package com.azulcian.GestionIncidentesPatrullas.incident.controller;
 
-import com.azulcian.GestionIncidentesPatrullas.incident.model.Incident;
-import com.azulcian.GestionIncidentesPatrullas.incident.service.IncidentService;
 import com.azulcian.GestionIncidentesPatrullas.incident.dto.IncidentSummaryDTO;
+import com.azulcian.GestionIncidentesPatrullas.incident.model.Incident;
+import com.azulcian.GestionIncidentesPatrullas.incident.model.IncidentStatus;
+import com.azulcian.GestionIncidentesPatrullas.incident.service.IncidentService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -76,8 +77,19 @@ public class IncidentController {
         return incidentService.updateStatus(id, request.status);
     }
 
-    // DTO interno
+    // =========================================
+    // CLOSE INCIDENT
+    // =========================================
+    @PatchMapping("/{id}/close")
+    public Incident closeIncident(@PathVariable Long id) {
+
+        return incidentService.closeIncident(id);
+    }
+
+    // =========================================
+    // DTO INTERNO
+    // =========================================
     public static class StatusRequest {
-        public String status;
+        public IncidentStatus status;
     }
 }

@@ -3,6 +3,7 @@
 -- =========================================
 
 -- OPTIONAL RESET
+DROP TABLE IF EXISTS operational_logs CASCADE;
 DROP TABLE IF EXISTS assignments CASCADE;
 DROP TABLE IF EXISTS incidents CASCADE;
 DROP TABLE IF EXISTS patrols CASCADE;
