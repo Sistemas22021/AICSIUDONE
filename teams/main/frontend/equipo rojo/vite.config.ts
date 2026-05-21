@@ -1,3 +1,4 @@
+// Configura el servidor de desarrollo, el proxy al backend y el alias @
 import { defineConfig } from 'vite'
 import path from 'path'
 import tailwindcss from '@tailwindcss/vite'

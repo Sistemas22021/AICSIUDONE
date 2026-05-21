@@ -1,3 +1,4 @@
+// Formulario completo de registro del hecho criminal (módulo A)
 import { useState, useRef, useEffect } from 'react'
 import { MapPin, Plus, X, AlertTriangle, Clock, AlignLeft, ChevronDown, FileText } from 'lucide-react'
 import { NeonPanel }    from '../../ui/NeonPanel'

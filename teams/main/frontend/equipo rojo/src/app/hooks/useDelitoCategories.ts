@@ -7,11 +7,6 @@ import type { DelitoTipo } from '../types/api.types'
  * Cuando el endpoint GET /api/v1/delitos/categorias esté listo,
  * estos datos se reemplazarán automáticamente por la respuesta real.
  *
- * Estructura basada en el Código Penal venezolano (Art. 1 CP):
- *   - Delitos Graves       (pena > 8 años de prisión)
- *   - Delitos Menos Graves (pena ≤ 8 años)
- *   - Faltas               (Libro III CP)
- *
  * Formato esperado del backend:
  * [
  *   { "value": "delitos_graves", "label": "DELITOS GRAVES", "subtipos": [...] },

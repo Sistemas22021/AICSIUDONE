@@ -1,3 +1,4 @@
+/* Define todas las variables CSS del sistema ZAC (colores, sombras neon, tipografía) */
 @custom-variant dark (&:is(.dark *));
 
 :root {

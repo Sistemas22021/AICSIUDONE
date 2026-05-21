@@ -1,10 +1,11 @@
 /**
  * Cliente base para comunicación con el API Gateway (Spring Boot).
- * URL configurada via VITE_API_URL en .env (default: http://localhost:8080)
+ * URL configurada via VITE_API_URL en .env
  *
  * Endpoints esperados del incident-service:
  *   GET  /api/v1/delitos/categorias     → DelitoTipo[]
  *   POST /api/v1/incidentes             → Incidente creado
+ *
  */
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080'
