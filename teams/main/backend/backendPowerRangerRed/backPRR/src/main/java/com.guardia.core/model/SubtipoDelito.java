@@ -30,4 +30,14 @@ public class SubtipoDelito {
     public boolean validarCorrespondenciaConTipo(TipoDelito tipo) {
         return this.tipoDelito != null && this.tipoDelito.equals(tipo);
     }
+
+    // Explicit accessors
+    public Long getId() { return this.id; }
+    public String getNombre() { return this.nombre; }
+    public String getDescripcion() { return this.descripcion; }
+    public TipoDelito getTipoDelito() { return this.tipoDelito; }
+
+    public void setNombre(String nombre) { this.nombre = nombre; }
+    public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
+    public void setTipoDelito(TipoDelito tipo) { this.tipoDelito = tipo; }
 }

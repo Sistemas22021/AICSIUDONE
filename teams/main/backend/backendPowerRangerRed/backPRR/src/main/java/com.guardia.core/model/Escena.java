@@ -71,4 +71,17 @@ public class Escena {
     public void bloquearEdicion() {
         this.estadoChecklist = "BLOQUEADO";
     }
+
+    // Explicit accessors
+    public Long getId() { return this.id; }
+    public String getEstadoChecklist() { return this.estadoChecklist; }
+    public java.time.LocalDateTime getInicioProceso() { return this.inicioProceso; }
+    public java.time.LocalDateTime getCierreProceso() { return this.cierreProceso; }
+    public Usuario getLevantadaPor() { return this.levantadaPor; }
+    public Expediente getExpediente() { return this.expediente; }
+    public List<Evidencia> getEvidencias() { return this.evidencias; }
+    public List<EscenaNegativa> getEscenasNegativas() { return this.escenasNegativas; }
+
+    public void setExpediente(Expediente expediente) { this.expediente = expediente; }
+    public void setLevantadaPor(Usuario levantadaPor) { this.levantadaPor = levantadaPor; }
 }

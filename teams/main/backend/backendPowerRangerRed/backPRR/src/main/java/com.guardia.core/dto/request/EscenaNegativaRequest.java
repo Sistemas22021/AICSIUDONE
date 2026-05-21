@@ -15,4 +15,10 @@ public record EscenaNegativaRequest(
 
         @NotNull(message = "La escena es obligatoria")
         Long escenaId
-) {}
+) {
+    public String getElementoBuscado() { return this.elementoBuscado; }
+    public String getAreaInspeccionada() { return this.areaInspeccionada; }
+    public String getResultado() { return this.resultado; }
+    public String getObservacion() { return this.observacion; }
+    public Long getEscenaId() { return this.escenaId; }
+}

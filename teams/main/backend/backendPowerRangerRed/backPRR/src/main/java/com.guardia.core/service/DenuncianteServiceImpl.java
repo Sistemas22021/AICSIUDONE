@@ -25,14 +25,13 @@ public class DenuncianteServiceImpl implements DenuncianteService {
         if (denuncianteRepository.existsByIdentificacion(request.identificacion()))
             throw new BusinessException("Ya existe un denunciante con esa identificación.");
 
-        Denunciante denunciante = Denunciante.builder()
-                .nombre(request.nombre())
-                .identificacion(request.identificacion())
-                .telefono(request.telefono())
-                .nacionalidad(request.nacionalidad())
-                .direccion(request.direccion())
-                .relacionConHecho(request.relacionConHecho())
-                .build();
+        Denunciante denunciante = new Denunciante();
+        denunciante.setNombre(request.nombre());
+        denunciante.setIdentificacion(request.identificacion());
+        denunciante.setTelefono(request.telefono());
+        denunciante.setNacionalidad(request.nacionalidad());
+        denunciante.setDireccion(request.direccion());
+        denunciante.setRelacionConHecho(request.relacionConHecho());
 
         return toResponse(denuncianteRepository.save(denunciante));
     }

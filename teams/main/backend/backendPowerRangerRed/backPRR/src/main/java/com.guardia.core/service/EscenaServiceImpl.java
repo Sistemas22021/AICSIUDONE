@@ -38,12 +38,11 @@ public class EscenaServiceImpl implements EscenaService {
         Usuario investigador = usuarioRepository.findById(request.levantadaPorId())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario", request.levantadaPorId()));
 
-        Escena escena = Escena.builder()
-                .expediente(expediente)
-                .levantadaPor(investigador)
-                .evidencias(new ArrayList<>())
-                .escenasNegativas(new ArrayList<>())
-                .build();
+        Escena escena = new Escena();
+        escena.setExpediente(expediente);
+        escena.setLevantadaPor(investigador);
+        escena.setEvidencias(new ArrayList<>());
+        escena.setEscenasNegativas(new ArrayList<>());
 
         return toResponse(escenaRepository.save(escena));
     }

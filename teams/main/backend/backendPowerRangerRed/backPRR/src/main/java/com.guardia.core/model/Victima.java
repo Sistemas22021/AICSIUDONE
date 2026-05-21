@@ -51,4 +51,21 @@ public class Victima {
     public boolean validarIdentificacion() {
         return this.identificacion != null && !this.identificacion.isBlank();
     }
+
+    // Explicit accessors for environments where Lombok annotation processing may not run
+    public Long getId() { return this.id; }
+    public String getNombre() { return this.nombre; }
+    public String getIdentificacion() { return this.identificacion; }
+    public String getTelefono() { return this.telefono; }
+    public String getNacionalidad() { return this.nacionalidad; }
+    public String getDireccion() { return this.direccion; }
+    public Expediente getExpediente() { return this.expediente; }
+
+    public void setNombre(String nombre) { this.nombre = nombre; }
+    public void setIdentificacion(String identificacion) { this.identificacion = identificacion; }
+    public void setTelefono(String telefono) { this.telefono = telefono; }
+    public void setNacionalidad(String nacionalidad) { this.nacionalidad = nacionalidad; }
+    public void setDireccion(String direccion) { this.direccion = direccion; }
+    public void setExpediente(Expediente expediente) { this.expediente = expediente; }
+
 }

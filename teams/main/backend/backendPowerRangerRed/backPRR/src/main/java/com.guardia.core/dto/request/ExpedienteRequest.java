@@ -1,28 +1,40 @@
 package com.guardia.core.dto.request;
 
-import com.guardia.core.model.enums.EstadoExpediente;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import java.util.List;
 import jakarta.validation.constraints.NotNull;
+import lombok.Data;
 
-import java.time.LocalDateTime;
+@Data
+public class ExpedienteRequest {
 
-public record ExpedienteRequest(
-        @NotBlank(message = "La descripción del hecho es obligatoria")
-        String descripcionHecho,
+    @NotNull
+    private UbicacionRequest ubicacion;
 
-        @NotNull(message = "La fecha del hecho es obligatoria")
-        LocalDateTime fechaHecho,
+    @NotEmpty(message = "Debe registrar al menos un delito en el expediente")
+    private List<DelitoRequest> delitos;
 
-        @NotNull(message = "El tipo de delito es obligatorio")
-        Long tipoDelitoId,
+    @NotBlank(message = "debe haber una descripcion")
+    private String descripcion;
 
-        Long subtipoDelitoId,
+    private Boolean esDenunciaFormal;
 
-        @NotNull(message = "La localización es obligatoria")
-        Long localizacionId,
+    @NotEmpty(message = "Debe registrar al menos un victima")
+    private List<InvolucradosRequest> victimas;
 
-        Long denuncianteId,
+    private DenuncianteRequest denunciante;
 
-        @NotNull(message = "El usuario creador es obligatorio")
-        Long creadoPorId
-) {}
+
+    public Boolean getEsDenunciaFormal() {
+        return esDenunciaFormal;
+    }
+
+    // Compatibility helpers (some code expects record-style accessors)
+    public String descripcion() { return this.descripcion; }
+    public java.util.List<DelitoRequest> delitos() { return this.delitos; }
+    public java.util.List<InvolucradosRequest> victimas() { return this.victimas; }
+    public UbicacionRequest ubicacion() { return this.ubicacion; }
+    public Boolean esDenunciaFormal() { return this.esDenunciaFormal; }
+    public DenuncianteRequest denunciante() { return this.denunciante; }
+}

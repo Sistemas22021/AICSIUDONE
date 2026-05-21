@@ -15,8 +15,6 @@ public interface ExpedienteService {
     List<ExpedienteResponse> obtenerPorCreador(Long usuarioId);
     ExpedienteResponse actualizar(Long id, ExpedienteRequest request);
     void eliminar(Long id);
-
-    // Métodos del diagrama
     ExpedienteResponse sellar(Long id, Long agenteSelladorId);
     ExpedienteResponse cambiarEstado(Long id, EstadoExpediente nuevoEstado);
     ExpedienteResponse asignarInvestigador(Long id, Long investigadorId);

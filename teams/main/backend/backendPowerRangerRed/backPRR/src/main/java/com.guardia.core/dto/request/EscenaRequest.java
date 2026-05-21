@@ -8,4 +8,7 @@ public record EscenaRequest(
 
         @NotNull(message = "El investigador responsable es obligatorio")
         Long levantadaPorId
-) {}
+) {
+    public Long getExpedienteId() { return this.expedienteId; }
+    public Long getLevantadaPorId() { return this.levantadaPorId; }
+}

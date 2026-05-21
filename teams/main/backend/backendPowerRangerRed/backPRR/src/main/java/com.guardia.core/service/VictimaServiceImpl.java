@@ -31,14 +31,13 @@ public class VictimaServiceImpl implements VictimaService {
         Expediente expediente = expedienteRepository.findById(request.expedienteId())
                 .orElseThrow(() -> new ResourceNotFoundException("Expediente", request.expedienteId()));
 
-        Victima victima = Victima.builder()
-                .nombre(request.nombre())
-                .identificacion(request.identificacion())
-                .telefono(request.telefono())
-                .nacionalidad(request.nacionalidad())
-                .direccion(request.direccion())
-                .expediente(expediente)
-                .build();
+        Victima victima = new Victima();
+        victima.setNombre(request.nombre());
+        victima.setIdentificacion(request.identificacion());
+        victima.setTelefono(request.telefono());
+        victima.setNacionalidad(request.nacionalidad());
+        victima.setDireccion(request.direccion());
+        victima.setExpediente(expediente);
 
         return toResponse(victimaRepository.save(victima));
     }

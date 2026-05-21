@@ -31,44 +31,72 @@ public class ExpedienteServiceImpl implements ExpedienteService {
 
     @Override
     public ExpedienteResponse crear(ExpedienteRequest request) {
-        Usuario creador = usuarioRepository.findById(request.creadoPorId())
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario", request.creadoPorId()));
-
-        TipoDelito tipoDelito = tipoDelitoRepository.findById(request.tipoDelitoId())
-                .orElseThrow(() -> new ResourceNotFoundException("TipoDelito", request.tipoDelitoId()));
-
-        Localizacion localizacion = localizacionRepository.findById(request.localizacionId())
-                .orElseThrow(() -> new ResourceNotFoundException("Localizacion", request.localizacionId()));
-
-        SubtipoDelito subtipoDelito = null;
-        if (request.subtipoDelitoId() != null) {
-            subtipoDelito = subtipoDelitoRepository.findById(request.subtipoDelitoId())
-                    .orElseThrow(() -> new ResourceNotFoundException("SubtipoDelito", request.subtipoDelitoId()));
-            if (!subtipoDelito.validarCorrespondenciaConTipo(tipoDelito))
-                throw new BusinessException("El subtipo no corresponde al tipo de delito indicado.");
+        // Mapear ubicación
+        Localizacion localizacion = new Localizacion();
+        if (request.getUbicacion() != null) {
+            localizacion.registrarDireccionManual(
+                    request.getUbicacion().getMunicipio(),
+                    request.getUbicacion().getSector(),
+                    request.getUbicacion().getDireccion(),
+                    request.getUbicacion().getReferencia()
+            );
+            localizacion = localizacionRepository.save(localizacion);
         }
 
-        if (Boolean.TRUE.equals(tipoDelito.getRequiereSubtipo()) && subtipoDelito == null)
-            throw new BusinessException("Este tipo de delito requiere un subtipo obligatorio.");
-
+        // Mapear denunciante si viene
         Denunciante denunciante = null;
-        if (request.denuncianteId() != null) {
-            denunciante = denuncianteRepository.findById(request.denuncianteId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Denunciante", request.denuncianteId()));
+        if (request.getDenunciante() != null) {
+            Denunciante d = new Denunciante();
+            d.setNombre(request.getDenunciante().getNombre());
+            d.setIdentificacion(request.getDenunciante().getCedula());
+            d.setDireccion(request.getDenunciante().getDireccion());
+            d.setTelefono(request.getDenunciante().getNumeroTelefono());
+            d.setNacionalidad(request.getDenunciante().getNacionalidad());
+            d.setRelacionConHecho(request.getDenunciante().getRelacionConCrimen());
+            denunciante = denuncianteRepository.save(d);
         }
 
-        Expediente expediente = Expediente.builder()
-                .descripcionHecho(request.descripcionHecho())
-                .fechaHecho(request.fechaHecho())
-                .creadoPor(creador)
-                .tipoDelito(tipoDelito)
-                .subtipoDelito(subtipoDelito)
-                .localizacion(localizacion)
-                .denunciante(denunciante)
-                .escenas(new ArrayList<>())
-                .victimas(new ArrayList<>())
-                .modusOperandiList(new ArrayList<>())
-                .build();
+        // Crear expediente
+        String folio = "EXP-2026-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+
+        Expediente expediente = new Expediente();
+        expediente.setFolio(folio);
+        expediente.setNumeroUnico(folio);
+        expediente.setFechaCreacion(LocalDateTime.now());
+        expediente.setDescripcionHecho(request.getDescripcion());
+        expediente.setLocalizacion(localizacion);
+        expediente.setDenunciante(denunciante);
+        expediente.setEscenas(new ArrayList<>());
+        expediente.setVictimas(new ArrayList<>());
+        expediente.setModusOperandiList(new ArrayList<>());
+        expediente.setEstadoExpediente(EstadoExpediente.BORRADOR);
+
+        // Mapear delitos (si vienen)
+        if (request.getDelitos() != null) {
+            request.getDelitos().forEach(dReq -> {
+                DelitoEnExpediente delito = new DelitoEnExpediente();
+                delito.setSubtipoDelito(dReq.getDelito().toUpperCase());
+                java.time.LocalDate date = dReq.getFechaHecho();
+                java.time.LocalTime time = dReq.getHoraInicioHecho();
+                java.time.LocalDateTime fechaHora = java.time.LocalDateTime.of(date, time);
+                delito.setFechaHoraHecho(fechaHora);
+                expediente.getDelitos().add(delito);
+            });
+        }
+
+        // Mapear víctimas
+        if (request.getVictimas() != null) {
+            request.getVictimas().forEach(vReq -> {
+                Victima v = new Victima();
+                v.setNombre(vReq.getNombre());
+                v.setIdentificacion(vReq.getCedula());
+                v.setTelefono(vReq.getTelefono());
+                v.setNacionalidad(vReq.getNacionalidad());
+                v.setDireccion(vReq.getDireccion());
+                v.setExpediente(expediente);
+                expediente.getVictimas().add(v);
+            });
+        }
 
         return toResponse(expedienteRepository.save(expediente));
     }
@@ -112,8 +140,13 @@ public class ExpedienteServiceImpl implements ExpedienteService {
                 || expediente.getEstadoExpediente() == EstadoExpediente.ARCHIVADO)
             throw new BusinessException("No se puede modificar un expediente sellado o archivado.");
 
-        expediente.setDescripcionHecho(request.descripcionHecho());
-        expediente.setFechaHecho(request.fechaHecho());
+        expediente.setDescripcionHecho(request.getDescripcion());
+        if (request.getDelitos() != null && !request.getDelitos().isEmpty()) {
+            var dReq = request.getDelitos().get(0);
+            java.time.LocalDate date = dReq.getFechaHecho();
+            java.time.LocalTime time = dReq.getHoraInicioHecho();
+            expediente.setFechaHecho(java.time.LocalDateTime.of(date, time));
+        }
         return toResponse(expedienteRepository.save(expediente));
     }
 

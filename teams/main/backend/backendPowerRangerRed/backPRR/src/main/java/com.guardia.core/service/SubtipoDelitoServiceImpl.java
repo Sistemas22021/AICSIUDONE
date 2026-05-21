@@ -30,11 +30,10 @@ public class SubtipoDelitoServiceImpl implements SubtipoDelitoService {
         TipoDelito tipo = tipoDelitoRepository.findById(request.tipoDelitoId())
                 .orElseThrow(() -> new ResourceNotFoundException("TipoDelito", request.tipoDelitoId()));
 
-        SubtipoDelito subtipo = SubtipoDelito.builder()
-                .nombre(request.nombre())
-                .descripcion(request.descripcion())
-                .tipoDelito(tipo)
-                .build();
+        SubtipoDelito subtipo = new SubtipoDelito();
+        subtipo.setNombre(request.nombre());
+        subtipo.setDescripcion(request.descripcion());
+        subtipo.setTipoDelito(tipo);
 
         return toResponse(subtipoDelitoRepository.save(subtipo));
     }

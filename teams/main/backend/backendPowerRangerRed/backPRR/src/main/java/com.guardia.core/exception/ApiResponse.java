@@ -15,36 +15,18 @@ public record ApiResponse<T>(
         LocalDateTime timestamp
 ) {
     public static <T> ApiResponse<T> ok(T data) {
-        return ApiResponse.<T>builder()
-                .success(true)
-                .data(data)
-                .timestamp(LocalDateTime.now())
-                .build();
+        return new ApiResponse<>(true, null, data, null, LocalDateTime.now());
     }
 
     public static <T> ApiResponse<T> ok(String message, T data) {
-        return ApiResponse.<T>builder()
-                .success(true)
-                .message(message)
-                .data(data)
-                .timestamp(LocalDateTime.now())
-                .build();
+        return new ApiResponse<>(true, message, data, null, LocalDateTime.now());
     }
 
     public static <T> ApiResponse<T> error(String message, Object errors) {
-        return ApiResponse.<T>builder()
-                .success(false)
-                .message(message)
-                .errors(errors)
-                .timestamp(LocalDateTime.now())
-                .build();
+        return new ApiResponse<>(false, message, null, errors, LocalDateTime.now());
     }
 
     public static <T> ApiResponse<T> error(String message) {
-        return ApiResponse.<T>builder()
-                .success(false)
-                .message(message)
-                .timestamp(LocalDateTime.now())
-                .build();
+        return new ApiResponse<>(false, message, null, null, LocalDateTime.now());
     }
 }

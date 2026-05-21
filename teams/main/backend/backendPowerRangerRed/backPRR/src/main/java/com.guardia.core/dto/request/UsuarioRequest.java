@@ -15,4 +15,9 @@ public record UsuarioRequest(
 
         @NotBlank(message = "El correo es obligatorio")
         String correo
-) {}
+) {
+    public String getNombre() { return this.nombre; }
+    public String getIdentificacion() { return this.identificacion; }
+    public String getCredenciales() { return this.credenciales; }
+    public String getCorreo() { return this.correo; }
+}

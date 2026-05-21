@@ -26,12 +26,11 @@ public class ModusOperandiServiceImpl implements ModusOperandiService {
 
     @Override
     public ModusOperandiResponse crear(ModusOperandiRequest request) {
-        ModusOperandi modus = ModusOperandi.builder()
-                .descripcionAnalitica(request.descripcionAnalitica())
-                .patronDetectado(request.patronDetectado())
-                .nivelConfianza(request.nivelConfianza())
-                .expedientes(new ArrayList<>())
-                .build();
+        ModusOperandi modus = new ModusOperandi();
+        modus.setDescripcionAnalitica(request.descripcionAnalitica());
+        modus.setPatronDetectado(request.patronDetectado());
+        modus.setNivelConfianza(request.nivelConfianza());
+        modus.setExpedientes(new ArrayList<>());
         return toResponse(modusOperandiRepository.save(modus));
     }
 

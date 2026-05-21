@@ -11,4 +11,8 @@ public record TipoDelitoRequest(
 
         @NotNull(message = "Debe indicar si requiere subtipo")
         Boolean requiereSubtipo
-) {}
+) {
+    public String getNombre() { return this.nombre; }
+    public String getDescripcion() { return this.descripcion; }
+    public Boolean getRequiereSubtipo() { return this.requiereSubtipo; }
+}

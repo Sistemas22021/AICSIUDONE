@@ -56,4 +56,16 @@ public class Evidencia {
     public void vincularEscena(Escena escena) {
         this.escena = escena;
     }
+
+    // Explicit accessors
+    public Long getId() { return this.id; }
+    public String getNumeroItem() { return this.numeroItem; }
+    public String getTipo() { return this.tipo; }
+    public String getDescripcion() { return this.descripcion; }
+    public Escena getEscena() { return this.escena; }
+
+    public void setNumeroItem(String numeroItem) { this.numeroItem = numeroItem; }
+    public void setTipo(String tipo) { this.tipo = tipo; }
+    public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
+    public void setEscena(Escena escena) { this.escena = escena; }
 }

@@ -26,12 +26,11 @@ public class TipoDelitoServiceImpl implements TipoDelitoService {
         if (tipoDelitoRepository.existsByNombre(request.nombre()))
             throw new BusinessException("Ya existe un tipo de delito con ese nombre.");
 
-        TipoDelito tipo = TipoDelito.builder()
-                .nombre(request.nombre())
-                .descripcion(request.descripcion())
-                .requiereSubtipo(request.requiereSubtipo())
-                .subtipos(new ArrayList<>())
-                .build();
+        TipoDelito tipo = new TipoDelito();
+        tipo.setNombre(request.nombre());
+        tipo.setDescripcion(request.descripcion());
+        tipo.setRequiereSubtipo(request.requiereSubtipo());
+        tipo.setSubtipos(new ArrayList<>());
 
         return toResponse(tipoDelitoRepository.save(tipo));
     }

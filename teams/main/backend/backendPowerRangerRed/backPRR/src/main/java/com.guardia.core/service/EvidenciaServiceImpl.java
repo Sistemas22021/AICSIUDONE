@@ -30,12 +30,11 @@ public class EvidenciaServiceImpl implements EvidenciaService {
         Escena escena = escenaRepository.findById(request.escenaId())
                 .orElseThrow(() -> new ResourceNotFoundException("Escena", request.escenaId()));
 
-        Evidencia evidencia = Evidencia.builder()
-                .numeroItem(request.numeroItem())
-                .tipo(request.tipo())
-                .descripcion(request.descripcion())
-                .escena(escena)
-                .build();
+        Evidencia evidencia = new Evidencia();
+        evidencia.setNumeroItem(request.numeroItem());
+        evidencia.setTipo(request.tipo());
+        evidencia.setDescripcion(request.descripcion());
+        evidencia.setEscena(escena);
 
         return toResponse(evidenciaRepository.save(evidencia));
     }

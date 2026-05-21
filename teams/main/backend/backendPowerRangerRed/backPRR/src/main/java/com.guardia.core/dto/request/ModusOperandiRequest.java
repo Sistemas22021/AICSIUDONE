@@ -8,4 +8,8 @@ public record ModusOperandiRequest(
 
         String patronDetectado,
         String nivelConfianza
-) {}
+) {
+    public String getDescripcionAnalitica() { return this.descripcionAnalitica; }
+    public String getPatronDetectado() { return this.patronDetectado; }
+    public String getNivelConfianza() { return this.nivelConfianza; }
+}

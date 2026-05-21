@@ -65,4 +65,17 @@ public class Usuario {
     public void registrarActividad(String accion) {
         // Lógica de auditoría a implementar
     }
+
+    // Explicit accessors to avoid Lombok issues
+    public Long getId() { return this.id; }
+    public String getNombre() { return this.nombre; }
+    public String getIdentificacion() { return this.identificacion; }
+    public String getCredenciales() { return this.credenciales; }
+    public String getCorreo() { return this.correo; }
+
+    public void setNombre(String nombre) { this.nombre = nombre; }
+    public void setIdentificacion(String identificacion) { this.identificacion = identificacion; }
+    public void setCredenciales(String credenciales) { this.credenciales = credenciales; }
+    public void setCorreo(String correo) { this.correo = correo; }
+
 }

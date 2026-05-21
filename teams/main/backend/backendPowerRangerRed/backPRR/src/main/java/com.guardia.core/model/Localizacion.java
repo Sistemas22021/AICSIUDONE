@@ -64,4 +64,21 @@ public class Localizacion {
         }
         return "Ubicación no especificada";
     }
+
+    // Explicit accessors
+    public Long getId() { return this.id; }
+    public String getMunicipio() { return this.municipio; }
+    public String getSector() { return this.sector; }
+    public String getDireccion() { return this.direccion; }
+    public String getReferencia() { return this.referencia; }
+    public Double getLatitud() { return this.latitud; }
+    public Double getLongitud() { return this.longitud; }
+
+    public void setMunicipio(String municipio) { this.municipio = municipio; }
+    public void setSector(String sector) { this.sector = sector; }
+    public void setDireccion(String direccion) { this.direccion = direccion; }
+    public void setReferencia(String referencia) { this.referencia = referencia; }
+    public void setLatitud(Double latitud) { this.latitud = latitud; }
+    public void setLongitud(Double longitud) { this.longitud = longitud; }
 }
+

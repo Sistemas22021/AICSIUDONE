@@ -27,12 +27,11 @@ public class UsuarioServiceImpl implements UsuarioService {
         if (usuarioRepository.existsByCorreo(request.correo()))
             throw new BusinessException("Ya existe un usuario con ese correo.");
 
-        Usuario usuario = Usuario.builder()
-                .nombre(request.nombre())
-                .identificacion(request.identificacion())
-                .credenciales(request.credenciales())
-                .correo(request.correo())
-                .build();
+        Usuario usuario = new Usuario();
+        usuario.setNombre(request.nombre());
+        usuario.setIdentificacion(request.identificacion());
+        usuario.setCredenciales(request.credenciales());
+        usuario.setCorreo(request.correo());
 
         return toResponse(usuarioRepository.save(usuario));
     }

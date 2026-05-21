@@ -47,4 +47,16 @@ public class TipoDelito {
     public boolean esSubtipoObligatorio() {
         return Boolean.TRUE.equals(this.requiereSubtipo);
     }
+
+    // Explicit accessors
+    public Long getId() { return this.id; }
+    public String getNombre() { return this.nombre; }
+    public String getDescripcion() { return this.descripcion; }
+    public Boolean getRequiereSubtipo() { return this.requiereSubtipo; }
+    public List<SubtipoDelito> getSubtipos() { return this.subtipos; }
+
+    public void setNombre(String nombre) { this.nombre = nombre; }
+    public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
+    public void setRequiereSubtipo(Boolean requiereSubtipo) { this.requiereSubtipo = requiereSubtipo; }
+    public void setSubtipos(List<SubtipoDelito> subtipos) { this.subtipos = subtipos; }
 }

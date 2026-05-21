@@ -27,13 +27,12 @@ public class EscenaNegativaServiceImpl implements EscenaNegativaService {
         Escena escena = escenaRepository.findById(request.escenaId())
                 .orElseThrow(() -> new ResourceNotFoundException("Escena", request.escenaId()));
 
-        EscenaNegativa escenaNegativa = EscenaNegativa.builder()
-                .elementoBuscado(request.elementoBuscado())
-                .areaInspeccionada(request.areaInspeccionada())
-                .resultado(request.resultado())
-                .observacion(request.observacion())
-                .escena(escena)
-                .build();
+        EscenaNegativa escenaNegativa = new EscenaNegativa();
+        escenaNegativa.setElementoBuscado(request.elementoBuscado());
+        escenaNegativa.setAreaInspeccionada(request.areaInspeccionada());
+        escenaNegativa.setResultado(request.resultado());
+        escenaNegativa.setObservacion(request.observacion());
+        escenaNegativa.setEscena(escena);
 
         return toResponse(escenaNegativaRepository.save(escenaNegativa));
     }

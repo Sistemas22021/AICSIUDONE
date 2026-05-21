@@ -21,14 +21,13 @@ public class LocalizacionServiceImpl implements LocalizacionService {
 
     @Override
     public LocalizacionResponse crear(LocalizacionRequest request) {
-        Localizacion loc = Localizacion.builder()
-                .municipio(request.municipio())
-                .sector(request.sector())
-                .direccion(request.direccion())
-                .referencia(request.referencia())
-                .latitud(request.latitud())
-                .longitud(request.longitud())
-                .build();
+        Localizacion loc = new Localizacion();
+        loc.setMunicipio(request.municipio());
+        loc.setSector(request.sector());
+        loc.setDireccion(request.direccion());
+        loc.setReferencia(request.referencia());
+        loc.setLatitud(request.latitud());
+        loc.setLongitud(request.longitud());
         return toResponse(localizacionRepository.save(loc));
     }
 
