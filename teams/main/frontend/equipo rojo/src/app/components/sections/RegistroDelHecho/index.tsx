@@ -214,124 +214,174 @@ export const RegistroDelHecho = () => {
 
                 {/* ══ INVOLUCRADOS ═════════════════════════════════════════ */}
                 <div>
-                    <div className="text-[11px] uppercase tracking-[0.12em] text-cyan-400 mb-3 font-medium">
+                    <div className="text-[11px] uppercase tracking-[0.12em] text-cyan-400 mb-1 font-medium">
                         Involucrados
                     </div>
+                    {requiresDenunciante && (
+                        <p className="text-[10px] text-emerald-500/70 mb-3 tracking-wide">
+                            Este tipo de registro requiere que el primer involucrado sea el <span className="text-emerald-400 font-semibold">Denunciante</span>. Puede agregar más involucrados a continuación.
+                        </p>
+                    )}
 
                     <div className="space-y-4">
-                        {formData.involucrados.map((inv, index) => (
-                            <div
-                                key={inv.id}
-                                className="relative p-4 border border-cyan-400/30 rounded bg-[#050F1C]/40"
-                                style={{ boxShadow: '0 2px 8px rgba(51,153,255,0.12), inset 0 1px 3px rgba(51,153,255,0.05)' }}
-                            >
-                                {formData.involucrados.length > 1 && (
-                                    <>
+                        {formData.involucrados.map((inv, index) => {
+                            // El primer involucrado es el denunciante obligatorio cuando aplica
+                            const isDenuncianteFijo = requiresDenunciante && index === 0
+
+                            return (
+                                <div
+                                    key={inv.id}
+                                    className={[
+                                        'relative p-4 border rounded',
+                                        isDenuncianteFijo
+                                            ? 'border-emerald-400/50 bg-emerald-400/5'
+                                            : 'border-cyan-400/30 bg-[#050F1C]/40',
+                                    ].join(' ')}
+                                    style={{
+                                        boxShadow: isDenuncianteFijo
+                                            ? '0 2px 12px rgba(0,255,136,0.18), inset 0 1px 3px rgba(0,255,136,0.06)'
+                                            : '0 2px 8px rgba(51,153,255,0.12), inset 0 1px 3px rgba(51,153,255,0.05)',
+                                    }}
+                                >
+                                    {/* Botón eliminar — no disponible para el denunciante fijo */}
+                                    {!isDenuncianteFijo && formData.involucrados.length > 1 && (
                                         <button
                                             onClick={() => removeInvolucrado(inv.id)}
                                             className="absolute top-2 right-2 text-red-400 hover:text-red-300 transition-colors p-1 rounded hover:bg-red-400/10"
                                         >
                                             <X size={16} />
                                         </button>
-                                        <div className="text-[10px] uppercase tracking-wider text-cyan-500/70 mb-3">
-                                            Involucrado #{index + 1}
+                                    )}
+
+                                    {/* Encabezado de tarjeta */}
+                                    {isDenuncianteFijo ? (
+                                        <div className="text-[10px] uppercase tracking-wider text-emerald-400 mb-3 font-semibold flex items-center gap-1.5">
+                                            <span style={{ filter: 'drop-shadow(0 0 4px rgba(0,255,136,0.6))' }}>◆</span>
+                                            Denunciante <span className="text-red-400">*</span>
+                                            <span className="ml-1 text-emerald-500/50 font-normal normal-case tracking-normal">(obligatorio)</span>
                                         </div>
-                                    </>
-                                )}
+                                    ) : (
+                                        <div className="text-[10px] uppercase tracking-wider text-cyan-500/70 mb-3">
+                                            Involucrado #{requiresDenunciante ? index : index + 1}
+                                        </div>
+                                    )}
 
-                                <div className="space-y-3">
-                                    <NeonSelect
-                                        label="Tipo de Involucrado"
-                                        required
-                                        options={tipoInvolucradoOptions}
-                                        value={inv.tipoInvolucrado}
-                                        onChange={e =>
-                                            updateInvolucrado(inv.id, {
-                                                tipoInvolucrado: e.target.value as TipoInvolucrado,
-                                            })
-                                        }
-                                    />
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        <NeonInput
-                                            label="Nombre y Apellido" required
-                                            placeholder="Nombre completo del involucrado…"
-                                            value={inv.nombre}
-                                            onChange={e => updateInvolucrado(inv.id, { nombre: e.target.value })}
+                                    <div className="space-y-3">
+                                        {/* Tipo de involucrado — bloqueado en "Denunciante" si es el fijo */}
+                                        <NeonSelect
+                                            label="Tipo de Involucrado"
+                                            required
+                                            options={tipoInvolucradoOptions}
+                                            value={isDenuncianteFijo ? 'denunciante' : inv.tipoInvolucrado}
+                                            onChange={e =>
+                                                !isDenuncianteFijo && updateInvolucrado(inv.id, {
+                                                    tipoInvolucrado: e.target.value as TipoInvolucrado,
+                                                })
+                                            }
                                         />
-                                        <NeonInput
-                                            label="Identificación" required
-                                            placeholder="Número de cédula o identificación…"
-                                            value={inv.identificacion}
-                                            onChange={e => updateInvolucrado(inv.id, { identificacion: e.target.value })}
-                                        />
-                                    </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        <NeonInput
-                                            label="Nacionalidad"
-                                            placeholder="Ej. Venezolana, Colombiana…"
-                                            value={inv.nacionalidad}
-                                            onChange={e => updateInvolucrado(inv.id, { nacionalidad: e.target.value })}
-                                        />
-                                        <NeonInput
-                                            label="Número de Teléfono"
-                                            placeholder="Ej. +58 412-1234567…"
-                                            value={inv.telefono}
-                                            onChange={e => updateInvolucrado(inv.id, { telefono: e.target.value })}
-                                        />
-                                    </div>
-
-                                    <NeonInput
-                                        label="Dirección"
-                                        placeholder="Dirección de residencia…"
-                                        value={inv.direccion}
-                                        onChange={e => updateInvolucrado(inv.id, { direccion: e.target.value })}
-                                    />
-
-                                    {/* Fotografía */}
-                                    <div className="flex flex-col gap-1.5">
-                                        <label className="text-[11px] uppercase tracking-[0.1em] text-cyan-400 font-medium">
-                                            Fotografía del Involucrado
-                                        </label>
-                                        <label className="cursor-pointer">
-                                            <input
-                                                type="file"
-                                                accept="image/*"
-                                                className="sr-only"
-                                                onChange={e => {
-                                                    const file = e.target.files?.[0] ?? null
-                                                    updateInvolucrado(inv.id, { foto: file })
-                                                }}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            <NeonInput
+                                                label="Nombre y Apellido" required
+                                                placeholder={isDenuncianteFijo ? 'Nombre completo del denunciante…' : 'Nombre completo del involucrado…'}
+                                                value={inv.nombre}
+                                                onChange={e => updateInvolucrado(inv.id, { nombre: e.target.value })}
                                             />
-                                            {inv.foto ? (
-                                                <div
-                                                    className="relative w-24 h-24 border-2 border-cyan-400/60 rounded overflow-hidden group"
-                                                    style={{ boxShadow: '0 0 12px rgba(51,153,255,0.3)' }}
-                                                >
-                                                    <img
-                                                        src={URL.createObjectURL(inv.foto)}
-                                                        alt="Foto involucrado"
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                        <span className="text-[9px] uppercase tracking-wider text-cyan-300">Cambiar</span>
+                                            <NeonInput
+                                                label="Identificación" required
+                                                placeholder="Número de cédula o identificación…"
+                                                value={inv.identificacion}
+                                                onChange={e => updateInvolucrado(inv.id, { identificacion: e.target.value })}
+                                            />
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            <NeonInput
+                                                label="Nacionalidad"
+                                                placeholder="Ej. Venezolana, Colombiana…"
+                                                value={inv.nacionalidad}
+                                                onChange={e => updateInvolucrado(inv.id, { nacionalidad: e.target.value })}
+                                            />
+                                            <NeonInput
+                                                label="Número de Teléfono"
+                                                placeholder="Ej. +58 412-1234567…"
+                                                value={inv.telefono}
+                                                onChange={e => updateInvolucrado(inv.id, { telefono: e.target.value })}
+                                            />
+                                        </div>
+
+                                        <NeonInput
+                                            label="Dirección"
+                                            placeholder="Dirección de residencia…"
+                                            value={inv.direccion}
+                                            onChange={e => updateInvolucrado(inv.id, { direccion: e.target.value })}
+                                        />
+
+                                        {/* Campo extra "Relación con el crimen" — solo para el denunciante fijo */}
+                                        {isDenuncianteFijo && (
+                                            <NeonInput
+                                                label="Relación con el Crimen" required
+                                                placeholder="Ej: Testigo, Familiar, Víctima indirecta…"
+                                                value={formData.denuncianteRelacion ?? ''}
+                                                onChange={e => updateFormData({ denuncianteRelacion: e.target.value })}
+                                            />
+                                        )}
+
+                                        {/* Fotografía */}
+                                        <div className="flex flex-col gap-1.5">
+                                            <label className={[
+                                                'text-[11px] uppercase tracking-[0.1em] font-medium',
+                                                isDenuncianteFijo ? 'text-emerald-400' : 'text-cyan-400',
+                                            ].join(' ')}>
+                                                {isDenuncianteFijo ? 'Fotografía del Denunciante' : 'Fotografía del Involucrado'}
+                                            </label>
+                                            <label className="cursor-pointer">
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    className="sr-only"
+                                                    onChange={e => {
+                                                        const file = e.target.files?.[0] ?? null
+                                                        updateInvolucrado(inv.id, { foto: file })
+                                                    }}
+                                                />
+                                                {inv.foto ? (
+                                                    <div
+                                                        className={[
+                                                            'relative w-24 h-24 border-2 rounded overflow-hidden group',
+                                                            isDenuncianteFijo ? 'border-emerald-400/60' : 'border-cyan-400/60',
+                                                        ].join(' ')}
+                                                        style={{ boxShadow: isDenuncianteFijo ? '0 0 12px rgba(0,255,136,0.3)' : '0 0 12px rgba(51,153,255,0.3)' }}
+                                                    >
+                                                        <img
+                                                            src={URL.createObjectURL(inv.foto)}
+                                                            alt="Foto involucrado"
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                            <span className={['text-[9px] uppercase tracking-wider', isDenuncianteFijo ? 'text-emerald-300' : 'text-cyan-300'].join(' ')}>Cambiar</span>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            ) : (
-                                                <div
-                                                    className="w-24 h-24 border-2 border-dashed border-cyan-400/30 rounded flex flex-col items-center justify-center gap-1 hover:border-cyan-400/60 hover:bg-cyan-400/5 transition-all"
-                                                    style={{ boxShadow: 'inset 0 1px 3px rgba(51,153,255,0.05)' }}
-                                                >
-                                                    <span className="text-cyan-600" style={{ fontSize: 22 }}>＋</span>
-                                                    <span className="text-[9px] uppercase tracking-wider text-cyan-600">Foto</span>
-                                                </div>
-                                            )}
-                                        </label>
+                                                ) : (
+                                                    <div
+                                                        className={[
+                                                            'w-24 h-24 border-2 border-dashed rounded flex flex-col items-center justify-center gap-1 transition-all',
+                                                            isDenuncianteFijo
+                                                                ? 'border-emerald-400/30 hover:border-emerald-400/60 hover:bg-emerald-400/5'
+                                                                : 'border-cyan-400/30 hover:border-cyan-400/60 hover:bg-cyan-400/5',
+                                                        ].join(' ')}
+                                                        style={{ boxShadow: 'inset 0 1px 3px rgba(51,153,255,0.05)' }}
+                                                    >
+                                                        <span className={isDenuncianteFijo ? 'text-emerald-600' : 'text-cyan-600'} style={{ fontSize: 22 }}>＋</span>
+                                                        <span className={['text-[9px] uppercase tracking-wider', isDenuncianteFijo ? 'text-emerald-600' : 'text-cyan-600'].join(' ')}>Foto</span>
+                                                    </div>
+                                                )}
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            )
+                        })}
 
                         <NeonButton variant="outline" icon={<Plus size={14} />} onClick={addInvolucrado}>
                             Agregar Involucrado
@@ -660,64 +710,6 @@ export const RegistroDelHecho = () => {
                         </div>
                     )}
                 </div>
-
-                {/* ══ DATOS DEL DENUNCIANTE ════════════════════════════════ */}
-                {/* Aparece automáticamente para Denuncia Formal y Reporte Ciudadano */}
-                {requiresDenunciante && (
-                    <div
-                        className="border-2 border-emerald-400/40 rounded p-4 bg-emerald-400/5 animate-fade-in"
-                        style={{ boxShadow: '0 2px 12px rgba(0,255,136,0.25), inset 0 1px 3px rgba(0,255,136,0.08)' }}
-                    >
-                        <div className="text-[11px] uppercase tracking-[0.12em] text-emerald-400 mb-1 font-medium">
-                            Datos del Denunciante
-                        </div>
-                        <p className="text-[10px] text-emerald-500/60 mb-3 tracking-wide">
-                            Requerido para este tipo de registro. El denunciante puede tener además un rol de Involucrado.
-                        </p>
-                        <div className="space-y-3">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <NeonInput
-                                    label="Nombre y Apellido" required
-                                    placeholder="Nombre completo del denunciante…"
-                                    value={formData.denuncianteNombre ?? ''}
-                                    onChange={e => updateFormData({ denuncianteNombre: e.target.value })}
-                                />
-                                <NeonInput
-                                    label="Teléfono" required
-                                    placeholder="Teléfono de contacto…"
-                                    value={formData.denuncianteTelefono ?? ''}
-                                    onChange={e => updateFormData({ denuncianteTelefono: e.target.value })}
-                                />
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <NeonInput
-                                    label="Identificación" required
-                                    placeholder="Número de cédula o identificación…"
-                                    value={formData.denuncianteIdentificacion ?? ''}
-                                    onChange={e => updateFormData({ denuncianteIdentificacion: e.target.value })}
-                                />
-                                <NeonInput
-                                    label="Nacionalidad" required
-                                    placeholder="Ej. Venezolana, Colombiana…"
-                                    value={formData.denuncianteNacionalidad ?? ''}
-                                    onChange={e => updateFormData({ denuncianteNacionalidad: e.target.value })}
-                                />
-                            </div>
-                            <NeonInput
-                                label="Dirección del Denunciante" required
-                                placeholder="Dirección de residencia…"
-                                value={formData.denuncianteDireccion ?? ''}
-                                onChange={e => updateFormData({ denuncianteDireccion: e.target.value })}
-                            />
-                            <NeonInput
-                                label="Relación con el Crimen" required
-                                placeholder="Ej: Testigo, Familiar, Víctima indirecta…"
-                                value={formData.denuncianteRelacion ?? ''}
-                                onChange={e => updateFormData({ denuncianteRelacion: e.target.value })}
-                            />
-                        </div>
-                    </div>
-                )}
 
                 {/* ══ ACCIONES ════════════════════════════════════════════ */}
                 <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
