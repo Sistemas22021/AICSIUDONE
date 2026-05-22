@@ -71,7 +71,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               <Box className="bg-slate-900 text-white p-1 rounded">
                 <ShieldCheck size={20} />
               </Box>
-              SIS-BALISTICA <span className="text-slate-400 font-medium ml-2 text-sm border-l pl-2 border-slate-200">DIVISIÓN FORENSE</span>
+              SISTEMA FORENSE BALÍSTICO <span className="text-slate-400 font-medium ml-2 text-sm border-l pl-2 border-slate-200">DIVISIÓN FORENSE</span>
             </Typography>
           </Box>
           <Box className="flex items-center gap-4">
