@@ -10,6 +10,8 @@ import com.azulcian.GestionIncidentesPatrullas.patrol.model.Patrol;
 import com.azulcian.GestionIncidentesPatrullas.patrol.model.PatrolStatus;
 import com.azulcian.GestionIncidentesPatrullas.patrol.repository.PatrolRepository;
 import org.springframework.stereotype.Service;
+import java.util.List;
+
 
 @Service
 public class AssignmentService {
@@ -62,5 +64,9 @@ public class AssignmentService {
         Assignment assignment = new Assignment(incident, patrol);
 
         return assignmentRepository.save(assignment);
+    }
+
+    public List<Assignment> getAllAssignments() {
+        return assignmentRepository.findAll();
     }
 }

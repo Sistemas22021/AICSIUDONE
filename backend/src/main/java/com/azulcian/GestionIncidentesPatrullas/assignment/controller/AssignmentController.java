@@ -4,6 +4,7 @@ import com.azulcian.GestionIncidentesPatrullas.assignment.dto.AssignmentRequestD
 import com.azulcian.GestionIncidentesPatrullas.assignment.model.Assignment;
 import com.azulcian.GestionIncidentesPatrullas.assignment.service.AssignmentService;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/assignments")
@@ -21,5 +22,13 @@ public class AssignmentController {
     @PostMapping
     public Assignment assignPatrol(@RequestBody AssignmentRequestDTO dto) {
         return assignmentService.assign(dto);
+    }
+
+    // =========================================
+    // LIST ALL ASSIGNMENTS
+    // =========================================
+    @GetMapping
+    public List<Assignment> getAllAssignments() {
+        return assignmentService.getAllAssignments();
     }
 }
