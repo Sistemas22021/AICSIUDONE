@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Box, TextField, MenuItem, Button, Typography, Snackbar, CircularProgress, LinearProgress, IconButton } from '@mui/material';
 import { SectionTitle } from '../components/SectionTitle';
 import { DataCard } from '../components/DataCard';
-import { UploadCloud, Hash, CheckCircle2, X, Image as ImageIcon, ArrowLeft, Eraser, Plus, Pencil, Trash2, Database, ChevronRight } from 'lucide-react';
+import { UploadCloud, Hash, CheckCircle2, X, Image as ImageIcon, ArrowLeft, Eraser, Plus, Pencil, Trash2, Database } from 'lucide-react';
 import { 
   TwistDirection, 
   PercussionType, 
@@ -578,15 +578,26 @@ export const RegistroPage = () => {
                     SHA-256 Verificado
                   </Typography>
                   
-                  <Button 
-                    variant="text" 
-                    startIcon={<UploadCloud size={16} />}
-                    onClick={(e) => { e.stopPropagation(); document.getElementById('file-upload')?.click(); }}
-                    className="mt-6 text-slate-500 hover:text-indigo-600 font-bold rounded-full px-6 py-2 transition-colors bg-white hover:bg-indigo-50 border border-slate-200 shadow-sm"
-                    sx={{ textTransform: 'none', whiteSpace: 'nowrap' }}
-                  >
-                    Cambiar fotografía
-                  </Button>
+                  <Box className="flex gap-3 mt-6">
+                    <Button 
+                      variant="text" 
+                      startIcon={<UploadCloud size={16} strokeWidth={2.5} />}
+                      onClick={(e) => { e.stopPropagation(); document.getElementById('file-upload')?.click(); }}
+                      className="text-slate-600 hover:text-indigo-600 font-bold rounded-full px-5 py-2 transition-colors bg-white hover:bg-indigo-50 border border-slate-200 shadow-sm"
+                      sx={{ textTransform: 'none', whiteSpace: 'nowrap' }}
+                    >
+                      Cambiar
+                    </Button>
+                    <Button 
+                      variant="text" 
+                      startIcon={<Trash2 size={16} strokeWidth={2.5} />}
+                      onClick={(e) => { e.stopPropagation(); removeFile(); }}
+                      className="text-slate-600 hover:text-red-600 font-bold rounded-full px-5 py-2 transition-colors bg-white hover:bg-red-50 border border-slate-200 shadow-sm"
+                      sx={{ textTransform: 'none', whiteSpace: 'nowrap' }}
+                    >
+                      Eliminar
+                    </Button>
+                  </Box>
                 </Box>
               ) : (
                 <Box className="flex flex-col items-center justify-center text-center animate-fade-in px-2">
