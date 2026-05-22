@@ -11,6 +11,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
   const [authState, setAuthState] = useState<AuthState>('loading');
 
   useEffect(() => {
+    /*
     async function checkAuth() {
       const token = await resolveToken();
 
@@ -22,9 +23,9 @@ export function AuthGuard({ children }: AuthGuardProps) {
         redirectToLogin();
       }
     }
+    */
 
     // Modo Maquetación: Forzar inicio de sesión
-    // checkAuth();
     setAuthState('authenticated');
   }, []);
 
