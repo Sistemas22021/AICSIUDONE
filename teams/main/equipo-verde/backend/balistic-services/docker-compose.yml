@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  localstack:
+    container_name: localstack-s3
+    # Usamos una versión estable (3.8.0) que no requiere token obligatorio de cuenta
+    image: localstack/localstack:3.8.0
+    ports:
+      - "127.0.0.1:4566:4566"
+    environment:
+      - SERVICES=s3
+      - DEBUG=1
+      - AWS_DEFAULT_REGION=us-east-1
+      - ACTIVATE_PRO=false
+      # Acepta el requerimiento de cuenta en caso de que utilices versiones más nuevas en el futuro
+      - LOCALSTACK_ACKNOWLEDGE_ACCOUNT_REQUIREMENT=1
+    volumes:
+      - "./localstack-init:/etc/localstack/init/ready.d"
+      - "/var/run/docker.sock:/var/run/docker.sock"
