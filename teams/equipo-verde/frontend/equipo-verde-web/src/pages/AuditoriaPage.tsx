@@ -5,7 +5,6 @@ import { Terminal, ShieldCheck } from 'lucide-react';
 
 import { AuditFilters, AuditFiltersState } from '../components/audit/AuditFilters';
 import { AuditTimeline } from '../components/audit/AuditTimeline';
-import { AuditDiffViewer } from '../components/audit/AuditDiffViewer';
 
 import { auditService } from '../services/auditService';
 import { AuditEntry } from '../types/audit';
@@ -18,8 +17,6 @@ export const AuditoriaPage = () => {
     dateTo: ''
   });
   
-  const [selectedEntry, setSelectedEntry] = useState<AuditEntry | null>(null);
-
   // Get data and filter it
   const filteredEntries = useMemo(() => {
     let data = auditService.getEntries();
@@ -85,7 +82,6 @@ export const AuditoriaPage = () => {
       <Box className="mb-8">
         <AuditTimeline 
           entries={filteredEntries} 
-          onViewDiff={setSelectedEntry} 
         />
       </Box>
 
@@ -105,12 +101,6 @@ export const AuditoriaPage = () => {
           </Typography>
         </Box>
       </Box>
-
-      {/* Modals */}
-      <AuditDiffViewer 
-        entry={selectedEntry} 
-        onClose={() => setSelectedEntry(null)} 
-      />
     </Box>
   );
 };

@@ -1,13 +1,13 @@
-import { Box, Typography, Button } from '@mui/material';
+import { useState } from 'react';
+import { Box, Typography, Button, Collapse } from '@mui/material';
 import { 
   Plus, Pencil, Trash2, Image as ImageIcon, 
-  RefreshCw, GitCompare, LogIn, Download, Eye
+  RefreshCw, GitCompare, LogIn, Download, Eye, ChevronUp, ArrowRight
 } from 'lucide-react';
 import { AuditActionType, AuditEntry } from '../../types/audit';
 
 interface Props {
   entries: AuditEntry[];
-  onViewDiff: (entry: AuditEntry) => void;
 }
 
 const getTypeConfig = (type: AuditActionType) => {
@@ -32,7 +32,13 @@ const formatDate = (isoString: string) => {
   }).format(date);
 };
 
-export const AuditTimeline = ({ entries, onViewDiff }: Props) => {
+export const AuditTimeline = ({ entries }: Props) => {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const handleToggleExpand = (id: string) => {
+    setExpandedId(prev => prev === id ? null : id);
+  };
+
   if (entries.length === 0) {
     return (
       <Box className="py-12 text-center bg-white rounded-3xl border border-slate-100 shadow-sm">
@@ -104,16 +110,55 @@ export const AuditTimeline = ({ entries, onViewDiff }: Props) => {
                 </Typography>
                 
                 {entry.changes && entry.changes.length > 0 && (
-                  <Button 
-                    variant="outlined" 
-                    size="small"
-                    startIcon={<Eye size={14} strokeWidth={2.5} />}
-                    onClick={() => onViewDiff(entry)}
-                    className="text-indigo-600 border-indigo-200 hover:bg-indigo-50 font-bold rounded-xl px-4"
-                    sx={{ textTransform: 'none' }}
-                  >
-                    Ver detalle de modificaciones ({entry.changes.length})
-                  </Button>
+                  <Box className="mt-2">
+                    <Button 
+                      variant="outlined" 
+                      size="small"
+                      startIcon={expandedId === entry.id ? <ChevronUp size={16} strokeWidth={2.5} /> : <Eye size={14} strokeWidth={2.5} />}
+                      onClick={() => handleToggleExpand(entry.id)}
+                      className="text-indigo-600 border-indigo-200 hover:bg-indigo-50 font-bold rounded-xl px-4"
+                      sx={{ textTransform: 'none' }}
+                    >
+                      {expandedId === entry.id ? 'Ocultar detalles' : `Ver detalle de modificaciones (${entry.changes.length})`}
+                    </Button>
+
+                    <Collapse in={expandedId === entry.id} timeout="auto" unmountOnExit>
+                      <Box className="mt-4 pt-4 border-t border-slate-100">
+                        <Box className="grid grid-cols-[1fr_auto_1fr] gap-4 mb-3 px-3 py-1.5 bg-slate-50 rounded-md">
+                          <Typography variant="caption" className="font-bold text-slate-500 tracking-wider">VALOR ANTERIOR</Typography>
+                          <Box className="w-6"></Box>
+                          <Typography variant="caption" className="font-bold text-slate-500 tracking-wider">VALOR NUEVO</Typography>
+                        </Box>
+
+                        <Box className="space-y-3">
+                          {entry.changes.map((change, idx) => (
+                            <Box key={idx} className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                              <Box className="bg-slate-50/80 px-4 py-1.5 border-b border-slate-200">
+                                <Typography variant="caption" className="font-extrabold text-slate-600 uppercase tracking-wider">
+                                  Campo: {change.field}
+                                </Typography>
+                              </Box>
+                              <Box className="grid grid-cols-[1fr_auto_1fr] items-center">
+                                <Box className="p-3 bg-red-50/40 h-full flex items-center">
+                                  <Typography className="text-red-700 font-mono text-xs line-through opacity-80">
+                                    {change.oldValue || '(vacío)'}
+                                  </Typography>
+                                </Box>
+                                <Box className="px-1 py-3 flex items-center justify-center bg-white z-10 border-x border-slate-100 shadow-sm">
+                                  <ArrowRight size={14} className="text-slate-400" />
+                                </Box>
+                                <Box className="p-3 bg-emerald-50/40 h-full flex items-center">
+                                  <Typography className="text-emerald-700 font-mono text-xs font-bold">
+                                    {change.newValue || '(vacío)'}
+                                  </Typography>
+                                </Box>
+                              </Box>
+                            </Box>
+                          ))}
+                        </Box>
+                      </Box>
+                    </Collapse>
+                  </Box>
                 )}
               </Box>
             </Box>
