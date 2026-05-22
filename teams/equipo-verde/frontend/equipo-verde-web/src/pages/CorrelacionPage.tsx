@@ -1,3 +1,4 @@
+import { useState, useMemo } from 'react';
 import { 
   Box, 
   Typography, 
@@ -7,151 +8,212 @@ import {
   TableContainer, 
   TableHead, 
   TableRow, 
-  Chip, 
-  Button, 
   Paper,
-  type ChipProps 
+  IconButton,
+  Tooltip
 } from '@mui/material';
-import { SectionTitle } from '../components/SectionTitle';
-import { DataCard } from '../components/DataCard';
-import type { EvidenceStatus } from '../types/balistica';
-import { Search, Filter, ChevronRight } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 
-const results = [
-  { 
-    evidencia: 'EV-992', 
-    fecha: '12/03/2026', 
-    caso: 'Homicidio-Centro', 
-    match: 'Metadatos Exactos', 
-    estado: 'En Bóveda' as EvidenceStatus,
-    color: 'success'
+import { SectionTitle } from '../components/SectionTitle';
+import { ConfidenceBadge } from '../components/ranking/ConfidenceBadge';
+import { TrendIndicator } from '../components/ranking/TrendIndicator';
+import { RankingFilters, RankingFilterState } from '../components/ranking/RankingFilters';
+import type { MatchRankingResult } from '../types/balistica';
+
+const MOCK_RESULTS: MatchRankingResult[] = [
+  {
+    id: 'R-001',
+    evidencia: 'EV-992',
+    fecha: '2026-03-12',
+    caso: 'Homicidio-Centro',
+    match: 'Marcas de estrías idénticas',
+    estado: 'En Bóveda',
+    score: 98.5,
+    confidence: 'Alta',
+    recurrenceCount: 4,
+    weaponType: 'Pistola 9mm',
+    location: 'Centro',
+    verificationStatus: 'Pendiente'
   },
-  { 
-    evidencia: 'EV-410', 
-    fecha: '05/11/2025', 
-    caso: 'Robo-Norte', 
-    match: 'Metadatos Exactos', 
-    estado: 'En Tribunal' as EvidenceStatus,
-    color: 'warning'
+  {
+    id: 'R-002',
+    evidencia: 'EV-410',
+    fecha: '2025-11-05',
+    caso: 'Robo-Norte',
+    match: 'Huella de percusión similar',
+    estado: 'En Tribunal',
+    score: 75.2,
+    confidence: 'Media',
+    recurrenceCount: 2,
+    weaponType: 'Revolver .38',
+    location: 'Norte',
+    verificationStatus: 'Confirmada'
   },
-  { 
-    evidencia: 'EV-102', 
-    fecha: '22/08/2024', 
-    caso: 'Hallazgo-Sur', 
-    match: 'Metadatos Exactos', 
-    estado: 'Destruida' as EvidenceStatus,
-    color: 'error'
-  },
+  {
+    id: 'R-003',
+    evidencia: 'EV-102',
+    fecha: '2024-08-22',
+    caso: 'Hallazgo-Sur',
+    match: 'Mismo calibre',
+    estado: 'Destruida',
+    score: 45.0,
+    confidence: 'Baja',
+    recurrenceCount: 1,
+    weaponType: 'Escopeta 12GA',
+    location: 'Sur',
+    verificationStatus: 'Descartada'
+  }
 ];
 
-const FilterChip = ({ label, value }: { label: string, value: string }) => (
-  <Box className="bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200 flex items-center gap-2">
-    <Typography variant="caption" className="text-slate-500 font-bold uppercase">{label}:</Typography>
-    <Typography variant="body2" className="text-slate-900 font-bold">{value}</Typography>
-  </Box>
-);
-
 export const CorrelacionPage = () => {
+  const [results, setResults] = useState<MatchRankingResult[]>(MOCK_RESULTS);
+  const [filters, setFilters] = useState<RankingFilterState>({
+    search: '',
+    sortBy: 'score',
+    sortOrder: 'desc',
+    confidenceFilter: 'all'
+  });
+
+  const handleVerify = (id: string, isConfirmed: boolean) => {
+    setResults(prev => prev.map(r => 
+      r.id === id ? { ...r, verificationStatus: isConfirmed ? 'Confirmada' : 'Descartada' } : r
+    ));
+  };
+
+  const filteredAndSortedResults = useMemo(() => {
+    let filtered = [...results];
+
+    // Search filter
+    if (filters.search) {
+      const q = filters.search.toLowerCase();
+      filtered = filtered.filter(r => 
+        r.caso.toLowerCase().includes(q) || 
+        r.weaponType.toLowerCase().includes(q) || 
+        r.location.toLowerCase().includes(q) ||
+        r.evidencia.toLowerCase().includes(q)
+      );
+    }
+
+    // Confidence filter
+    if (filters.confidenceFilter !== 'all') {
+      filtered = filtered.filter(r => r.confidence === filters.confidenceFilter);
+    }
+
+    // Sorting
+    filtered.sort((a, b) => {
+      let valA: any = a[filters.sortBy as keyof MatchRankingResult];
+      let valB: any = b[filters.sortBy as keyof MatchRankingResult];
+      
+      if (typeof valA === 'string') valA = valA.toLowerCase();
+      if (typeof valB === 'string') valB = valB.toLowerCase();
+
+      if (valA < valB) return filters.sortOrder === 'asc' ? -1 : 1;
+      if (valA > valB) return filters.sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return filtered;
+  }, [results, filters]);
+
   return (
-    <Box>
-      <SectionTitle>Búsqueda Paramétrica de Coincidencias</SectionTitle>
+    <Box className="animate-fade-in max-w-6xl mx-auto px-4 py-6">
+      <SectionTitle>Motor Correlación</SectionTitle>
+      <Typography variant="body2" className="text-slate-500 mb-6 max-w-3xl">
+        Motor analítico jerárquico. Las evidencias con mayor probabilidad matemática de estar vinculadas aparecen en las primeras posiciones. Verifique y valide los hallazgos directamente.
+      </Typography>
       
-      <DataCard className="mb-6">
-        <Box className="flex flex-row items-center gap-4 flex-wrap">
-          <Box className="bg-slate-900 text-white p-2 rounded-lg">
-            <Filter size={18} />
-          </Box>
-          <Typography variant="body2" className="text-slate-500 font-bold">FILTROS ACTIVOS:</Typography>
-          <FilterChip label="Calibre" value="9mm" />
-          <FilterChip label="Estrías" value="6" />
-          <FilterChip label="Giro" value="Derecha" />
-          
-          <Box className="flex-grow" />
-          
-          <Button 
-            variant="outlined" 
-            startIcon={<Search size={16} />}
-            className="border-slate-200 text-slate-600 capitalize font-bold hover:bg-slate-50"
-          >
-            Modificar Búsqueda
-          </Button>
-        </Box>
-      </DataCard>
+      <RankingFilters filters={filters} onFilterChange={setFilters} />
       
-      <TableContainer component={Paper} elevation={0} className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-        <Table sx={{ minWidth: 650 }}>
-          <TableHead className="bg-slate-50">
+      <TableContainer component={Paper} elevation={0} className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+        <Table sx={{ minWidth: 800 }} className="border-collapse">
+          <TableHead className="bg-slate-50 border-b border-slate-200">
             <TableRow>
-              <TableCell className="font-bold text-slate-500 uppercase text-xs">Evidencia</TableCell>
-              <TableCell className="font-bold text-slate-500 uppercase text-xs">Fecha</TableCell>
-              <TableCell className="font-bold text-slate-500 uppercase text-xs">Caso</TableCell>
-              <TableCell className="font-bold text-slate-500 uppercase text-xs">Match Relacional</TableCell>
-              <TableCell className="font-bold text-slate-500 uppercase text-xs">Estado</TableCell>
-              <TableCell align="right" className="font-bold text-slate-500 uppercase text-xs">Acción</TableCell>
+              <TableCell className="font-bold text-slate-500 uppercase text-[11px] tracking-wider w-16 text-center py-4">N°</TableCell>
+              <TableCell className="font-bold text-slate-500 uppercase text-[11px] tracking-wider py-4">Similitud</TableCell>
+              <TableCell className="font-bold text-slate-500 uppercase text-[11px] tracking-wider py-4">Evidencia (Origen)</TableCell>
+              <TableCell className="font-bold text-slate-500 uppercase text-[11px] tracking-wider text-center py-4">Tendencia</TableCell>
+              <TableCell className="font-bold text-slate-500 uppercase text-[11px] tracking-wider py-4">Detalles Técnicos</TableCell>
+              <TableCell className="font-bold text-slate-500 uppercase text-[11px] tracking-wider py-4">Estado</TableCell>
+              <TableCell align="right" className="font-bold text-slate-500 uppercase text-[11px] tracking-wider py-4">Acción</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {results.map((row) => (
-              <TableRow key={row.evidencia} hover className="transition-colors">
-                <TableCell className="font-bold text-slate-900">{row.evidencia}</TableCell>
-                <TableCell className="text-slate-600">{row.fecha}</TableCell>
-                <TableCell className="font-medium text-slate-700">{row.caso}</TableCell>
-                <TableCell>
-                  <Box className="flex items-center gap-1 text-emerald-600 font-bold text-xs uppercase">
-                    <CheckCircle2 size={12} className="inline" /> {row.match}
-                  </Box>
-                </TableCell>
-                <TableCell>
-                  <Chip 
-                    label={row.estado} 
-                    size="small" 
-                    color={row.color as ChipProps['color']} 
-                    variant="outlined"
-                    className="font-bold text-[10px] uppercase"
-                  />
-                </TableCell>
-                <TableCell align="right">
-                  <Button 
-                    variant="text" 
-                    size="small" 
-                    endIcon={<ChevronRight size={14} />}
-                    className="text-slate-600 font-bold capitalize hover:text-slate-900"
-                  >
-                    Ver Perfil
-                  </Button>
+            {filteredAndSortedResults.map((row, index) => {
+              const isConfirmed = row.verificationStatus === 'Confirmada';
+              const isDiscarded = row.verificationStatus === 'Descartada';
+
+              return (
+                <TableRow 
+                  key={row.id} 
+                  hover 
+                  className={`transition-colors ${isDiscarded ? 'opacity-50' : ''}`}
+                >
+                  <TableCell className="text-center py-3">
+                    <Typography variant="body2" className="font-bold text-slate-700">
+                      {index + 1}
+                    </Typography>
+                  </TableCell>
+                  <TableCell className="py-3">
+                    <ConfidenceBadge confidence={row.confidence} score={row.score} />
+                  </TableCell>
+                  <TableCell className="py-3">
+                    <Typography className="font-bold text-slate-700 text-sm">{row.evidencia}</Typography>
+                  </TableCell>
+                  <TableCell align="center" className="py-3">
+                    <TrendIndicator count={row.recurrenceCount} />
+                  </TableCell>
+                  <TableCell className="py-3">
+                    <Typography variant="body2" className="text-slate-700 font-medium">{row.weaponType}</Typography>
+                  </TableCell>
+                  <TableCell className="py-3">
+                    {isConfirmed ? (
+                      <span className="text-emerald-700 font-medium text-[13px]">Verificado</span>
+                    ) : isDiscarded ? (
+                      <span className="text-slate-400 font-medium text-[13px]">Descartado</span>
+                    ) : (
+                      <span className="text-amber-600 font-medium text-[13px]">Pendiente</span>
+                    )}
+                  </TableCell>
+                  <TableCell align="right" className="py-3">
+                    <Box className="flex items-center justify-end gap-2">
+                      {row.verificationStatus === 'Pendiente' && (
+                        <>
+                          <Tooltip title="Confirmar similitud">
+                            <IconButton 
+                              size="small" 
+                              onClick={() => handleVerify(row.id, true)} 
+                              className="bg-white border border-slate-200 shadow-sm hover:shadow text-emerald-600 hover:bg-emerald-50 w-9 h-9"
+                            >
+                              <Check size={16} strokeWidth={2.5} />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Descartar">
+                            <IconButton 
+                              size="small" 
+                              onClick={() => handleVerify(row.id, false)} 
+                              className="bg-white border border-slate-200 shadow-sm hover:shadow text-red-600 hover:bg-red-50 w-9 h-9"
+                            >
+                              <X size={16} strokeWidth={2.5} />
+                            </IconButton>
+                          </Tooltip>
+                        </>
+                      )}
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+            
+            {filteredAndSortedResults.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-12">
+                  <Typography className="text-slate-500">No se encontraron coincidencias para estos filtros.</Typography>
                 </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </TableContainer>
-      
-      <Box className="mt-6 flex justify-between items-center px-2">
-        <Typography variant="caption" className="text-slate-400">
-          Mostrando 3 coincidencias exactas basadas en metadatos técnicos.
-        </Typography>
-        <Button variant="text" size="small" className="text-slate-400 capitalize">
-          Exportar Informe PDF
-        </Button>
-      </Box>
     </Box>
   );
 };
-
-// Internal component for the icon to avoid missing import
-const CheckCircle2 = ({ size, className }: { size: number, className: string }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    width={size} 
-    height={size} 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
-    className={className}
-  >
-    <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/>
-  </svg>
-);

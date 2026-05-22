@@ -7,7 +7,6 @@ import { AuditFilters, AuditFiltersState } from '../components/audit/AuditFilter
 import { AuditTimeline } from '../components/audit/AuditTimeline';
 
 import { auditService } from '../services/auditService';
-import { AuditEntry } from '../types/audit';
 
 export const AuditoriaPage = () => {
   const [filters, setFilters] = useState<AuditFiltersState>({

@@ -22,6 +22,19 @@ export interface CorrelationResult {
   estado: EvidenceStatus;
 }
 
+export type MatchConfidence = 'Alta' | 'Media' | 'Baja';
+export type VerificationStatus = 'Pendiente' | 'Confirmada' | 'Descartada';
+
+export interface MatchRankingResult extends CorrelationResult {
+  id: string;
+  score: number;
+  confidence: MatchConfidence;
+  recurrenceCount: number;
+  weaponType: string;
+  location: string;
+  verificationStatus: VerificationStatus;
+}
+
 export interface AuditLog {
   timestamp: string;
   usuario: string;
