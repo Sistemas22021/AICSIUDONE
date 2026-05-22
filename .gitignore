@@ -31,3 +31,19 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Java Backend ###
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+backend/*.log
+
+### React Frontend ###
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/*.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+
