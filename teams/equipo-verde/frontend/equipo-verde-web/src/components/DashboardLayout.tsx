@@ -39,9 +39,9 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   };
 
   const menuItems = [
-    { text: 'Registro Evidencia', icon: <PlusCircle size={20} />, path: '/' },
-    { text: 'Motor Correlación', icon: <Search size={20} />, path: '/correlacion' },
-    { text: 'Cadena de Custodia', icon: <ShieldCheck size={20} />, path: '/auditoria' },
+    { text: 'Evidencia', icon: <PlusCircle size={20} />, path: '/' },
+    { text: 'Motor de cotejo', icon: <Search size={20} />, path: '/correlacion' },
+    { text: 'Log de auditoria', icon: <ShieldCheck size={20} />, path: '/auditoria' },
   ];
 
   return (

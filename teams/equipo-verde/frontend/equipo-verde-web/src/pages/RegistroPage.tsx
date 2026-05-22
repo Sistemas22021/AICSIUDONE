@@ -303,7 +303,7 @@ export const RegistroPage = () => {
     return (
       <Box className="animate-fade-in max-w-7xl mx-auto px-6 py-6">
         <Box className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-          <SectionTitle className="!mb-0">Expedientes Balísticos</SectionTitle>
+          <SectionTitle className="!mb-0">Lista de expedientes balisticos</SectionTitle>
           <Button 
             variant="contained" 
             startIcon={<Plus size={20} strokeWidth={2.5} />}
@@ -552,8 +552,11 @@ export const RegistroPage = () => {
               {isUploading ? (
                 <Box className="flex flex-col items-center justify-center w-full animate-fade-in">
                   <CircularProgress size={40} className="text-indigo-500 mb-6" thickness={4} />
-                  <Typography variant="body2" className="text-indigo-700 font-bold tracking-tight" sx={{ mb: 2 }}>
-                    Analizando algoritmos...
+                  <Typography variant="body2" className="text-indigo-700 font-bold tracking-tight" sx={{ mb: 1 }}>
+                    Normalizando imagen para cotejo...
+                  </Typography>
+                  <Typography variant="caption" className="text-indigo-500 font-mono tracking-tight" sx={{ mb: 2 }}>
+                    Aplicando formato PNG lossless y tamaño 1:1
                   </Typography>
                   <Box className="w-full px-8 mt-2">
                     <LinearProgress className="rounded-full h-1.5" color="inherit" sx={{ color: '#6366f1', bgcolor: '#e0e7ff' }} />
@@ -565,7 +568,7 @@ export const RegistroPage = () => {
                     <img 
                       src={previewUrl} 
                       alt="Evidencia balística" 
-                      className="w-full max-w-[200px] h-[200px] rounded-[1.25rem] shadow-md border-4 border-white object-cover transition-transform duration-500 group-hover:scale-105"
+                      className="w-full max-w-[200px] aspect-square rounded-[1.25rem] shadow-md border-4 border-white object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                     <Box className="absolute -bottom-2 -right-2 bg-emerald-500 text-white p-1.5 rounded-full shadow-lg border-2 border-white z-20">
                       <CheckCircle2 size={18} strokeWidth={3} />
@@ -574,9 +577,14 @@ export const RegistroPage = () => {
                   <Typography variant="body2" className="text-slate-800 font-bold text-center w-full truncate px-2" sx={{ mt: 2 }}>
                     {selectedFile?.name || 'Imagen cargada'}
                   </Typography>
-                  <Typography variant="caption" className="text-emerald-600 font-bold bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100" sx={{ mt: 1.5, display: 'inline-block' }}>
-                    SHA-256 Verificado
-                  </Typography>
+                  <Box className="flex flex-col gap-1 items-center mt-2">
+                    <Typography variant="caption" className="text-emerald-600 font-bold bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100" sx={{ display: 'inline-block' }}>
+                      Formato Normalizado (PNG Lossless)
+                    </Typography>
+                    <Typography variant="caption" className="text-emerald-600 font-bold bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100" sx={{ display: 'inline-block' }}>
+                      SHA-256 Verificado
+                    </Typography>
+                  </Box>
                   
                   <Box className="flex gap-3 mt-6">
                     <Button 
@@ -625,7 +633,7 @@ export const RegistroPage = () => {
             
             <Box className="mt-6 p-5 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100 rounded-2xl">
               <Typography variant="caption" className="text-amber-800 font-medium leading-relaxed block text-justify">
-                <strong>ATENCIÓN:</strong> La imagen será procesada mediante algoritmos de visión artificial para extraer patrones de micro-estriado. Asegúrese de que la iluminación lateral sea la adecuada.
+                <strong>ATENCIÓN:</strong> La imagen será procesada y normalizada a un formato sin pérdida (Lossless PNG/TIFF) y redimensionada (1:1) para extraer patrones de micro-estriado. Asegúrese de que la iluminación lateral sea la adecuada.
               </Typography>
             </Box>
           </DataCard>
