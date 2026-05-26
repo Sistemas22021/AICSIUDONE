@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/inmates")
@@ -31,5 +32,20 @@ public class InmateController {
     @GetMapping("/unassigned")
     public ResponseEntity<List<InmateDto>> getUnassigned() {
         return ResponseEntity.ok(inmateService.getByStatus(InmateStatus.ACTIVO_SIN_CELDA));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<InmateDto>> getAll() {
+        return ResponseEntity.ok(inmateService.getAllInmates());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<InmateDto> getById(@PathVariable UUID id) {
+        return ResponseEntity.ok(inmateService.getInmateById(id));
+    }
+
+    @GetMapping("/cell/{cellId}")
+    public ResponseEntity<List<InmateDto>> getByCell(@PathVariable UUID cellId) {
+        return ResponseEntity.ok(inmateService.getInmatesByCell(cellId));
     }
 }

@@ -37,4 +37,12 @@ public class CellController {
         cellService.deleteCell(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/{cellId}/assign/{inmateId}")
+    public ResponseEntity<CellDto> assign(
+            @PathVariable UUID cellId,
+            @PathVariable UUID inmateId,
+            @RequestHeader(value = "X-User-Name", defaultValue = "Oficial") String assignedBy) {
+        return ResponseEntity.ok(cellService.assignInmate(cellId, inmateId, assignedBy));
+    }
 }

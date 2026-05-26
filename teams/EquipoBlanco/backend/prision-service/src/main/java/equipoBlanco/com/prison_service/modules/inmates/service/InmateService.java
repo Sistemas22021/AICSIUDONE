@@ -1,6 +1,7 @@
 package equipoBlanco.com.prison_service.modules.inmates.service;
 
 import equipoBlanco.com.prison_service.modules.inmates.dto.InmateDto;
+import equipoBlanco.com.prison_service.modules.inmates.dto.BelongingDto;
 import equipoBlanco.com.prison_service.modules.inmates.model.Belonging;
 import equipoBlanco.com.prison_service.modules.inmates.model.Inmate;
 import equipoBlanco.com.prison_service.modules.inmates.model.Inmate.InmateStatus;
@@ -9,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -72,7 +74,26 @@ public class InmateService {
 
     public List<InmateDto> getByStatus(InmateStatus status) {
         return inmateRepository.findByStatus(status).stream()
-            .map(this::toDto).toList();
+            .map(this::toDetailedDto).toList();
+    }
+
+    public List<InmateDto> getAllInmates() {
+        return inmateRepository.findAll().stream()
+            .map(this::toDetailedDto)
+            .toList();
+    }
+
+    public InmateDto getInmateById(UUID id) {
+        Inmate inmate = inmateRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Recluso no encontrado"));
+        return toDetailedDto(inmate);
+    }
+
+    public List<InmateDto> getInmatesByCell(UUID cellId) {
+        return inmateRepository.findAll().stream()
+            .filter(i -> i.getCell() != null && i.getCell().getId().equals(cellId))
+            .map(this::toDetailedDto)
+            .toList();
     }
 
     private InmateDto toDto(Inmate i) {
@@ -83,6 +104,51 @@ public class InmateService {
             .firstLastname(i.getFirstLastname())
             .status(i.getStatus())
             .estimatedReleaseDate(i.getEstimatedReleaseDate())
+            .cellId(i.getCell() != null ? i.getCell().getId() : null)
+            .cellIdentifier(i.getCell() != null ? i.getCell().getIdentifier() : null)
+            .build();
+    }
+
+    private InmateDto toDetailedDto(Inmate i) {
+        List<BelongingDto> belongingDtos = null;
+        if (i.getBelongings() != null) {
+            belongingDtos = i.getBelongings().stream().map(b ->
+                BelongingDto.builder()
+                    .id(b.getId())
+                    .description(b.getDescription())
+                    .quantity(b.getQuantity())
+                    .observations(b.getObservations())
+                    .build()
+            ).toList();
+        }
+
+        return InmateDto.builder()
+            .id(i.getId())
+            .cedula(i.getCedula())
+            .firstName(i.getFirstName())
+            .secondName(i.getSecondName())
+            .firstLastname(i.getFirstLastname())
+            .secondLastname(i.getSecondLastname())
+            .birthDate(i.getBirthDate())
+            .crime(i.getCrime())
+            .caseNumber(i.getCaseNumber())
+            .court(i.getCourt())
+            .admissionDate(i.getAdmissionDate())
+            .sentenceYears(i.getSentenceYears())
+            .sentenceMonths(i.getSentenceMonths())
+            .estimatedReleaseDate(i.getEstimatedReleaseDate())
+            .eyeColor(i.getEyeColor())
+            .hairColor(i.getHairColor())
+            .bodyBuild(i.getBodyBuild())
+            .heightCm(i.getHeightCm())
+            .weightKg(i.getWeightKg())
+            .distinguishingMarks(i.getDistinguishingMarks())
+            .photoUrl(i.getPhotoUrl())
+            .fingerprintUrl(i.getFingerprintUrl())
+            .status(i.getStatus())
+            .belongings(belongingDtos)
+            .cellId(i.getCell() != null ? i.getCell().getId() : null)
+            .cellIdentifier(i.getCell() != null ? i.getCell().getIdentifier() : null)
             .build();
     }
 }

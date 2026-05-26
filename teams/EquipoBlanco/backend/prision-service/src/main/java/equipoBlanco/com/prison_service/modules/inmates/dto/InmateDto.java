@@ -33,4 +33,6 @@ public class InmateDto {
     private String fingerprintUrl;
     private InmateStatus status;
     private List<BelongingDto> belongings;
+    private UUID cellId;
+    private String cellIdentifier;
 }
