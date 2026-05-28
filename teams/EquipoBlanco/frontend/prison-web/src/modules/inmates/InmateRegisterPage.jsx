@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Camera, Upload, Trash2, Fingerprint } from 'lucide-react'
 import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
 
@@ -6,8 +7,8 @@ const EMPTY_FORM = {
   cedula: '', firstName: '', secondName: '', firstLastname: '', secondLastname: '',
   birthDate: '', crime: '', caseNumber: '', court: '',
   admissionDate: '', sentenceYears: '', sentenceMonths: '',
-  eyeColor: '', hairColor: '', build: '', heightCm: '', weightKg: '',
-  distinguishingMarks: '', photoUrl: '', fingerprintUrl: ''
+  eyeColor: '', hairColor: '', bodyBuild: '', heightCm: '', weightKg: '',
+  distinguishingMarks: '', photoUrl: '', photoUrl2: '', photoUrl3: '', fingerprintUrl: '', fingerprintRightUrl: ''
 }
 
 export default function InmateRegisterPage() {
@@ -17,6 +18,16 @@ export default function InmateRegisterPage() {
   const [cedulaExists, setCedulaExists] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+
+  const handleFileChange = (e, fieldName) => {
+    const file = e.target.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      setForm(prev => ({ ...prev, [fieldName]: event.target.result }))
+    }
+    reader.readAsDataURL(file)
+  }
 
   function handleChange(e) {
     const { name, value } = e.target
@@ -206,8 +217,8 @@ export default function InmateRegisterPage() {
             </div>
             <div>
               <label className="text-sm text-gray-600">Complexión</label>
-              <input name="build" className="w-full border rounded-lg px-3 py-2 mt-1"
-                value={form.build} onChange={handleChange} />
+              <input name="bodyBuild" className="w-full border rounded-lg px-3 py-2 mt-1"
+                value={form.bodyBuild} onChange={handleChange} />
             </div>
             <div>
               <label className="text-sm text-gray-600">Estatura (cm)</label>
@@ -228,17 +239,93 @@ export default function InmateRegisterPage() {
         </section>
 
         <section className="bg-white border border-gray-200 rounded-xl p-5">
-          <h2 className="text-lg font-medium mb-4">Biométricos</h2>
-          <div className="grid grid-cols-2 gap-4">
+          <h2 className="text-lg font-medium mb-4 flex items-center gap-2 text-gray-800">
+            <Camera className="w-5 h-5 text-gray-500" />
+            Registro de Biométricos
+          </h2>
+          
+          <div className="space-y-6">
+            {/* Fotos del Recluso */}
             <div>
-              <label className="text-sm text-gray-600">URL de fotografía</label>
-              <input name="photoUrl" className="w-full border rounded-lg px-3 py-2 mt-1"
-                value={form.photoUrl} onChange={handleChange} placeholder="https://..." />
+              <label className="text-sm font-semibold text-gray-700 block mb-3">Fotografías del interno (Máx. 3)</label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {[
+                  { key: 'photoUrl', label: 'Foto Frontal' },
+                  { key: 'photoUrl2', label: 'Perfil Izquierdo' },
+                  { key: 'photoUrl3', label: 'Perfil Derecho' }
+                ].map(({ key, label }) => (
+                  <div key={key} className="flex flex-col items-center">
+                    <span className="text-xs text-gray-500 mb-1.5 font-medium">{label}</span>
+                    <div className="relative w-full h-40 border-2 border-dashed border-gray-300 hover:border-blue-500 rounded-xl overflow-hidden flex flex-col items-center justify-center bg-gray-50 transition-colors group">
+                      {form[key] ? (
+                        <>
+                          <img src={form[key]} alt={label} className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => setForm(prev => ({ ...prev, [key]: '' }))}
+                            className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full shadow-md transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </>
+                      ) : (
+                        <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer p-4 text-center">
+                          <Upload className="w-6 h-6 text-gray-400 group-hover:text-blue-500 mb-2 transition-colors" />
+                          <span className="text-xs font-semibold text-blue-600 group-hover:text-blue-700 transition-colors">Subir imagen</span>
+                          <span className="text-[10px] text-gray-400 mt-1">PNG, JPG</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleFileChange(e, key)}
+                            className="hidden"
+                          />
+                        </label>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div>
-              <label className="text-sm text-gray-600">URL de huellas</label>
-              <input name="fingerprintUrl" className="w-full border rounded-lg px-3 py-2 mt-1"
-                value={form.fingerprintUrl} onChange={handleChange} placeholder="https://..." />
+
+            {/* Huellas Dactilares */}
+            <div className="border-t border-gray-100 pt-5">
+              <label className="text-sm font-semibold text-gray-700 block mb-3">Huellas dactilares (Izquierda y Derecha)</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {[
+                  { key: 'fingerprintUrl', label: 'Mano Izquierda' },
+                  { key: 'fingerprintRightUrl', label: 'Mano Derecha' }
+                ].map(({ key, label }) => (
+                  <div key={key} className="flex flex-col items-center">
+                    <span className="text-xs text-gray-500 mb-1.5 font-medium">{label}</span>
+                    <div className="relative w-full h-40 border-2 border-dashed border-gray-300 hover:border-blue-500 rounded-xl overflow-hidden flex flex-col items-center justify-center bg-gray-50 transition-colors group">
+                      {form[key] ? (
+                        <>
+                          <img src={form[key]} alt={label} className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => setForm(prev => ({ ...prev, [key]: '' }))}
+                            className="absolute top-2 right-2 bg-red-500 hover:bg-red-650 text-white p-1.5 rounded-full shadow-md transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </>
+                      ) : (
+                        <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer p-4 text-center">
+                          <Fingerprint className="w-6 h-6 text-gray-400 group-hover:text-blue-500 mb-2 transition-colors" />
+                          <span className="text-xs font-semibold text-blue-600 group-hover:text-blue-700 transition-colors">Subir Huella</span>
+                          <span className="text-[10px] text-gray-400 mt-1">Imagen de huella</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleFileChange(e, key)}
+                            className="hidden"
+                          />
+                        </label>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </section>

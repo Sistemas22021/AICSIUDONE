@@ -1,6 +1,12 @@
 spring:
   application:
     name: EQUIPO-BLANCO-PRISON-SERVICE
+  servlet:
+    multipart:
+      max-file-size: 15MB
+      max-request-size: 15MB
+  codec:
+    max-in-memory-size: 15MB
 
   datasource:
     url: ${DATASOURCE_URL}
@@ -19,6 +25,9 @@ spring:
 
 server:
   port: 8081
+  tomcat:
+    max-http-form-post-size: 15MB
+    max-swallow-size: 15MB
 
 eureka:
   client:

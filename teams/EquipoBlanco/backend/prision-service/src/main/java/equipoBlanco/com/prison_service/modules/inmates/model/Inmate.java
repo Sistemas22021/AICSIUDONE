@@ -44,8 +44,11 @@ public class Inmate {
     @Column(columnDefinition = "TEXT")
     private String distinguishingMarks;
 
-    private String photoUrl;
-    private String fingerprintUrl;
+    @OneToMany(mappedBy = "inmate", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<InmatePhoto> photos;
+
+    @OneToMany(mappedBy = "inmate", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<InmateFingerprint> fingerprints;
 
     @Enumerated(EnumType.STRING)
     private InmateStatus status;

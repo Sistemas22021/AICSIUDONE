@@ -30,7 +30,10 @@ public class InmateDto {
     private BigDecimal weightKg;
     private String distinguishingMarks;
     private String photoUrl;
+    private String photoUrl2;
+    private String photoUrl3;
     private String fingerprintUrl;
+    private String fingerprintRightUrl;
     private InmateStatus status;
     private List<BelongingDto> belongings;
     private UUID cellId;

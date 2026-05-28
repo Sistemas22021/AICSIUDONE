@@ -4,6 +4,8 @@ import equipoBlanco.com.prison_service.modules.inmates.dto.InmateDto;
 import equipoBlanco.com.prison_service.modules.inmates.dto.BelongingDto;
 import equipoBlanco.com.prison_service.modules.inmates.model.Belonging;
 import equipoBlanco.com.prison_service.modules.inmates.model.Inmate;
+import equipoBlanco.com.prison_service.modules.inmates.model.InmatePhoto;
+import equipoBlanco.com.prison_service.modules.inmates.model.InmateFingerprint;
 import equipoBlanco.com.prison_service.modules.inmates.model.Inmate.InmateStatus;
 import equipoBlanco.com.prison_service.modules.inmates.repository.InmateRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,9 +30,13 @@ public class InmateService {
             throw new RuntimeException("Ya existe un expediente activo con la cédula: " + dto.getCedula());
         }
 
-        LocalDate release = dto.getAdmissionDate()
-            .plusYears(dto.getSentenceYears() != null ? dto.getSentenceYears() : 0)
-            .plusMonths(dto.getSentenceMonths() != null ? dto.getSentenceMonths() : 0);
+        LocalDate release = null;
+        if (dto.getAdmissionDate() != null) {
+            release = dto.getAdmissionDate()
+                .plusYears(dto.getSentenceYears() != null ? dto.getSentenceYears() : 0)
+                .plusMonths(dto.getSentenceMonths() != null ? dto.getSentenceMonths() : 0);
+        }
+
 
         Inmate inmate = Inmate.builder()
             .cedula(dto.getCedula())
@@ -52,10 +58,29 @@ public class InmateService {
             .heightCm(dto.getHeightCm())
             .weightKg(dto.getWeightKg())
             .distinguishingMarks(dto.getDistinguishingMarks())
-            .photoUrl(dto.getPhotoUrl())
-            .fingerprintUrl(dto.getFingerprintUrl())
             .status(InmateStatus.ACTIVO_SIN_CELDA)
             .build();
+
+        java.util.List<InmatePhoto> photos = new java.util.ArrayList<>();
+        if (dto.getPhotoUrl() != null && !dto.getPhotoUrl().trim().isEmpty()) {
+            photos.add(InmatePhoto.builder().inmate(inmate).url(dto.getPhotoUrl()).description("Foto Frontal").build());
+        }
+        if (dto.getPhotoUrl2() != null && !dto.getPhotoUrl2().trim().isEmpty()) {
+            photos.add(InmatePhoto.builder().inmate(inmate).url(dto.getPhotoUrl2()).description("Perfil Izquierdo").build());
+        }
+        if (dto.getPhotoUrl3() != null && !dto.getPhotoUrl3().trim().isEmpty()) {
+            photos.add(InmatePhoto.builder().inmate(inmate).url(dto.getPhotoUrl3()).description("Perfil Derecho").build());
+        }
+        inmate.setPhotos(photos);
+
+        java.util.List<InmateFingerprint> fingerprints = new java.util.ArrayList<>();
+        if (dto.getFingerprintUrl() != null && !dto.getFingerprintUrl().trim().isEmpty()) {
+            fingerprints.add(InmateFingerprint.builder().inmate(inmate).url(dto.getFingerprintUrl()).description("Mano Izquierda").build());
+        }
+        if (dto.getFingerprintRightUrl() != null && !dto.getFingerprintRightUrl().trim().isEmpty()) {
+            fingerprints.add(InmateFingerprint.builder().inmate(inmate).url(dto.getFingerprintRightUrl()).description("Mano Derecha").build());
+        }
+        inmate.setFingerprints(fingerprints);
 
         if (dto.getBelongings() != null) {
             List<Belonging> belongings = dto.getBelongings().stream().map(b ->
@@ -122,6 +147,33 @@ public class InmateService {
             ).toList();
         }
 
+        String photoUrl = null;
+        String photoUrl2 = null;
+        String photoUrl3 = null;
+        if (i.getPhotos() != null) {
+            for (InmatePhoto photo : i.getPhotos()) {
+                if ("Foto Frontal".equals(photo.getDescription())) {
+                    photoUrl = photo.getUrl();
+                } else if ("Perfil Izquierdo".equals(photo.getDescription())) {
+                    photoUrl2 = photo.getUrl();
+                } else if ("Perfil Derecho".equals(photo.getDescription())) {
+                    photoUrl3 = photo.getUrl();
+                }
+            }
+        }
+
+        String fingerprintUrl = null;
+        String fingerprintRightUrl = null;
+        if (i.getFingerprints() != null) {
+            for (InmateFingerprint fingerprint : i.getFingerprints()) {
+                if ("Mano Izquierda".equals(fingerprint.getDescription())) {
+                    fingerprintUrl = fingerprint.getUrl();
+                } else if ("Mano Derecha".equals(fingerprint.getDescription())) {
+                    fingerprintRightUrl = fingerprint.getUrl();
+                }
+            }
+        }
+
         return InmateDto.builder()
             .id(i.getId())
             .cedula(i.getCedula())
@@ -143,8 +195,11 @@ public class InmateService {
             .heightCm(i.getHeightCm())
             .weightKg(i.getWeightKg())
             .distinguishingMarks(i.getDistinguishingMarks())
-            .photoUrl(i.getPhotoUrl())
-            .fingerprintUrl(i.getFingerprintUrl())
+            .photoUrl(photoUrl)
+            .photoUrl2(photoUrl2)
+            .photoUrl3(photoUrl3)
+            .fingerprintUrl(fingerprintUrl)
+            .fingerprintRightUrl(fingerprintRightUrl)
             .status(i.getStatus())
             .belongings(belongingDtos)
             .cellId(i.getCell() != null ? i.getCell().getId() : null)

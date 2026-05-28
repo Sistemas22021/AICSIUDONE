@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Settings, X, User, Move, MapPin, Info, Users, CheckCircle, AlertTriangle, HelpCircle } from 'lucide-react'
+import { Settings, X, User, Move, MapPin, Info, Users, CheckCircle, AlertTriangle, HelpCircle, Fingerprint } from 'lucide-react'
 import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
 
@@ -1174,6 +1174,76 @@ const quitarCeldaDelPlano = (celdaId, identificador) => {
                     </div>
                   </div>
                 )}
+
+                {/* Biometría Completa */}
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-150 space-y-4">
+                  <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-200/50 pb-1.5">
+                    Biometría Completa
+                  </h4>
+                  
+                  {/* Fotografías */}
+                  <div>
+                    <h5 className="text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-wide">Fotografías del Recluso</h5>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { src: reclusoExpediente.photoUrl, label: 'Foto Frontal' },
+                        { src: reclusoExpediente.photoUrl2, label: 'Perfil Izquierdo' },
+                        { src: reclusoExpediente.photoUrl3, label: 'Perfil Derecho' }
+                      ].map((photo, index) => (
+                        <div key={index} className="flex flex-col items-center bg-white p-1 rounded-lg border border-gray-200 shadow-sm">
+                          {photo.src ? (
+                            <img
+                              src={photo.src}
+                              alt={photo.label}
+                              className="w-full h-24 object-cover rounded-md cursor-zoom-in hover:scale-105 transition-transform"
+                              onClick={() => {
+                                const win = window.open();
+                                win.document.write(`<img src="${photo.src}" style="max-width:100%; max-height:100vh; display:block; margin:auto;" />`);
+                              }}
+                            />
+                          ) : (
+                            <div className="w-full h-24 bg-gray-100 rounded-md flex flex-col items-center justify-center text-gray-450">
+                              <User className="w-5 h-5 mb-1" />
+                              <span className="text-[9px] font-semibold">Sin imagen</span>
+                            </div>
+                          )}
+                          <span className="text-[10px] text-gray-550 mt-1 font-medium">{photo.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Huellas */}
+                  <div className="border-t border-gray-200/60 pt-3">
+                    <h5 className="text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-wide">Huellas Dactilares</h5>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        { src: reclusoExpediente.fingerprintUrl, label: 'Mano Izquierda' },
+                        { src: reclusoExpediente.fingerprintRightUrl, label: 'Mano Derecha' }
+                      ].map((fp, index) => (
+                        <div key={index} className="flex flex-col items-center bg-white p-2 rounded-lg border border-gray-200 shadow-sm">
+                          {fp.src ? (
+                            <img
+                              src={fp.src}
+                              alt={fp.label}
+                              className="w-full h-24 object-contain rounded-md cursor-zoom-in hover:scale-105 transition-transform"
+                              onClick={() => {
+                                const win = window.open();
+                                win.document.write(`<img src="${fp.src}" style="max-width:100%; max-height:100vh; display:block; margin:auto;" />`);
+                              }}
+                            />
+                          ) : (
+                            <div className="w-full h-24 bg-gray-100 rounded-md flex flex-col items-center justify-center text-gray-450">
+                              <Fingerprint className="w-5 h-5 mb-1" />
+                              <span className="text-[9px] font-semibold">Sin huella</span>
+                            </div>
+                          )}
+                          <span className="text-[10px] text-gray-550 mt-1 font-semibold">{fp.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Footer */}
