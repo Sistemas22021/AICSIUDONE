@@ -174,13 +174,22 @@ sso-boilerplate/
 │       │   └── config-server/        ← Configuración centralizada
 │       └── frontend/
 │           ├── login-mfe/            ← Micro-frontend de login
-│           └── consumer-app/         ← App de prueba
+│           ├── consumer-app/         ← App de prueba
+│           └── lib-react-component/  ← Sandbox de componentes en blanco (Storybook)
 ├── config-repo/             ← YAMLs de configuración (leídos por Config Server)
 ├── docker/                  ← Docker Compose por responsabilidad
 ├── infrastructure/
 │   ├── terraform/modules/   ← Módulos Terraform reutilizables
 │   └── terragrunt/          ← Configuración por ambiente (dev/prod)
 └── docs/adr/                ← Decisiones de arquitectura documentadas
+│
+### 🧪 Sandbox de Componentes en Blanco (Storybook)
+Para modelar y probar componentes visuales de forma aislada sin la fricción del flujo de negocio:
+```bash
+cd teams/main/frontend/lib-react-component
+npm run storybook
+```
+
 ```
 
 ---
