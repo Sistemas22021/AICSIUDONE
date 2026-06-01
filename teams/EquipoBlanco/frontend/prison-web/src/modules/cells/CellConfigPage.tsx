@@ -2,33 +2,50 @@ import { useState, useEffect } from 'react'
 import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
 
-const CONDUCT_LEVELS = ['BAJO', 'MEDIO', 'ALTO']
+const CONDUCT_LEVELS = ['BAJO', 'MEDIO', 'ALTO'] as const
 
-const CONDUCT_BADGE = {
+const CONDUCT_BADGE: Record<string, string> = {
   BAJO: 'bg-green-100 text-green-700',
   MEDIO: 'bg-yellow-100 text-yellow-700',
   ALTO: 'bg-red-100 text-red-700',
 }
 
-const EMPTY_FORM = {
+interface CellData {
+  id: string
+  identifier: string
+  maxCapacity: number
+  conductLevel: string
+  lengthMeters: number | null
+  widthMeters: number | null
+  currentOccupancy: number
+}
+
+interface CellForm {
+  identifier: string
+  maxCapacity: string
+  conductLevel: string
+  lengthMeters: string
+  widthMeters: string
+}
+
+const EMPTY_FORM: CellForm = {
   identifier: '', maxCapacity: '', conductLevel: 'BAJO', lengthMeters: '', widthMeters: '',
 }
 
 export default function CellConfigPage() {
-  const [cells, setCells] = useState([])
+  const [cells, setCells] = useState<CellData[]>([])
   const [modalOpen, setModalOpen] = useState(false)
-  const [form, setForm] = useState({ ...EMPTY_FORM })
-  const [editingId, setEditingId] = useState(null)
+  const [form, setForm] = useState<CellForm>({ ...EMPTY_FORM })
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [error, setError] = useState('')
 
   useEffect(() => { loadCells() }, [])
 
   async function loadCells() {
     try {
-      const res = await api.get('/cells')
+      const res = await api.get<CellData[]>('/cells')
       setCells(res.data)
     } catch {
-      // Backend no disponible — arranca con lista vacía
       setCells([])
     }
   }
@@ -40,7 +57,7 @@ export default function CellConfigPage() {
     setModalOpen(true)
   }
 
-  function openEdit(cell) {
+  function openEdit(cell: CellData) {
     setForm({
       identifier: cell.identifier,
       maxCapacity: String(cell.maxCapacity),
@@ -58,11 +75,11 @@ export default function CellConfigPage() {
     setError('')
   }
 
-  function handleChange(e) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     setForm({ ...form, [e.target.name]: e.target.value })
   }
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
     try {
@@ -82,12 +99,13 @@ export default function CellConfigPage() {
       setEditingId(null)
       closeModal()
       loadCells()
-    } catch (err) {
-      setError(err.response?.data?.message || 'Error al guardar la celda')
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } }
+      setError(axiosErr.response?.data?.message || 'Error al guardar la celda')
     }
   }
 
-  async function handleDelete(cell) {
+  async function handleDelete(cell: CellData) {
     if (cell.currentOccupancy > 0) {
       alert('No se puede eliminar una celda con reclusos activos')
       return
@@ -96,8 +114,9 @@ export default function CellConfigPage() {
     try {
       await api.delete(`/cells/${cell.id}`)
       loadCells()
-    } catch (err) {
-      alert(err.response?.data?.message || 'No se puede eliminar')
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } }
+      alert(axiosErr.response?.data?.message || 'No se puede eliminar')
     }
   }
 
@@ -125,7 +144,7 @@ export default function CellConfigPage() {
                 <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-3.5">Capacidad</th>
                 <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-3.5">Nivel Conducta</th>
                 <th className="hidden sm:table-cell text-left text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-3.5">Dimensiones (m)</th>
-                <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-3.5">Ocupación</th>
+                <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-3.5">Ocupaci\u00f3n</th>
                 <th className="text-right text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-3.5">Acciones</th>
               </tr>
             </thead>
@@ -148,8 +167,8 @@ export default function CellConfigPage() {
                     </td>
                     <td className="hidden sm:table-cell px-4 py-4 text-gray-600">
                       {cell.lengthMeters != null && cell.widthMeters != null
-                        ? `${cell.lengthMeters}×${cell.widthMeters}`
-                        : '—'}
+                        ? `${cell.lengthMeters}\u00d7${cell.widthMeters}`
+                        : '\u2014'}
                     </td>
                     <td className="px-4 py-4 text-gray-600">{cell.currentOccupancy}/{cell.maxCapacity}</td>
                     <td className="px-4 py-4 text-right">
@@ -211,7 +230,7 @@ export default function CellConfigPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Capacidad máxima <span className="text-red-500">*</span>
+                    Capacidad m\u00e1xima <span className="text-red-500">*</span>
                   </label>
                   <input
                     name="maxCapacity"

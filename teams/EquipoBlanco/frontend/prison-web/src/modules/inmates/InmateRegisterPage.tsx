@@ -3,7 +3,39 @@ import { Camera, Upload, Trash2, Fingerprint } from 'lucide-react'
 import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
 
-const EMPTY_FORM = {
+interface Belonging {
+  description: string
+  quantity: number
+  observations: string
+}
+
+interface FormData {
+  cedula: string
+  firstName: string
+  secondName: string
+  firstLastname: string
+  secondLastname: string
+  birthDate: string
+  crime: string
+  caseNumber: string
+  court: string
+  admissionDate: string
+  sentenceYears: string
+  sentenceMonths: string
+  eyeColor: string
+  hairColor: string
+  bodyBuild: string
+  heightCm: string
+  weightKg: string
+  distinguishingMarks: string
+  photoUrl: string
+  photoUrl2: string
+  photoUrl3: string
+  fingerprintUrl: string
+  fingerprintRightUrl: string
+}
+
+const EMPTY_FORM: FormData = {
   cedula: '', firstName: '', secondName: '', firstLastname: '', secondLastname: '',
   birthDate: '', crime: '', caseNumber: '', court: '',
   admissionDate: '', sentenceYears: '', sentenceMonths: '',
@@ -12,24 +44,24 @@ const EMPTY_FORM = {
 }
 
 export default function InmateRegisterPage() {
-  const [form, setForm] = useState({ ...EMPTY_FORM })
-  const [belongings, setBelongings] = useState([])
+  const [form, setForm] = useState<FormData>({ ...EMPTY_FORM })
+  const [belongings, setBelongings] = useState<Belonging[]>([])
   const [cedulaChecked, setCedulaChecked] = useState(false)
   const [cedulaExists, setCedulaExists] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
-  const handleFileChange = (e, fieldName) => {
-    const file = e.target.files[0]
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fieldName: keyof FormData) => {
+    const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
     reader.onload = (event) => {
-      setForm(prev => ({ ...prev, [fieldName]: event.target.result }))
+      setForm(prev => ({ ...prev, [fieldName]: event.target?.result as string }))
     }
     reader.readAsDataURL(file)
   }
 
-  function handleChange(e) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     const { name, value } = e.target
     setForm(prev => ({ ...prev, [name]: value }))
     if (name === 'cedula') setCedulaChecked(false)
@@ -38,11 +70,11 @@ export default function InmateRegisterPage() {
   async function checkCedula() {
     if (!form.cedula) return
     try {
-      const res = await api.get(`/inmates/check-cedula/${form.cedula}`)
+      const res = await api.get<{ hasActiveRecord: boolean }>(`/inmates/check-cedula/${form.cedula}`)
       setCedulaExists(res.data.hasActiveRecord)
       setCedulaChecked(true)
     } catch {
-      setError('Error al verificar cédula')
+      setError('Error al verificar c\u00e9dula')
     }
   }
 
@@ -50,15 +82,15 @@ export default function InmateRegisterPage() {
     setBelongings(prev => [...prev, { description: '', quantity: 1, observations: '' }])
   }
 
-  function updateBelonging(index, field, value) {
+  function updateBelonging(index: number, field: keyof Belonging, value: string | number) {
     setBelongings(prev => prev.map((b, i) => i === index ? { ...b, [field]: value } : b))
   }
 
-  function removeBelonging(index) {
+  function removeBelonging(index: number) {
     setBelongings(prev => prev.filter((_, i) => i !== index))
   }
 
-  function calculateAge(birthDate) {
+  function calculateAge(birthDate: string) {
     if (!birthDate) return ''
     const birth = new Date(birthDate)
     const today = new Date()
@@ -73,12 +105,13 @@ export default function InmateRegisterPage() {
     const admission = new Date(form.admissionDate)
     const years = parseInt(form.sentenceYears) || 0
     const months = parseInt(form.sentenceMonths) || 0
-    admission.setFullYear(admission.getFullYear() + years)
-    admission.setMonth(admission.getMonth() + months)
-    return admission.toISOString().split('T')[0]
+    const release = new Date(admission)
+    release.setFullYear(release.getFullYear() + years)
+    release.setMonth(release.getMonth() + months)
+    return release.toISOString().split('T')[0]
   }
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
     setSuccess('')
@@ -88,8 +121,9 @@ export default function InmateRegisterPage() {
       setBelongings([])
       setCedulaChecked(false)
       setSuccess('Recluso registrado exitosamente')
-    } catch (err) {
-      setError(err.response?.data?.message || 'Error al registrar el recluso')
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } }
+      setError(axiosErr.response?.data?.message || 'Error al registrar el recluso')
     }
   }
 
@@ -111,7 +145,7 @@ export default function InmateRegisterPage() {
           <h2 className="text-lg font-medium mb-4">Datos personales</h2>
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-              <label className="text-sm text-gray-600">Cédula de identidad *</label>
+              <label className="text-sm text-gray-600">C\u00e9dula de identidad *</label>
               <div className="flex gap-2 mt-1">
                 <input name="cedula" className="flex-1 border rounded-lg px-3 py-2"
                   value={form.cedula} onChange={handleChange} placeholder="V-12345678" required />
@@ -122,7 +156,7 @@ export default function InmateRegisterPage() {
               </div>
               {cedulaChecked && (
                 <p className={`text-sm mt-1 ${cedulaExists ? 'text-red-600' : 'text-green-600'}`}>
-                  {cedulaExists ? 'Esta cédula ya tiene un expediente activo' : 'Cédula disponible'}
+                  {cedulaExists ? 'Esta c\u00e9dula ya tiene un expediente activo' : 'C\u00e9dula disponible'}
                 </p>
               )}
             </div>
@@ -150,13 +184,13 @@ export default function InmateRegisterPage() {
               <label className="text-sm text-gray-600">Fecha de nacimiento</label>
               <input type="date" name="birthDate" className="w-full border rounded-lg px-3 py-2 mt-1"
                 value={form.birthDate} onChange={handleChange} />
-              {age && <p className="text-xs text-gray-500 mt-1">Edad: {age} años</p>}
+              {age && <p className="text-xs text-gray-500 mt-1">Edad: {age} a\u00f1os</p>}
             </div>
           </div>
         </section>
 
         <section className="bg-white border border-gray-200 rounded-xl p-5">
-          <h2 className="text-lg font-medium mb-4">Información judicial</h2>
+          <h2 className="text-lg font-medium mb-4">Informaci\u00f3n judicial</h2>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-sm text-gray-600">Delito imputado</label>
@@ -164,7 +198,7 @@ export default function InmateRegisterPage() {
                 value={form.crime} onChange={handleChange} />
             </div>
             <div>
-              <label className="text-sm text-gray-600">N° de expediente</label>
+              <label className="text-sm text-gray-600">N\u00b0 de expediente</label>
               <input name="caseNumber" className="w-full border rounded-lg px-3 py-2 mt-1"
                 value={form.caseNumber} onChange={handleChange} />
             </div>
@@ -185,7 +219,7 @@ export default function InmateRegisterPage() {
                 value={form.admissionDate} onChange={handleChange} />
             </div>
             <div>
-              <label className="text-sm text-gray-600">Años de condena</label>
+              <label className="text-sm text-gray-600">A\u00f1os de condena</label>
               <input type="number" min="0" name="sentenceYears" className="w-full border rounded-lg px-3 py-2 mt-1"
                 value={form.sentenceYears} onChange={handleChange} />
             </div>
@@ -195,7 +229,7 @@ export default function InmateRegisterPage() {
                 value={form.sentenceMonths} onChange={handleChange} />
             </div>
             <div>
-              <label className="text-sm text-gray-600">Fecha estimada de liberación</label>
+              <label className="text-sm text-gray-600">Fecha estimada de liberaci\u00f3n</label>
               <input type="date" className="w-full border rounded-lg px-3 py-2 mt-1 bg-gray-50"
                 value={releaseDate} disabled />
             </div>
@@ -203,7 +237,7 @@ export default function InmateRegisterPage() {
         </section>
 
         <section className="bg-white border border-gray-200 rounded-xl p-5">
-          <h2 className="text-lg font-medium mb-4">Características físicas</h2>
+          <h2 className="text-lg font-medium mb-4">Caracter\u00edsticas f\u00edsicas</h2>
           <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="text-sm text-gray-600">Color de ojos</label>
@@ -216,7 +250,7 @@ export default function InmateRegisterPage() {
                 value={form.hairColor} onChange={handleChange} />
             </div>
             <div>
-              <label className="text-sm text-gray-600">Complexión</label>
+              <label className="text-sm text-gray-600">Complexi\u00f3n</label>
               <input name="bodyBuild" className="w-full border rounded-lg px-3 py-2 mt-1"
                 value={form.bodyBuild} onChange={handleChange} />
             </div>
@@ -231,7 +265,7 @@ export default function InmateRegisterPage() {
                 value={form.weightKg} onChange={handleChange} />
             </div>
             <div className="col-span-3">
-              <label className="text-sm text-gray-600">Señas particulares</label>
+              <label className="text-sm text-gray-600">Se\u00f1as particulares</label>
               <textarea name="distinguishingMarks" className="w-full border rounded-lg px-3 py-2 mt-1"
                 rows="2" value={form.distinguishingMarks} onChange={handleChange} />
             </div>
@@ -241,18 +275,17 @@ export default function InmateRegisterPage() {
         <section className="bg-white border border-gray-200 rounded-xl p-5">
           <h2 className="text-lg font-medium mb-4 flex items-center gap-2 text-gray-800">
             <Camera className="w-5 h-5 text-gray-500" />
-            Registro de Biométricos
+            Registro de Biom\u00e9tricos
           </h2>
           
           <div className="space-y-6">
-            {/* Fotos del Recluso */}
             <div>
-              <label className="text-sm font-semibold text-gray-700 block mb-3">Fotografías del interno (Máx. 3)</label>
+              <label className="text-sm font-semibold text-gray-700 block mb-3">Fotograf\u00edas del interno (M\u00e1x. 3)</label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[
-                  { key: 'photoUrl', label: 'Foto Frontal' },
-                  { key: 'photoUrl2', label: 'Perfil Izquierdo' },
-                  { key: 'photoUrl3', label: 'Perfil Derecho' }
+                  { key: 'photoUrl' as const, label: 'Foto Frontal' },
+                  { key: 'photoUrl2' as const, label: 'Perfil Izquierdo' },
+                  { key: 'photoUrl3' as const, label: 'Perfil Derecho' }
                 ].map(({ key, label }) => (
                   <div key={key} className="flex flex-col items-center">
                     <span className="text-xs text-gray-500 mb-1.5 font-medium">{label}</span>
@@ -287,13 +320,12 @@ export default function InmateRegisterPage() {
               </div>
             </div>
 
-            {/* Huellas Dactilares */}
             <div className="border-t border-gray-100 pt-5">
               <label className="text-sm font-semibold text-gray-700 block mb-3">Huellas dactilares (Izquierda y Derecha)</label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
-                  { key: 'fingerprintUrl', label: 'Mano Izquierda' },
-                  { key: 'fingerprintRightUrl', label: 'Mano Derecha' }
+                  { key: 'fingerprintUrl' as const, label: 'Mano Izquierda' },
+                  { key: 'fingerprintRightUrl' as const, label: 'Mano Derecha' }
                 ].map(({ key, label }) => (
                   <div key={key} className="flex flex-col items-center">
                     <span className="text-xs text-gray-500 mb-1.5 font-medium">{label}</span>
@@ -335,7 +367,7 @@ export default function InmateRegisterPage() {
           {belongings.map((b, i) => (
             <div key={i} className="flex gap-2 mb-2 items-start">
               <div className="flex-1">
-                <input placeholder="Descripción" className="w-full border rounded-lg px-3 py-2"
+                <input placeholder="Descripci\u00f3n" className="w-full border rounded-lg px-3 py-2"
                   value={b.description} onChange={e => updateBelonging(i, 'description', e.target.value)} />
               </div>
               <div className="w-20">

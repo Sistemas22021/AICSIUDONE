@@ -1,6 +1,7 @@
 package equipoBlanco.com.prison_service.modules.cells.controller;
 
 import equipoBlanco.com.prison_service.modules.cells.dto.CellDto;
+import equipoBlanco.com.prison_service.modules.cells.service.CellPositionService;
 import equipoBlanco.com.prison_service.modules.cells.service.CellService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import java.util.UUID;
 public class CellController {
 
     private final CellService cellService;
+    private final CellPositionService cellPositionService;
 
     @GetMapping
     public ResponseEntity<List<CellDto>> getAll() {
@@ -44,5 +46,11 @@ public class CellController {
             @PathVariable UUID inmateId,
             @RequestHeader(value = "X-User-Name", defaultValue = "Oficial") String assignedBy) {
         return ResponseEntity.ok(cellService.assignInmate(cellId, inmateId, assignedBy));
+    }
+
+    @DeleteMapping("/{cellId}/position")
+    public ResponseEntity<Void> removePosition(@PathVariable UUID cellId) {
+        cellPositionService.deleteByCellId(cellId);
+        return ResponseEntity.noContent().build();
     }
 }

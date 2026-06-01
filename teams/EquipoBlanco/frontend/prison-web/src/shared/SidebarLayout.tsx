@@ -7,10 +7,10 @@ const MENU_ITEMS = [
   { label: 'Mapa de Celdas', to: '/mapa' },
   { label: 'Post-Penitenciario', to: '/post' },
   { label: 'Control y Disciplina', to: '/control' },
-  { label: 'Configuración de Celdas', to: '/celdas/configurar' },
+  { label: 'Configuraci\u00f3n de Celdas', to: '/celdas/configurar' },
 ]
 
-export default function SidebarLayout({ children }) {
+export default function SidebarLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false)
 
   function handleLogout() {
@@ -63,12 +63,12 @@ export default function SidebarLayout({ children }) {
           <button
             onClick={handleLogout}
             className={`flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors ${collapsed ? 'justify-center' : ''}`}
-            title={collapsed ? 'Cerrar Sesión' : undefined}
+            title={collapsed ? 'Cerrar Sesi\u00f3n' : undefined}
           >
             <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
-            {!collapsed && <span>Cerrar Sesión</span>}
+            {!collapsed && <span>Cerrar Sesi\u00f3n</span>}
           </button>
         </div>
       </aside>
@@ -78,7 +78,7 @@ export default function SidebarLayout({ children }) {
           <div className="text-sm text-gray-500">
             <span className="font-semibold text-gray-700">SIGP</span>
             <span className="mx-1.5">|</span>
-            <span>Sistema de Gestión</span>
+            <span>Sistema de Gesti\u00f3n</span>
           </div>
           <div className="flex items-center gap-3">
             <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">

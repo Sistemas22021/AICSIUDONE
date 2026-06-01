@@ -28,4 +28,11 @@ public class CellAssignment {
 
     @Column(nullable = false)
     private LocalDateTime assignedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        if (assignedAt == null) {
+            assignedAt = LocalDateTime.now();
+        }
+    }
 }

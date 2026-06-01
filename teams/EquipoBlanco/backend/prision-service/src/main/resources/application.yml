@@ -3,13 +3,11 @@ spring:
     name: EQUIPO-BLANCO-PRISON-SERVICE
   servlet:
     multipart:
-      max-file-size: 15MB
-      max-request-size: 15MB
-  codec:
-    max-in-memory-size: 15MB
+      max-file-size: 50MB
+      max-request-size: 50MB
 
   datasource:
-    url: ${DATASOURCE_URL}
+    url: ${DATASOURCE_URL}&prepareThreshold=0
     username: ${DATASOURCE_USERNAME}
     password: ${DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
@@ -23,18 +21,20 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
 
+  jackson:
+    max-string-length: 50000000
+
 server:
   port: 8081
   tomcat:
-    max-http-form-post-size: 15MB
-    max-swallow-size: 15MB
+    max-http-form-post-size: 50MB
+    max-swallow-size: 50MB
+    max-http-header-size: 128KB
+  max-http-request-header-size: 128KB
 
 eureka:
   client:
-    service-url:
-      defaultZone: http://eureka-server:8761/eureka/
-  instance:
-    prefer-ip-address: true
+    enabled: false
 
 management:
   endpoints:
