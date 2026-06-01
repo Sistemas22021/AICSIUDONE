@@ -1,0 +1,12 @@
+spring:
+  config:
+    import: "optional:configserver:http://localhost:8888"
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+sso:
+  auth:
+    jwt-secret: este-es-un-secreto-de-desarrollo-cambiar-en-produccion-32chars

@@ -1,0 +1,45 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# docker-compose.localstack.yml
+#
+# Levanta LocalStack para emular servicios AWS localmente, sin costo.
+# Ideal para que los estudiantes practiquen Terragrunt sin necesitar
+# una cuenta AWS real.
+#
+# Servicios emulados:
+#   - S3       → Hosting estático de frontends
+#   - ECR      → Registro de imágenes Docker
+#
+# REQUISITO: LocalStack requiere Docker con volúmenes habilitados.
+#
+# USO:
+#   docker compose -f docker/docker-compose.localstack.yml up -d
+#
+# Luego puedes usar la AWS CLI con:
+#   aws --endpoint-url=http://localhost:4566 s3 ls
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  localstack:
+    image: localstack/localstack:3.4
+    container_name: sso-localstack
+    ports:
+      - "4566:4566"   # Puerto principal de todos los servicios emulados
+    environment:
+      - SERVICES=s3,ecr
+      - AWS_DEFAULT_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=test       # Credenciales de prueba (LocalStack no valida)
+      - AWS_SECRET_ACCESS_KEY=test
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - localstack-data:/var/lib/localstack
+    networks:
+      - sso-network
+
+volumes:
+  localstack-data:
+
+networks:
+  sso-network:
+    external: true   # Usa la red creada por docker-compose.common.yml
+    name: sso-network

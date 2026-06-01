@@ -1,0 +1,117 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# docker-compose.common.yml
+#
+# Levanta la infraestructura compartida del ecosistema SSO:
+#   - Eureka Server    (Service Discovery)
+#   - Config Server    (Configuración centralizada)
+#   - Auth Service     (Autenticación)
+#   - API Gateway      (Punto de entrada único)
+#
+# NOTA: La base de datos NO se incluye aquí.
+# En Fase 1, apunta a Neon/Supabase via DATASOURCE_URL.
+#
+# USO:
+#   docker compose -f docker/docker-compose.common.yml up -d
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  # ─── Eureka Server ──────────────────────────────────────────────────────────
+  eureka-server:
+    build:
+      context: ../teams/main/backend/eureka-server
+      dockerfile: Dockerfile
+    image: sso/eureka-server:local
+    container_name: sso-eureka
+    ports:
+      - "8761:8761"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8761/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - sso-network
+
+  # ─── Config Server ───────────────────────────────────────────────────────────
+  config-server:
+    build:
+      context: ../teams/main/backend/config-server
+      dockerfile: Dockerfile
+    image: sso/config-server:local
+    container_name: sso-config
+    ports:
+      - "8888:8888"
+    environment:
+      - EUREKA_HOST=eureka-server
+      # CONFIG_REPO_PATH apunta al directorio config-repo del monorepo
+      - CONFIG_REPO_PATH=/workspace/config-repo
+    volumes:
+      # Monta el config-repo del monorepo dentro del contenedor
+      - ../config-repo:/workspace/config-repo:ro
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8888/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - sso-network
+
+  # ─── Auth Service ────────────────────────────────────────────────────────────
+  auth-service:
+    build:
+      context: ../teams/main/backend/auth-service
+      dockerfile: Dockerfile
+    image: sso/auth-service:local
+    container_name: sso-auth
+    ports:
+      - "8080:8080"
+    environment:
+      - EUREKA_HOST=eureka-server
+      - CONFIG_SERVER_URL=http://config-server:8888
+      # CONFIGURA TU BD AQUÍ: Neon/Supabase en Fase 1
+      - DATASOURCE_URL=${DATASOURCE_URL}
+      - DATASOURCE_USERNAME=${DATASOURCE_USERNAME}
+      - DATASOURCE_PASSWORD=${DATASOURCE_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - JPA_DDL_AUTO=update  # Solo primera vez. Cambiar a 'validate' después.
+    depends_on:
+      config-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    networks:
+      - sso-network
+
+  # ─── API Gateway ─────────────────────────────────────────────────────────────
+  api-gateway:
+    build:
+      context: ../teams/main/backend/api-gateway
+      dockerfile: Dockerfile
+    image: sso/api-gateway:local
+    container_name: sso-gateway
+    ports:
+      - "8090:8090"
+    environment:
+      - EUREKA_HOST=eureka-server
+      - CONFIG_SERVER_URL=http://config-server:8888
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      auth-service:
+        condition: service_healthy
+    networks:
+      - sso-network
+
+networks:
+  sso-network:
+    driver: bridge
+    name: sso-network

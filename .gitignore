@@ -1,10 +1,30 @@
-HELP.md
-target/
-.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
+# ─── Secretos y variables de entorno ─────────────────────────────────────────
+.env
+.env.local
+.env.*.local
 
-### STS ###
+# ─── Java / Maven ────────────────────────────────────────────────────────────
+target/
+*.class
+*.jar
+*.war
+*.ear
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**
+!**/src/test/**
+HELP.md
+
+# ─── Node.js / Frontend ───────────────────────────────────────────────────────
+node_modules/
+dist/
+build/
+.npm
+
+# ─── IDEs ────────────────────────────────────────────────────────────────────
+.idea/
+*.iws
+*.iml
+*.ipr
 .apt_generated
 .classpath
 .factorypath
@@ -13,37 +33,41 @@ target/
 .springBeans
 .sts4-cache
 
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-
-### NetBeans ###
+# NetBeans
 /nbproject/private/
 /nbbuild/
-/dist/
 /nbdist/
 /.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
 
-### VS Code ###
+# ─── VS Code ─────────────────────────────────────────────────────────────────
 .vscode/
+!.vscode/extensions.json
 
-### Java Backend ###
+# ─── OS ──────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ─── Terraform / Terragrunt ───────────────────────────────────────────────────
+**/.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfplan
+.terragrunt-cache/
+
+# ─── Logs ────────────────────────────────────────────────────────────────────
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ─── Java Backend (Specific) ─────────────────────────────────────────────────
 backend/target/
 backend/.mvn/wrapper/maven-wrapper.jar
-backend/*.log
 
-### React Frontend ###
+# ─── React Frontend (Specific) ───────────────────────────────────────────────
 frontend/node_modules/
 frontend/dist/
 frontend/dist-ssr/
 frontend/*.local
-frontend/npm-debug.log*
-frontend/yarn-debug.log*
-frontend/yarn-error.log*
-frontend/pnpm-debug.log*
-

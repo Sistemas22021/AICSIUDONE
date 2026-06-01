@@ -1,0 +1,25 @@
+# Configuración del Auth Service para el ambiente DEV
+# Este archivo es leído por el Config Server y enviado al Auth Service al arrancar.
+
+spring:
+  datasource:
+    # Reemplazar con tu URL de Neon o Supabase
+    # Neon:     postgresql://user:pass@ep-xxx.us-east-2.aws.neon.tech/sso_db?sslmode=require
+    # Supabase: postgresql://postgres:pass@db.xxx.supabase.co:5432/postgres
+    url: ${DATASOURCE_URL}
+    username: ${DATASOURCE_USERNAME}
+    password: ${DATASOURCE_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update  # Primera vez: genera el schema. Cambiar a 'validate' después.
+
+sso:
+  auth:
+    jwt-secret: ${JWT_SECRET}
+    access-token-expiry-minutes: 15
+    refresh-token-expiry-days: 7
+
+logging:
+  level:
+    com.sso: DEBUG
+    org.springframework.security: DEBUG

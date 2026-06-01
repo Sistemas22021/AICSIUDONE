@@ -1,0 +1,64 @@
+spring:
+  application:
+    name: auth-service
+  config:
+    # Importar configuración desde el Config Server antes de arrancar
+    import: "optional:configserver:${CONFIG_SERVER_URL:http://localhost:8888}"
+
+  # JPA — usa 'update' en dev para que JPA genere/actualice el schema automáticamente
+  # IMPORTANTE: Cambiar a 'validate' antes de cualquier deploy a producción
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:update}
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # Datasource — apunta a Neon/Supabase en Fase 1
+  # Formato Neon: postgresql://user:pass@host/db?sslmode=require
+  # Formato Supabase: postgresql://postgres:pass@db.xxx.supabase.co:5432/postgres
+  datasource:
+    url: ${DATASOURCE_URL:jdbc:postgresql://localhost:5432/sso_db}
+    username: ${DATASOURCE_USERNAME:sso_user}
+    password: ${DATASOURCE_PASSWORD:sso_password}
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 5          # Pool pequeño para Free Tier (Neon/Supabase limita conexiones)
+      minimum-idle: 1
+
+server:
+  port: 8080
+
+# Eureka: se registra para que el Gateway pueda encontrarlo
+eureka:
+  client:
+    service-url:
+      defaultZone: http://${EUREKA_HOST:localhost}:8761/eureka/
+  instance:
+    prefer-ip-address: true
+
+# Configuración JWT y tokens — sobreescribir en config-repo para producción
+sso:
+  auth:
+    jwt-secret: ${JWT_SECRET:este-es-un-secreto-de-desarrollo-cambiar-en-produccion-32chars}
+    access-token-expiry-minutes: ${ACCESS_TOKEN_EXPIRY_MINUTES:15}
+    refresh-token-expiry-days: ${REFRESH_TOKEN_EXPIRY_DAYS:7}
+
+# Swagger — disponible en /swagger-ui.html
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+  api-docs:
+    path: /v3/api-docs
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  endpoint:
+    health:
+      show-details: when-authorized
