@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @RestControllerAdvice
 public class FileExceptionHandler {
     @ExceptionHandler(ImageNotFoundException.class)
-    public ResponseEntity<ApiErrorResponse> handleImageNotFoundException(ImageNotFoundException ex, WebRequest request) {
+    public ResponseEntity<ApiErrorResponse> handleImageNotFound(ImageNotFoundException ex, WebRequest request) {
 
 
         ApiErrorResponse apiError = ApiErrorResponse.builder()
@@ -28,7 +28,7 @@ public class FileExceptionHandler {
         return new ResponseEntity<>(apiError,HttpStatus.CONTENT_TOO_LARGE);
     }
     @ExceptionHandler(FileTooLargeException.class)
-    public ResponseEntity<ApiErrorResponse> handleFileTooLargeException(FileTooLargeException ex, WebRequest request) {
+    public ResponseEntity<ApiErrorResponse> handleFileTooLarge(FileTooLargeException ex, WebRequest request) {
 
 
         ApiErrorResponse apiError = ApiErrorResponse.builder()
@@ -42,7 +42,7 @@ public class FileExceptionHandler {
         return new ResponseEntity<>(apiError,HttpStatus.CONTENT_TOO_LARGE);
     }
     @ExceptionHandler(FileUploadException.class)
-    public ResponseEntity<ApiErrorResponse> handleFileUploadException(FileUploadException ex, WebRequest request) {
+    public ResponseEntity<ApiErrorResponse> handleFileUpload(FileUploadException ex, WebRequest request) {
 
 
         ApiErrorResponse apiError = ApiErrorResponse.builder()
