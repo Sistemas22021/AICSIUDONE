@@ -2,6 +2,7 @@ package com.ccc.sistema_balistico.core.domain.exceptions.handler;
 
 import com.ccc.sistema_balistico.core.domain.exceptions.custom.storage.FileTooLargeException;
 import com.ccc.sistema_balistico.core.domain.exceptions.custom.storage.ImageNotFoundException;
+import com.ccc.sistema_balistico.core.domain.exceptions.custom.storage.FileAlreadyExistsException;
 import org.apache.tomcat.util.http.fileupload.FileUploadException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,7 +15,7 @@ import java.time.LocalDateTime;
 @RestControllerAdvice
 public class FileExceptionHandler {
     @ExceptionHandler(ImageNotFoundException.class)
-    public ResponseEntity<ApiErrorResponse> handleImageNotFoundException(ImageNotFoundException ex, WebRequest request) {
+    public ResponseEntity<ApiErrorResponse> handleImageNotFound(ImageNotFoundException ex, WebRequest request) {
 
 
         ApiErrorResponse apiError = ApiErrorResponse.builder()
@@ -28,7 +29,7 @@ public class FileExceptionHandler {
         return new ResponseEntity<>(apiError,HttpStatus.CONTENT_TOO_LARGE);
     }
     @ExceptionHandler(FileTooLargeException.class)
-    public ResponseEntity<ApiErrorResponse> handleFileTooLargeException(FileTooLargeException ex, WebRequest request) {
+    public ResponseEntity<ApiErrorResponse> handleFileTooLarge(FileTooLargeException ex, WebRequest request) {
 
 
         ApiErrorResponse apiError = ApiErrorResponse.builder()
@@ -42,7 +43,7 @@ public class FileExceptionHandler {
         return new ResponseEntity<>(apiError,HttpStatus.CONTENT_TOO_LARGE);
     }
     @ExceptionHandler(FileUploadException.class)
-    public ResponseEntity<ApiErrorResponse> handleFileUploadException(FileUploadException ex, WebRequest request) {
+    public ResponseEntity<ApiErrorResponse> handleFileUpload(FileUploadException ex, WebRequest request) {
 
 
         ApiErrorResponse apiError = ApiErrorResponse.builder()
@@ -54,6 +55,19 @@ public class FileExceptionHandler {
                 .build();
 
         return new ResponseEntity<>(apiError,HttpStatus.UNSUPPORTED_MEDIA_TYPE);
+    }
+
+    @ExceptionHandler(FileAlreadyExistsException.class)
+    public ResponseEntity<ApiErrorResponse> handleFileAlreadyExists(FileAlreadyExistsException ex, WebRequest request) {
+        ApiErrorResponse apiError = ApiErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.CONFLICT.value())
+                .error("Conflict [CONFLICT]")
+                .message(ex.getMessage())
+                .path(request.getDescription(false))
+                .build();
+
+        return new ResponseEntity<>(apiError, HttpStatus.CONFLICT);
     }
 
 }

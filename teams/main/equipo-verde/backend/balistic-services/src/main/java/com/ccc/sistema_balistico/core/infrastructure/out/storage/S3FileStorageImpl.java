@@ -44,7 +44,14 @@ public class S3FileStorageImpl implements FileStorageService {
                     .contentType(file.getContentType())
                     .build();
 
-            s3Client.putObject(putRequest, RequestBody.fromBytes(bytes));
+            try {
+                s3Client.putObject(putRequest, RequestBody.fromBytes(bytes));
+            } catch (software.amazon.awssdk.services.s3.model.NoSuchBucketException e) {
+                s3Client.createBucket(software.amazon.awssdk.services.s3.model.CreateBucketRequest.builder()
+                        .bucket(bucketName)
+                        .build());
+                s3Client.putObject(putRequest, RequestBody.fromBytes(bytes));
+            }
 
             return newFileName;
         } catch (IOException e) {
