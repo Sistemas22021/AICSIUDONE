@@ -9,4 +9,5 @@ import java.util.UUID;
 public interface BulletImageRepository extends JpaRepository<BulletImagesEntity, UUID> {
 
     List<BulletImagesEntity> findByIdBullet(Long id);
+    boolean existsByHashImage(String hashImage);
 }

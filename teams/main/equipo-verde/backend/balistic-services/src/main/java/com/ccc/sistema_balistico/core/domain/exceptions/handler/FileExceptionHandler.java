@@ -2,6 +2,7 @@ package com.ccc.sistema_balistico.core.domain.exceptions.handler;
 
 import com.ccc.sistema_balistico.core.domain.exceptions.custom.storage.FileTooLargeException;
 import com.ccc.sistema_balistico.core.domain.exceptions.custom.storage.ImageNotFoundException;
+import com.ccc.sistema_balistico.core.domain.exceptions.custom.storage.FileAlreadyExistsException;
 import org.apache.tomcat.util.http.fileupload.FileUploadException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -54,6 +55,19 @@ public class FileExceptionHandler {
                 .build();
 
         return new ResponseEntity<>(apiError,HttpStatus.UNSUPPORTED_MEDIA_TYPE);
+    }
+
+    @ExceptionHandler(FileAlreadyExistsException.class)
+    public ResponseEntity<ApiErrorResponse> handleFileAlreadyExists(FileAlreadyExistsException ex, WebRequest request) {
+        ApiErrorResponse apiError = ApiErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.CONFLICT.value())
+                .error("Conflict [CONFLICT]")
+                .message(ex.getMessage())
+                .path(request.getDescription(false))
+                .build();
+
+        return new ResponseEntity<>(apiError, HttpStatus.CONFLICT);
     }
 
 }

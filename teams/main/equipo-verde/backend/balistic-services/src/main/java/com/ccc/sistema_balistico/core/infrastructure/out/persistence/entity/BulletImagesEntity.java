@@ -22,4 +22,6 @@ public class BulletImagesEntity {
 
     private String pathImage;
 
+    private String hashImage;
+
 }
