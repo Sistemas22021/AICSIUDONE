@@ -10,7 +10,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { icon: <Mic2 size={20} />, label: 'Interrogatorios', id: 'interrogation' },
+  { icon: <Mic2 size={20} />, label: 'Toma de Testimonios', id: 'interrogation' },
 ]
 
 interface CustodiaSidebarProps {
@@ -23,33 +23,36 @@ export function CustodiaSidebar({ activeView, onViewChange }: CustodiaSidebarPro
   return (
     <aside className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col h-screen">
       {/* Logo Section */}
-      <div className="p-6 border-b border-sidebar-border">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-            <Shield size={24} className="text-primary-foreground" />
-          </div>
-          <div className="flex-1">
-            <h1 className="text-lg font-bold text-primary">CUSTODIA</h1>
-            <p className="text-xs text-sidebar-foreground">360</p>
-          </div>
+      <div className="p-6 border-b border-sidebar-border flex flex-col items-center text-center gap-2">
+        <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center shadow-md shadow-primary/20">
+          <Shield size={26} className="text-primary-foreground" />
+        </div>
+        <div>
+          <h1 className="text-xl font-extrabold text-primary tracking-wider leading-none">CUSTODIA</h1>
+          <p className="text-[10px] text-sidebar-foreground mt-1 font-mono tracking-widest uppercase opacity-75">360</p>
         </div>
       </div>
 
       {/* Navigation Menu */}
-      <nav className="flex-1 px-4 py-6 space-y-2">
+      <nav className="flex-1 flex flex-col items-center justify-center px-4 py-6">
         {navItems.map((item) => (
           <button
             key={item.id}
             onClick={() => onViewChange(item.id)}
             className={cn(
-              'w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-sm font-medium',
+              'w-full max-w-[200px] flex flex-col items-center text-center gap-2.5 px-4 py-5 rounded-xl transition-all duration-300 font-semibold border border-transparent',
               activeView === item.id
-                ? 'bg-primary text-primary-foreground shadow-lg'
+                ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-105 border-primary/10'
                 : 'text-sidebar-foreground hover:bg-secondary hover:text-primary'
             )}
           >
-            <span className="flex-shrink-0">{item.icon}</span>
-            <span>{item.label}</span>
+            <div className={cn(
+              'w-12 h-12 rounded-xl flex items-center justify-center transition-colors shadow-sm',
+              activeView === item.id ? 'bg-primary-foreground/15 text-primary-foreground' : 'bg-secondary text-primary'
+            )}>
+              {item.icon}
+            </div>
+            <span className="text-sm tracking-wide">{item.label}</span>
           </button>
         ))}
       </nav>

@@ -11,24 +11,30 @@ import { GladiaWebSocket, TranscriptData } from '@/lib/gladia-websocket'
 
 export function TranscriptionPanel() {
   const [mounted, setMounted] = useState(false)
-  
+
   useEffect(() => {
     setMounted(true)
   }, [])
 
   const [status, setStatus] = useState<'idle' | 'recording' | 'connecting'>('idle')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
-  
+
   const [finalTranscripts, setFinalTranscripts] = useState<string[]>([])
   const [partialTranscript, setPartialTranscript] = useState<string>('')
 
   const { toast } = useToast()
-  
+
   const microphoneRef = useRef<MicrophoneCapture | null>(null)
   const gladiaWsRef = useRef<GladiaWebSocket | null>(null)
-  
+
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animationRef = useRef<number | null>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  // Auto-scroll dynamically as new transcriptions arrive
+  useEffect(() => {
+    scrollRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [finalTranscripts, partialTranscript])
 
   const startRecording = async () => {
     setErrorMsg(null)
@@ -94,16 +100,17 @@ export function TranscriptionPanel() {
       }
 
       setStatus('recording')
-      toast({
+      const { dismiss } = toast({
         title: "Micrófono activado",
         description: "Comienza a hablar, la transcripción está en vivo.",
         duration: 3000,
       })
+      setTimeout(dismiss, 3000)
 
     } catch (error: any) {
       console.error("Error starting recording:", error)
       setErrorMsg(error.message)
-      
+
       setStatus('idle')
       cleanup()
     }
@@ -116,7 +123,7 @@ export function TranscriptionPanel() {
         gladiaWsRef.current?.disconnect()
       }, 1500)
     }
-    
+
     cleanup()
     setStatus('idle')
     setPartialTranscript('')
@@ -130,7 +137,7 @@ export function TranscriptionPanel() {
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current)
       animationRef.current = null
-      
+
       if (canvasRef.current) {
         const ctx = canvasRef.current.getContext('2d')
         ctx?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
@@ -203,16 +210,17 @@ export function TranscriptionPanel() {
             <p>La transcripción en vivo aparecerá aquí...</p>
           </div>
         )}
-        
+
         {finalTranscripts.map((text, i) => (
           <p key={i} className="text-foreground leading-relaxed">{text}</p>
         ))}
-        
+
         {partialTranscript && (
           <p className="text-muted-foreground italic leading-relaxed animate-pulse">
             {partialTranscript}
           </p>
         )}
+        <div ref={scrollRef} />
       </Card>
 
       {/* Controles y Visualizador */}
@@ -227,31 +235,29 @@ export function TranscriptionPanel() {
         {/* Visualizador de Audio */}
         <div className="w-full h-16 bg-background/50 rounded-md border border-border/50 relative overflow-hidden flex items-center justify-center">
           {status === 'idle' && (
-            <span className="text-xs text-muted-foreground absolute">Visualizador de Audio Inactivo</span>
+            <span className="text-xs text-muted-foreground absolute">Visualizador de audio inactivo</span>
           )}
           {status === 'connecting' && (
             <span className="text-xs text-muted-foreground absolute animate-pulse">Conectando con Gladia...</span>
           )}
-          <canvas 
-            ref={canvasRef} 
-            width={800} 
-            height={64} 
+          <canvas
+            ref={canvasRef}
+            width={800}
+            height={64}
             className="w-full h-full absolute top-0 left-0"
           />
         </div>
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={`w-3 h-3 rounded-full transition-colors duration-300 ${
-                status === 'recording' ? 'bg-red-500 animate-pulse' :
+            <div className={`w-3 h-3 rounded-full transition-colors duration-300 ${status === 'recording' ? 'bg-red-500 animate-pulse' :
                 status === 'connecting' ? 'bg-yellow-500 animate-pulse' : 'bg-muted-foreground'
               }`} />
-            <span className={`text-sm font-medium ${
-                status === 'recording' ? 'text-red-500' :
+            <span className={`text-sm font-medium ${status === 'recording' ? 'text-red-500' :
                 status === 'connecting' ? 'text-yellow-600' : 'text-muted-foreground'
               }`}>
               {status === 'recording' ? 'Grabando Audio...' :
-               status === 'connecting' ? 'Conectando...' : 'Listo para grabar'}
+                status === 'connecting' ? 'Conectando...' : 'Listo para grabar'}
             </span>
           </div>
 

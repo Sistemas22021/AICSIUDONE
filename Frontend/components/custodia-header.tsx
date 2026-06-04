@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronRight, Shield, LogOut, AlertTriangle } from 'lucide-react'
+import { Shield } from 'lucide-react'
 
 interface CustodiaHeaderProps {
   currentView: string
@@ -8,9 +8,9 @@ interface CustodiaHeaderProps {
 }
 
 const viewTitles: Record<string, { title: string; role: string }> = {
-  'dashboard': { title: 'Interrogatorios', role: 'Investigador' },
+  'dashboard': { title: 'Toma de Testimonios', role: 'Investigador' },
   'guard-officer': { title: 'Oficial de Guardia', role: 'Oficial de Guardia' },
-  'interrogation': { title: 'Interrogatorios', role: 'Investigador' },
+  'interrogation': { title: 'Toma de Testimonios', role: 'Investigador' },
   'audit': { title: 'Auditoría de Cadena de Custodia', role: 'Auditor' },
   'settings': { title: 'Configuración del Sistema', role: 'Administrador' },
 }
@@ -19,51 +19,25 @@ export function CustodiaHeader({ currentView, currentStep }: CustodiaHeaderProps
   const viewInfo = viewTitles[currentView] || viewTitles['dashboard']
   
   return (
-    <header className="bg-card border-b border-border px-4 py-3 sm:px-6 sm:py-4">
-      <div className="flex items-center justify-between gap-2">
-        {/* Breadcrumbs */}
-        <div className="flex items-center gap-1 sm:gap-2 min-w-0">
-          <span className="text-primary font-bold text-sm sm:text-base truncate">{viewInfo.title}</span>
-          {currentStep !== undefined && (
-            <div className="hidden sm:flex items-center gap-2">
-              <ChevronRight size={14} className="text-muted-foreground shrink-0" />
-              <span className="text-sm text-foreground whitespace-nowrap">Paso {currentStep} de 6</span>
-            </div>
-          )}
-          {currentView === 'audit' && (
-            <div className="hidden sm:flex items-center gap-2">
-              <ChevronRight size={14} className="text-muted-foreground shrink-0" />
-              <span className="text-sm text-foreground whitespace-nowrap">Expediente #EXP-2026-8902</span>
-            </div>
-          )}
-        </div>
+    <header className="bg-card border-b border-border px-4 py-3 sm:px-6 sm:py-4 relative flex items-center justify-between">
+      {/* Left section (spacer to balance layout) */}
+      <div className="flex-1 min-w-0" />
 
-        {/* User Profile & Actions */}
-        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-          {/* User Role Badge (Compacto en móvil) */}
-          <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 py-1.5 sm:px-4 sm:py-2 bg-secondary rounded-lg border border-border">
-            <Shield size={14} className="text-primary" />
-            <div className="hidden sm:flex flex-col">
-              <span className="text-xs text-muted-foreground leading-tight">Oficial A. Ramírez</span>
-              <span className="text-xs font-mono text-primary leading-tight">{viewInfo.role}</span>
-            </div>
+      {/* Centered Title */}
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
+        <span className="text-primary font-bold text-sm sm:text-lg md:text-xl truncate tracking-wide">
+          {viewInfo.title}
+        </span>
+      </div>
+
+      {/* Right section: User Profile */}
+      <div className="flex-1 flex justify-end shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 py-1.5 sm:px-4 sm:py-2 bg-secondary rounded-lg border border-border">
+          <Shield size={14} className="text-primary" />
+          <div className="hidden sm:flex flex-col text-left">
+            <span className="text-xs text-muted-foreground leading-tight">Oficial A. Ramírez</span>
+            <span className="text-xs font-mono text-primary leading-tight">{viewInfo.role}</span>
           </div>
-
-          {/* Emergency Lock Button */}
-          <button
-            className="p-1.5 sm:p-2 rounded-lg bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/30 transition-all hover:shadow-lg"
-            title="Bloqueo de emergencia"
-          >
-            <AlertTriangle size={16} className="sm:w-[18px] sm:h-[18px]" />
-          </button>
-
-          {/* Logout Button */}
-          <button
-            className="p-1.5 sm:p-2 rounded-lg bg-secondary hover:bg-muted text-foreground border border-border transition-all"
-            title="Cerrar sesión"
-          >
-            <LogOut size={16} className="sm:w-[18px] sm:h-[18px]" />
-          </button>
         </div>
       </div>
     </header>
