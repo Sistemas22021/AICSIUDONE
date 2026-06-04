@@ -12,3 +12,9 @@ public class Involucrado {
     private String numeroTelefono;
     private String direccion;
 }
+//Inicio de las modificaciones.
+//Por hacer:
+// 1.Crear Involucrado como entidad.
+// 2.Crear su tabla.
+// 3.Crear repository.
+// 4.Modificar Expediente.
