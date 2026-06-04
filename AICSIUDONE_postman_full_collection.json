@@ -1,0 +1,140 @@
+{
+  "info": {
+    "_postman_id": "aicsiudone-full-collection",
+    "name": "AICSIUDONE Full API Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Full collection: one request per discovered endpoint with basic tests. Set {{baseUrl}} and run."
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "accessToken", "value": "" },
+    { "key": "adminToken", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "POST /api/v1/auth/register",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"test_user\",\n  \"password\": \"Password123!\",\n  \"fullName\": \"Test User\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/register", "host": ["{{baseUrl}}"], "path": ["api","v1","auth","register"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status is 201', function () { pm.expect(pm.response.code).to.eql(201); });" ] } } ]
+        },
+        {
+          "name": "POST /api/v1/auth/login",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"test_user\",\n  \"password\": \"Password123!\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/login", "host": ["{{baseUrl}}"], "path": ["api","v1","auth","login"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [ "var json; try { json = pm.response.json(); } catch(e) { json = null; }", "pm.test('Status is 2xx', function () { pm.expect(pm.response.code).to.be.within(200,299); });", "if (json && json.accessToken) { pm.environment.set('accessToken', json.accessToken); console.log('Saved accessToken'); }" ] } } ]
+        },
+        {
+          "name": "POST /api/v1/auth/refresh",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/refresh", "host": ["{{baseUrl}}"], "path": ["api","v1","auth","refresh"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status is 2xx', function () { pm.expect(pm.response.code).to.be.within(200,299); });" ] } } ]
+        }
+      ]
+    },
+    {
+      "name": "Users Maintainer",
+      "item": [
+        {
+          "name": "POST /api/users (multipart)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{adminToken}}" } ],
+            "body": { "mode": "formdata", "formdata": [ { "key": "username", "value": "jane_doe", "type": "text" }, { "key": "email", "value": "jane@example.com", "type": "text" }, { "key": "fullName", "value": "Jane Doe", "type": "text" }, { "key": "photo", "type": "file", "src": "" } ] },
+            "url": { "raw": "{{baseUrl}}/api/users", "host": ["{{baseUrl}}"], "path": ["api","users"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status is 2xx', function () { pm.expect(pm.response.code).to.be.within(200,299); });" ] } } ]
+        },
+        {
+          "name": "GET /api/users",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
+            "url": { "raw": "{{baseUrl}}/api/users?search=&page=0&size=10", "host": ["{{baseUrl}}"], "path": ["api","users"], "query": [ { "key": "search", "value": "" }, { "key": "page", "value": "0" }, { "key": "size", "value": "10" } ] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status is 2xx', function () { pm.expect(pm.response.code).to.be.within(200,299); });" ] } } ]
+        },
+        {
+          "name": "PUT /api/users/{id}",
+          "request": {
+            "method": "PUT",
+            "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
+            "body": { "mode": "raw", "raw": "{ \"fullName\": \"Updated Name\" }" },
+            "url": { "raw": "{{baseUrl}}/api/users/:id", "host": ["{{baseUrl}}"], "path": ["api","users",":id"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status is 2xx', function () { pm.expect(pm.response.code).to.be.within(200,299); });" ] } } ]
+        },
+        {
+          "name": "DELETE /api/users/{id}",
+          "request": {
+            "method": "DELETE",
+            "header": [ { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
+            "url": { "raw": "{{baseUrl}}/api/users/:id?permanent=false", "host": ["{{baseUrl}}"], "path": ["api","users",":id"], "query": [ { "key": "permanent", "value": "false" } ] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status is 2xx or 204', function () { pm.expect([200,204]).to.include(pm.response.code); });" ] } } ]
+        },
+        {
+          "name": "POST /api/users/{id}/reset-password",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
+            "url": { "raw": "{{baseUrl}}/api/users/:id/reset-password", "host": ["{{baseUrl}}"], "path": ["api","users",":id","reset-password"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status is 2xx', function () { pm.expect(pm.response.code).to.be.within(200,299); });" ] } } ]
+        }
+      ]
+    },
+    {
+      "name": "Guardia - Core Endpoints",
+      "item": [
+        { "name": "POST /api/v1/usuarios", "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" } ], "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Usuario Prueba\",\n  \"identificacion\": \"123456\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/usuarios", "host": ["{{baseUrl}}"], "path": ["api","v1","usuarios"] } }, "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status 201 or 200', function(){ pm.expect(pm.response.code).to.be.within(200,299); });" ] } } ] },
+        { "name": "GET /api/v1/usuarios", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/usuarios", "host": ["{{baseUrl}}"], "path": ["api","v1","usuarios"] } }, "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status is 2xx', function(){ pm.expect(pm.response.code).to.be.within(200,299); });" ] } } ] },
+        { "name": "GET /api/v1/usuarios/{id}", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/usuarios/:id", "host": ["{{baseUrl}}"], "path": ["api","v1","usuarios",":id"] } }, "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status is 2xx', function(){ pm.expect(pm.response.code).to.be.within(200,299); });" ] } } ] },
+
+        { "name": "POST /api/v1/victimas", "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" } ], "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Víctima Prueba\",\n  \"edad\": 30\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/victimas", "host": ["{{baseUrl}}"], "path": ["api","v1","victimas"] } }, "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status is 201 or 200', function(){ pm.expect(pm.response.code).to.be.within(200,299); });" ] } } ] },
+        { "name": "GET /api/v1/victimas/{id}", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/victimas/:id", "host": ["{{baseUrl}}"], "path": ["api","v1","victimas",":id"] } }, "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status is 2xx', function(){ pm.expect(pm.response.code).to.be.within(200,299); });" ] } } ] },
+
+        { "name": "POST /api/expedientes/registrar", "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" } ], "body": { "mode": "raw", "raw": "{\n  \"titulo\": \"Expediente de prueba\",\n  \"descripcion\": \"Descripción...\"\n}" }, "url": { "raw": "{{baseUrl}}/api/expedientes/registrar", "host": ["{{baseUrl}}"], "path": ["api","expedientes","registrar"] } }, "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status is 201', function(){ pm.expect(pm.response.code).to.be.within(200,299); });" ] } } ] },
+
+        { "name": "POST /api/v1/escenas", "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" } ], "body": { "mode": "raw", "raw": "{\n  \"expedienteId\": 1,\n  \"descripcion\": \"Escena de prueba\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/escenas", "host": ["{{baseUrl}}"], "path": ["api","v1","escenas"] } }, "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status is 201 or 200', function(){ pm.expect(pm.response.code).to.be.within(200,299); });" ] } } ] },
+
+        { "name": "GET /api/v1/escenas/{id}", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/escenas/:id", "host": ["{{baseUrl}}"], "path": ["api","v1","escenas",":id"] } }, "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status is 2xx', function(){ pm.expect(pm.response.code).to.be.within(200,299); });" ] } } ] },
+
+        { "name": "PATCH /api/v1/escenas/{id}/iniciar-checklist", "request": { "method": "PATCH", "url": { "raw": "{{baseUrl}}/api/v1/escenas/:id/iniciar-checklist", "host": ["{{baseUrl}}"], "path": ["api","v1","escenas",":id","iniciar-checklist"] } }, "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status is 2xx', function(){ pm.expect(pm.response.code).to.be.within(200,299); });" ] } } ] },
+
+        { "name": "POST /api/v1/evidencias", "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" } ], "body": { "mode": "raw", "raw": "{\n  \"escenaId\": 1,\n  \"descripcion\": \"Evidencia de prueba\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/evidencias", "host": ["{{baseUrl}}"], "path": ["api","v1","evidencias"] } }, "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status is 201 or 200', function(){ pm.expect(pm.response.code).to.be.within(200,299); });" ] } } ] },
+
+        { "name": "GET /api/v1/evidencias/{id}", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/evidencias/:id", "host": ["{{baseUrl}}"], "path": ["api","v1","evidencias",":id"] } }, "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status is 2xx', function(){ pm.expect(pm.response.code).to.be.within(200,299); });" ] } } ] },
+
+        { "name": "PATCH /api/v1/evidencias/{id}/numero", "request": { "method": "PATCH", "header": [ { "key": "Content-Type", "value": "application/json" } ], "body": { "mode": "raw", "raw": "{ \"numero\": \"EV-001\" }" }, "url": { "raw": "{{baseUrl}}/api/v1/evidencias/:id/numero", "host": ["{{baseUrl}}"], "path": ["api","v1","evidencias",":id","numero"] } }, "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status is 2xx', function(){ pm.expect(pm.response.code).to.be.within(200,299); });" ] } } ] },
+
+        { "name": "PATCH /api/v1/evidencias/{id}/firmar/{investigadorId}", "request": { "method": "PATCH", "url": { "raw": "{{baseUrl}}/api/v1/evidencias/:id/firmar/:investigadorId", "host": ["{{baseUrl}}"], "path": ["api","v1","evidencias",":id","firmar",":investigadorId"] } }, "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status is 2xx', function(){ pm.expect(pm.response.code).to.be.within(200,299); });" ] } } ] }
+
+      ]
+    },
+    {
+      "name": "Guardia - Additional",
+      "item": [
+        { "name": "Localizaciones: POST /api/v1/localizaciones", "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" } ], "body": { "mode": "raw", "raw": "{\n  \"municipio\": \"Ciudad\",\n  \"sector\": \"Centro\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/localizaciones", "host": ["{{baseUrl}}"], "path": ["api","v1","localizaciones"] } }, "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status is 201 or 200', function(){ pm.expect(pm.response.code).to.be.within(200,299); });" ] } } ] },
+        { "name": "Localizaciones: PATCH /api/v1/localizaciones/{id}/gps", "request": { "method": "PATCH", "header": [ { "key": "Content-Type", "value": "application/json" } ], "body": { "mode": "raw", "raw": "{\n  \"latitud\": 12.34,\n  \"longitud\": 56.78\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/localizaciones/:id/gps", "host": ["{{baseUrl}}"], "path": ["api","v1","localizaciones",":id","gps"] } }, "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status is 2xx', function(){ pm.expect(pm.response.code).to.be.within(200,299); });" ] } } ] },
+        { "name": "Tipos-Delito: POST /api/v1/tipos-delito", "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" } ], "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Robo\",\n  \"requiereSubtipo\": true\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/tipos-delito", "host": ["{{baseUrl}}"], "path": ["api","v1","tipos-delito"] } }, "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status is 201 or 200', function(){ pm.expect(pm.response.code).to.be.within(200,299); });" ] } } ] },
+        { "name": "Subtipos-Delito: POST /api/v1/subtipos-delito", "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" } ], "body": { "mode": "raw", "raw": "{\n  \"tipoDelitoId\": 1,\n  \"nombre\": \"Subtipo A\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/subtipos-delito", "host": ["{{baseUrl}}"], "path": ["api","v1","subtipos-delito"] } }, "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status is 201 or 200', function(){ pm.expect(pm.response.code).to.be.within(200,299); });" ] } } ] },
+        { "name": "Modus-Operandi: POST /api/v1/modus-operandi", "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" } ], "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Patrón X\",\n  \"patrones\": [\"p1\"]\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/modus-operandi", "host": ["{{baseUrl}}"], "path": ["api","v1","modus-operandi"] } }, "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status is 201 or 200', function(){ pm.expect(pm.response.code).to.be.within(200,299); });" ] } } ] },
+        { "name": "Denunciantes: POST /api/v1/denunciantes", "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" } ], "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Denunciante\",\n  \"identificacion\": \"987654\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/denunciantes", "host": ["{{baseUrl}}"], "path": ["api","v1","denunciantes"] } }, "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status is 201 or 200', function(){ pm.expect(pm.response.code).to.be.within(200,299); });" ] } } ] }
+      ]
+    }
+  ]
+}
