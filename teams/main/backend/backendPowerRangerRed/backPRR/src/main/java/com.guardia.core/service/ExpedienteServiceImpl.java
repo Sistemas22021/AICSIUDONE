@@ -6,6 +6,7 @@ import com.guardia.core.exception.BusinessException;
 import com.guardia.core.exception.ResourceNotFoundException;
 import com.guardia.core.model.*;
 import com.guardia.core.model.enums.EstadoExpediente;
+import com.guardia.core.model.enums.TipoRol;
 import com.guardia.core.repository.*;
 import com.guardia.core.service.ExpedienteService;
 import lombok.RequiredArgsConstructor;
@@ -26,8 +27,8 @@ public class ExpedienteServiceImpl implements ExpedienteService {
     private final TipoDelitoRepository tipoDelitoRepository;
     private final SubtipoDelitoRepository subtipoDelitoRepository;
     private final LocalizacionRepository localizacionRepository;
-    private final DenuncianteRepository denuncianteRepository;
     private final EscenaRepository escenaRepository;
+    private final InvolucradoRepository involucradoRepository;
 
     @Override
     public ExpedienteResponse crear(ExpedienteRequest request) {
@@ -43,33 +44,70 @@ public class ExpedienteServiceImpl implements ExpedienteService {
             localizacion = localizacionRepository.save(localizacion);
         }
 
-        // Mapear denunciante si viene
-        Denunciante denunciante = null;
-        if (request.getDenunciante() != null) {
-            Denunciante d = new Denunciante();
-            d.setNombre(request.getDenunciante().getNombre());
-            d.setIdentificacion(request.getDenunciante().getCedula());
-            d.setDireccion(request.getDenunciante().getDireccion());
-            d.setTelefono(request.getDenunciante().getNumeroTelefono());
-            d.setNacionalidad(request.getDenunciante().getNacionalidad());
-            d.setRelacionConHecho(request.getDenunciante().getRelacionConCrimen());
-            denunciante = denuncianteRepository.save(d);
-        }
 
         // Crear expediente
-        String folio = "EXP-2026-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        String folio = "EXP-2026-" +
+                java.util.UUID.randomUUID()
+                        .toString()
+                        .substring(0, 8)
+                        .toUpperCase();
 
         Expediente expediente = new Expediente();
+
         expediente.setFolio(folio);
         expediente.setNumeroUnico(folio);
         expediente.setFechaCreacion(LocalDateTime.now());
         expediente.setDescripcionHecho(request.getDescripcion());
         expediente.setLocalizacion(localizacion);
-        expediente.setDenunciante(denunciante);
+
+        expediente.setInvolucrados(new ArrayList<>());
         expediente.setEscenas(new ArrayList<>());
-        expediente.setVictimas(new ArrayList<>());
         expediente.setModusOperandiList(new ArrayList<>());
-        expediente.setEstadoExpediente(EstadoExpediente.BORRADOR);
+
+        expediente.setEstadoExpediente(
+                EstadoExpediente.BORRADOR
+        );
+
+        if (request.getDenunciante() != null) {
+
+            Involucrado denunciante = new Involucrado();
+
+            denunciante.setNombre(
+                    request.getDenunciante().getNombre()
+            );
+
+            denunciante.setIdentificacion(
+                    request.getDenunciante().getCedula()
+            );
+
+            denunciante.setNumeroTelefono(
+                    request.getDenunciante().getNumeroTelefono()
+            );
+
+            denunciante.setNacionalidad(
+                    request.getDenunciante().getNacionalidad()
+            );
+
+            denunciante.setDireccion(
+                    request.getDenunciante().getDireccion()
+            );
+
+            denunciante.setRelacionConHecho(
+                    request.getDenunciante().getRelacionConCrimen()
+            );
+
+            denunciante.setRol(
+                    TipoRol.DENUNCIANTE
+            );
+
+            denunciante.setExpediente(
+                    expediente
+            );
+
+            expediente.getInvolucrados()
+                    .add(denunciante);
+        }
+
 
         // Mapear delitos (si vienen)
         if (request.getDelitos() != null) {
@@ -86,15 +124,41 @@ public class ExpedienteServiceImpl implements ExpedienteService {
 
         // Mapear víctimas
         if (request.getVictimas() != null) {
+
             request.getVictimas().forEach(vReq -> {
-                Victima v = new Victima();
-                v.setNombre(vReq.getNombre());
-                v.setIdentificacion(vReq.getCedula());
-                v.setTelefono(vReq.getTelefono());
-                v.setNacionalidad(vReq.getNacionalidad());
-                v.setDireccion(vReq.getDireccion());
-                v.setExpediente(expediente);
-                expediente.getVictimas().add(v);
+
+                Involucrado victima = new Involucrado();
+
+                victima.setNombre(
+                        vReq.getNombre()
+                );
+
+                victima.setIdentificacion(
+                        vReq.getCedula()
+                );
+
+                victima.setNumeroTelefono(
+                        vReq.getTelefono()
+                );
+
+                victima.setNacionalidad(
+                        vReq.getNacionalidad()
+                );
+
+                victima.setDireccion(
+                        vReq.getDireccion()
+                );
+
+                victima.setRol(
+                        TipoRol.VICTIMA
+                );
+
+                victima.setExpediente(
+                        expediente
+                );
+
+                expediente.getInvolucrados()
+                        .add(victima);
             });
         }
 
@@ -233,11 +297,21 @@ public class ExpedienteServiceImpl implements ExpedienteService {
                         e.getSubtipoDelito().getDescripcion(), e.getTipoDelito().getId(),
                         e.getTipoDelito().getNombre());
 
-        DenuncianteResponse denunciante = e.getDenunciante() == null ? null :
-                new DenuncianteResponse(e.getDenunciante().getId(), e.getDenunciante().getNombre(),
-                        e.getDenunciante().getIdentificacion(), e.getDenunciante().getTelefono(),
-                        e.getDenunciante().getNacionalidad(), e.getDenunciante().getDireccion(),
-                        e.getDenunciante().getRelacionConHecho());
+        List<InvolucradoResponse> involucrados =
+                e.getInvolucrados() == null
+                        ? List.of()
+                        : e.getInvolucrados().stream()
+                        .map(i -> new InvolucradoResponse(
+                                i.getId(),
+                                i.getNombre(),
+                                i.getIdentificacion(),
+                                i.getNumeroTelefono(),
+                                i.getNacionalidad(),
+                                i.getDireccion(),
+                                i.getRol(),
+                                i.getRelacionConHecho()
+                        ))
+                        .toList();
 
         LocalizacionResponse localizacion = e.getLocalizacion() == null ? null :
                 new LocalizacionResponse(e.getLocalizacion().getId(), e.getLocalizacion().getMunicipio(),
@@ -250,14 +324,9 @@ public class ExpedienteServiceImpl implements ExpedienteService {
                         es.getInicioProceso(), es.getCierreProceso(), e.getId(), null,
                         List.of(), List.of())).toList();
 
-        List<VictimaResponse> victimas = e.getVictimas() == null ? List.of() :
-                e.getVictimas().stream().map(v -> new VictimaResponse(v.getId(), v.getNombre(),
-                        v.getIdentificacion(), v.getTelefono(), v.getNacionalidad(),
-                        v.getDireccion(), e.getId())).toList();
-
         return new ExpedienteResponse(e.getId(), e.getFolio(), e.getEstadoExpediente(),
                 e.getFechaCreacion(), e.getFechaSellado(), e.getDescripcionHecho(),
                 e.getFechaHecho(), creadoPor, selladoPor, tipoDelito, subtipoDelito,
-                denunciante, localizacion, escenas, victimas);
+                localizacion, escenas, involucrados);
     }
 }

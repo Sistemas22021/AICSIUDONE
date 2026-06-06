@@ -17,8 +17,8 @@ public record ExpedienteResponse(
         UsuarioResponse selladoPor,
         TipoDelitoResponse tipoDelito,
         SubtipoDelitoResponse subtipoDelito,
-        DenuncianteResponse denunciante,
         LocalizacionResponse localizacion,
         List<EscenaResponse> escenas,
-        List<VictimaResponse> victimas
+        List<InvolucradoResponse> involucrados
+
 ) {}

@@ -56,22 +56,14 @@ public class Expediente {
     @JoinColumn(name = "localizacion_id")
     private Localizacion localizacion;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "denunciante_id")
-    private Denunciante denunciante;
-
     @OneToMany(mappedBy = "expediente", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Escena> escenas = new ArrayList<>();
 
-    @OneToMany(mappedBy = "expediente", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Victima> victimas = new ArrayList<>();
+    @OneToMany(mappedBy = "expediente", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Involucrado> involucrados = new ArrayList<>();
 
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-            name = "expediente_modus_operandi",
-            joinColumns = @JoinColumn(name = "expediente_id"),
-            inverseJoinColumns = @JoinColumn(name = "modus_operandi_id")
-    )
+    @JoinTable(name = "expediente_modus_operandi", joinColumns = @JoinColumn(name = "expediente_id"), inverseJoinColumns = @JoinColumn(name = "modus_operandi_id"))
     private List<ModusOperandi> modusOperandiList = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
@@ -115,6 +107,12 @@ public class Expediente {
         this.estadoExpediente = EstadoExpediente.PROCESADO_Y_SELLADO;
     }
 
+    public void agregarInvolucrado(Involucrado involucrado) {
+        involucrados.add(involucrado);
+        involucrado.setExpediente(this);
+    }
+
+
     public void asignarFechaHecho(LocalDateTime fecha) {
         this.fechaHecho = fecha;
     }
@@ -155,14 +153,8 @@ public class Expediente {
     public Localizacion getLocalizacion() { return this.localizacion; }
     public void setLocalizacion(Localizacion localizacion) { this.localizacion = localizacion; }
 
-    public Denunciante getDenunciante() { return this.denunciante; }
-    public void setDenunciante(Denunciante denunciante) { this.denunciante = denunciante; }
-
     public List<Escena> getEscenas() { return this.escenas; }
     public void setEscenas(List<Escena> escenas) { this.escenas = escenas; }
-
-    public List<Victima> getVictimas() { return this.victimas; }
-    public void setVictimas(List<Victima> victimas) { this.victimas = victimas; }
 
     public List<ModusOperandi> getModusOperandiList() { return this.modusOperandiList; }
     public void setModusOperandiList(List<ModusOperandi> modusOperandiList) { this.modusOperandiList = modusOperandiList; }
