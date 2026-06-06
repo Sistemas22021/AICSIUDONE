@@ -1,8 +1,8 @@
 package naranja.custodia_360.controllers;
 
 import naranja.custodia_360.models.Testimony;
+import naranja.custodia_360.services.AiService;
 import naranja.custodia_360.services.TestimonyService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -13,18 +13,19 @@ import java.io.IOException;
 @RequestMapping("/api/v1/testimonies")
 public class TestimonyController {
 
-    @Autowired
     private final TestimonyService testimonyService;
+    private final AiService aiService;
 
-    public TestimonyController(TestimonyService testimonyService) {
+    public TestimonyController(TestimonyService testimonyService, AiService aiService) {
 
         this.testimonyService = testimonyService;
+        this.aiService = aiService;
     }
 
     @PostMapping(consumes = "multipart/form-data")
     public ResponseEntity<?> registerTestimony(
             @RequestParam("audio") MultipartFile audio,
-            @RequestParam("transcripcionOriginal") String originalTranscription
+            @RequestParam("originalTranscription") String originalTranscription
     ) throws IOException {
 
         if (audio.isEmpty()) {
@@ -34,9 +35,9 @@ public class TestimonyController {
             return ResponseEntity.badRequest().body("La transcripción original no puede estar vacía.");
         }
 
-        String sessionId = testimonyService.saveTestimony(audio, originalTranscription);
-        String transcriptionReport = testimonyService.generateReport(originalTranscription);
+        String modifiedTranscription = aiService.generateJudicialReport(originalTranscription);
+        String sessionId = testimonyService.saveTestimony(audio, originalTranscription, modifiedTranscription);
 
-        return ResponseEntity.ok(new Testimony(transcriptionReport, sessionId));
+        return ResponseEntity.ok(new Testimony(modifiedTranscription, sessionId));
     }
 }
