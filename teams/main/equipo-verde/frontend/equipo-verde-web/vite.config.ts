@@ -11,7 +11,8 @@ export default defineConfig({
     port: 3002,
     proxy: {
       '/api': {
-        target: process.env.VITE_API_GATEWAY_URL || 'http://localhost:8090',
+        // En local apuntamos directo al balistic-services (sin API Gateway)
+        target: 'http://localhost:8080',
         changeOrigin: true,
       },
     },
