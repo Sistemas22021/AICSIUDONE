@@ -1,8 +1,10 @@
 package com.guardia.core.model;
 
+import com.guardia.core.model.enums.PasoChecklist;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -39,8 +41,15 @@ public class Escena {
     @OneToMany(mappedBy = "escena", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Evidencia> evidencias;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "paso_actual")
+    private PasoChecklist pasoActual;
+
     @OneToMany(mappedBy = "escena", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<EscenaNegativa> escenasNegativas;
+
+    @OneToMany(mappedBy = "escena", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<EscenaChecklist> checklist = new ArrayList<>();
 
     // Methods
     public void iniciarChecklist() {

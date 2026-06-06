@@ -8,8 +8,10 @@ import com.guardia.core.dto.response.UsuarioResponse;
 import com.guardia.core.exception.BusinessException;
 import com.guardia.core.exception.ResourceNotFoundException;
 import com.guardia.core.model.Escena;
+import com.guardia.core.model.EscenaChecklist;
 import com.guardia.core.model.Expediente;
 import com.guardia.core.model.Usuario;
+import com.guardia.core.model.enums.PasoChecklist;
 import com.guardia.core.repository.EscenaRepository;
 import com.guardia.core.repository.ExpedienteRepository;
 import com.guardia.core.repository.UsuarioRepository;
@@ -18,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,8 +46,55 @@ public class EscenaServiceImpl implements EscenaService {
         escena.setLevantadaPor(investigador);
         escena.setEvidencias(new ArrayList<>());
         escena.setEscenasNegativas(new ArrayList<>());
+        escena.setChecklist(crearChecklistInicial(escena));
+
+        escena.setEstadoChecklist("PENDIENTE");
+        escena.setPasoActual( PasoChecklist.ASEGURAMIENTO_PERIMETRO);
 
         return toResponse(escenaRepository.save(escena));
+    }
+
+    private List<EscenaChecklist> crearChecklistInicial(Escena escena) {
+
+        List<EscenaChecklist> pasos = new ArrayList<>();
+
+        pasos.add(
+                EscenaChecklist.builder()
+                        .paso(PasoChecklist.ASEGURAMIENTO_PERIMETRO)
+                        .orden(1)
+                        .completado(false)
+                        .escena(escena)
+                        .build()
+        );
+
+        pasos.add(
+                EscenaChecklist.builder()
+                        .paso(PasoChecklist.DOCUMENTACION_EVIDENCIA)
+                        .orden(2)
+                        .completado(false)
+                        .escena(escena)
+                        .build()
+        );
+
+        pasos.add(
+                EscenaChecklist.builder()
+                        .paso(PasoChecklist.RECOLECCION_EMBALAJE)
+                        .orden(3)
+                        .completado(false)
+                        .escena(escena)
+                        .build()
+        );
+
+        pasos.add(
+                EscenaChecklist.builder()
+                        .paso(PasoChecklist.LIBERACION_ESCENA)
+                        .orden(4)
+                        .completado(false)
+                        .escena(escena)
+                        .build()
+        );
+
+        return pasos;
     }
 
     @Override
@@ -75,6 +125,66 @@ public class EscenaServiceImpl implements EscenaService {
     public void eliminar(Long id) {
         findById(id);
         escenaRepository.deleteById(id);
+    }
+
+    @Override
+    public EscenaResponse avanzarPaso(Long id) {
+
+        Escena escena = findById(id);
+
+        switch (escena.getPasoActual()) {
+
+            case ASEGURAMIENTO_PERIMETRO ->
+
+                    escena.setPasoActual(
+                            PasoChecklist.DOCUMENTACION_EVIDENCIA
+                    );
+
+            case DOCUMENTACION_EVIDENCIA -> {
+
+                if (escena.getEvidencias() == null ||
+                        escena.getEvidencias().isEmpty()) {
+
+                    throw new BusinessException(
+                            "Debe registrar al menos una evidencia."
+                    );
+                }
+
+                escena.setPasoActual(
+                        PasoChecklist.RECOLECCION_EMBALAJE
+                );
+            }
+
+            case RECOLECCION_EMBALAJE ->
+
+                    escena.setPasoActual(
+                            PasoChecklist.LIBERACION_ESCENA
+                    );
+
+            case LIBERACION_ESCENA -> {
+
+                escena.setPasoActual(
+                        PasoChecklist.COMPLETADO
+                );
+
+                escena.setEstadoChecklist(
+                        "CERRADO"
+                );
+
+                escena.setCierreProceso(
+                        LocalDateTime.now()
+                );
+            }
+
+            case COMPLETADO ->
+                    throw new BusinessException(
+                            "Checklist ya completado."
+                    );
+        }
+
+        return toResponse(
+                escenaRepository.save(escena)
+        );
     }
 
     @Override
@@ -133,7 +243,18 @@ public class EscenaServiceImpl implements EscenaService {
                                 en.getAreaInspeccionada(), en.getResultado(), en.getObservacion(), e.getId()))
                         .toList();
 
-        return new EscenaResponse(e.getId(), e.getEstadoChecklist(), e.getInicioProceso(),
-                e.getCierreProceso(), expedienteId, investigador, evidencias, negativas);
+        return new EscenaResponse(
+                e.getId(),
+                e.getEstadoChecklist(),
+                e.getPasoActual() != null
+                        ? e.getPasoActual().name()
+                        : null,
+                e.getInicioProceso(),
+                e.getCierreProceso(),
+                expedienteId,
+                investigador,
+                evidencias,
+                negativas
+        );
     }
 }
