@@ -1,0 +1,39 @@
+package com.guardia.core.model;
+
+import com.guardia.core.model.enums.PasoChecklist;
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "escena_checklist")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class EscenaChecklist {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private PasoChecklist paso;
+
+    @Column(nullable = false)
+    private Integer orden;
+
+    @Column(nullable = false)
+    private Boolean completado = false;
+
+    private LocalDateTime fechaInicio;
+
+    private LocalDateTime fechaCierre;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "escena_id")
+    private Escena escena;
+}

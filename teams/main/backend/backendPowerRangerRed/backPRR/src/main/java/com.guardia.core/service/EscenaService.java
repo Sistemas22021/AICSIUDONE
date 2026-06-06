@@ -16,4 +16,5 @@ public interface EscenaService {
     EscenaResponse cerrar(Long id);
     EscenaResponse bloquearEdicion(Long id);
     boolean validarSecuencia(Long id);
+    EscenaResponse avanzarPaso(Long id);
 }

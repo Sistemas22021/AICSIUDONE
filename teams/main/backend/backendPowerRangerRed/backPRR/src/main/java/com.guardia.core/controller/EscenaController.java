@@ -70,4 +70,18 @@ public class EscenaController {
     public ResponseEntity<ApiResponse<Boolean>> validarSecuencia(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(escenaService.validarSecuencia(id)));
     }
+
+    @PatchMapping("/{id}/avanzar")
+    public ResponseEntity<ApiResponse<EscenaResponse>> avanzarPaso(
+            @PathVariable Long id
+    ) {
+
+        return ResponseEntity.ok(
+                ApiResponse.ok(
+                        "Paso completado.",
+                        escenaService.avanzarPaso(id)
+                )
+        );
+    }
+
 }
