@@ -233,3 +233,13 @@ body {
 .modal-close-btn:hover {
   color: var(--text-main);
 }
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
