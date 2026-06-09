@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { MapPin, Users, CheckCircle, AlertTriangle, Info, DoorOpen, Gauge, BarChart3 } from 'lucide-react'
+import { MapPin, Users, CheckCircle, AlertTriangle, Info, DoorOpen, Gauge, BarChart3, Move, Check, X, Clock } from 'lucide-react'
 import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
 
@@ -20,28 +20,109 @@ interface InmateData {
   cellId: string | null
 }
 
+interface TransferRequestDto {
+  id: string
+  inmateId: string
+  inmateName: string
+  inmateCedula: string
+  sourceCellId: string | null
+  sourceCellIdentifier: string | null
+  targetCellId: string
+  targetCellIdentifier: string
+  reason: string
+  status: string
+  requestedBy: string
+  createdAt: string
+}
+
 export default function DashboardPage() {
   const [celdas, setCeldas] = useState<CellData[]>([])
   const [reclusos, setReclusos] = useState<InmateData[]>([])
+  const [transfers, setTransfers] = useState<TransferRequestDto[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const [cellsRes, inmatesRes] = await Promise.all([
-          api.get<CellData[]>('/cells'),
-          api.get<InmateData[]>('/inmates').catch(() => ({ data: [] as InmateData[] }))
-        ])
-        setCeldas(cellsRes.data || [])
-        setReclusos(inmatesRes.data || [])
-      } catch (err) {
-        console.error('Error loading dashboard data', err)
-      } finally {
-        setLoading(false)
-      }
+  const [rejectionModalTransfer, setRejectionModalTransfer] = useState<TransferRequestDto | null>(null)
+  const [rejectionReason, setRejectionReason] = useState('')
+  const [rejectionError, setRejectionError] = useState('')
+  const [actionLoading, setActionLoading] = useState(false)
+
+  const currentUser = sessionStorage.getItem('username') || 'Oficial'
+
+  const loadDashboard = async () => {
+    try {
+      const [cellsRes, inmatesRes, transfersRes] = await Promise.all([
+        api.get<CellData[]>('/cells'),
+        api.get<InmateData[]>('/inmates').catch(() => ({ data: [] as InmateData[] })),
+        api.get<TransferRequestDto[]>('/transfers/pending').catch(() => ({ data: [] as TransferRequestDto[] }))
+      ])
+      setCeldas(cellsRes.data || [])
+      setReclusos(inmatesRes.data || [])
+      setTransfers(transfersRes.data || [])
+    } catch (err) {
+      console.error('Error loading dashboard data', err)
+    } finally {
+      setLoading(false)
     }
-    load()
+  }
+
+  useEffect(() => {
+    loadDashboard()
   }, [])
+
+  const handleApprove = async (transfer: TransferRequestDto) => {
+    if (!confirm(`¿Está seguro de aprobar el traslado de ${transfer.inmateName} a la Celda ${transfer.targetCellIdentifier}?`)) {
+      return
+    }
+
+    setActionLoading(true)
+    try {
+      await api.put(`/transfers/${transfer.id}/resolve`, {
+        status: 'APROBADO'
+      }, {
+        headers: { 'X-User-Name': currentUser }
+      })
+      alert('Traslado aprobado con éxito.')
+      loadDashboard()
+    } catch (err: any) {
+      const message = err.response?.data?.message || 'Error al aprobar el traslado.'
+      alert(message)
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleOpenRejection = (transfer: TransferRequestDto) => {
+    setRejectionModalTransfer(transfer)
+    setRejectionReason('')
+    setRejectionError('')
+  }
+
+  const handleConfirmRejection = async () => {
+    if (!rejectionReason.trim()) {
+      setRejectionError('El motivo de rechazo es obligatorio.')
+      return
+    }
+    if (!rejectionModalTransfer) return
+
+    setActionLoading(true)
+    setRejectionError('')
+    try {
+      await api.put(`/transfers/${rejectionModalTransfer.id}/resolve`, {
+        status: 'RECHAZADO',
+        rejectionReason: rejectionReason.trim()
+      }, {
+        headers: { 'X-User-Name': currentUser }
+      })
+      alert('Solicitud de traslado rechazada con éxito.')
+      setRejectionModalTransfer(null)
+      loadDashboard()
+    } catch (err: any) {
+      const message = err.response?.data?.message || 'Error al rechazar el traslado.'
+      setRejectionError(message)
+    } finally {
+      setActionLoading(false)
+    }
+  }
 
   const totalCeldas = celdas.length
   const totalReclusos = celdas.reduce((s, c) => s + (c.currentOccupancy ?? 0), 0)
@@ -159,7 +240,150 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
+
+        {/* Solicitudes de Traslado Pendientes */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+            <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
+              <Clock className="w-4 h-4 text-gray-400" />
+              Solicitudes de Traslado Pendientes
+            </h3>
+            <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-200 uppercase tracking-wide animate-pulse">
+              {transfers.length} Pendientes
+            </span>
+          </div>
+          <div className="p-0">
+            {transfers.length === 0 ? (
+              <p className="text-xs text-gray-400 italic p-6 text-center">No hay solicitudes de traslado pendientes de resolución.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-gray-150 bg-gray-50/50 text-gray-400 font-bold uppercase tracking-wider">
+                      <th className="px-6 py-3">Recluso</th>
+                      <th className="px-6 py-3">Origen</th>
+                      <th className="px-6 py-3">Destino</th>
+                      <th className="px-6 py-3">Justificación</th>
+                      <th className="px-6 py-3">Solicitante</th>
+                      <th className="px-6 py-3">Fecha</th>
+                      <th className="px-6 py-3 text-right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {transfers.map(t => {
+                      const isOwnRequest = t.requestedBy.toLowerCase() === currentUser.toLowerCase()
+                      return (
+                        <tr key={t.id} className="hover:bg-gray-50/30 transition-colors">
+                          <td className="px-6 py-4.5">
+                            <Link
+                              to={`/internos/expediente/${t.inmateId}`}
+                              state={{ from: '/dashboard' }}
+                              className="font-bold text-gray-800 hover:text-blue-600 hover:underline block"
+                            >
+                              {t.inmateName}
+                            </Link>
+                            <span className="text-[10px] text-gray-400">C.I. {t.inmateCedula}</span>
+                          </td>
+                          <td className="px-6 py-4.5 font-semibold text-gray-700">{t.sourceCellIdentifier}</td>
+                          <td className="px-6 py-4.5 font-semibold text-gray-750">{t.targetCellIdentifier}</td>
+                          <td className="px-6 py-4.5 text-gray-600 italic max-w-xs truncate" title={t.reason}>
+                            {t.reason}
+                          </td>
+                          <td className="px-6 py-4.5 font-medium text-gray-600">{t.requestedBy}</td>
+                          <td className="px-6 py-4.5 text-gray-400 font-mono">
+                            {new Date(t.createdAt).toLocaleString()}
+                          </td>
+                          <td className="px-6 py-4.5 text-right">
+                            {isOwnRequest ? (
+                              <span className="inline-block px-2.5 py-1.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-[10px] font-bold max-w-[190px] text-center leading-tight">
+                                No puedes resolver tu propia solicitud (Segregación)
+                              </span>
+                            ) : (
+                              <div className="flex justify-end gap-2">
+                                <button
+                                  onClick={() => handleOpenRejection(t)}
+                                  disabled={actionLoading}
+                                  className="px-3 py-1.5 border border-red-200 text-red-650 hover:bg-red-50 rounded-lg text-[11px] font-bold uppercase transition-colors disabled:opacity-50 cursor-pointer bg-white"
+                                >
+                                  Rechazar
+                                </button>
+                                <button
+                                  onClick={() => handleApprove(t)}
+                                  disabled={actionLoading}
+                                  className="px-3 py-1.5 bg-emerald-600 text-white hover:bg-emerald-700 rounded-lg text-[11px] font-bold uppercase transition-all disabled:opacity-50 shadow-sm cursor-pointer"
+                                >
+                                  Aprobar
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
+
+      {/* Modal para ingresar el motivo de rechazo */}
+      {rejectionModalTransfer && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[70] p-4 transition-all duration-300 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-250">
+            <div className="flex items-center justify-between px-5 py-3.5 bg-red-600 text-white">
+              <h3 className="text-sm font-bold uppercase tracking-wider">Rechazar Solicitud de Traslado</h3>
+              <button onClick={() => setRejectionModalTransfer(null)} className="p-1 hover:bg-red-700 rounded-lg text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-5 space-y-4 text-xs">
+              <p className="text-gray-500 leading-relaxed font-semibold">
+                Debe ingresar una justificación detallada de por qué se rechaza la solicitud de traslado a la Celda {rejectionModalTransfer.targetCellIdentifier}.
+              </p>
+
+              {rejectionError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-800 font-semibold animate-pulse">
+                  {rejectionError}
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <label className="block text-gray-700 font-bold uppercase tracking-wide">Motivo de Rechazo</label>
+                <textarea
+                  rows={3}
+                  required
+                  placeholder="Detalle los motivos de seguridad o administrativos para el rechazo..."
+                  value={rejectionReason}
+                  onChange={e => setRejectionReason(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 focus:border-red-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setRejectionModalTransfer(null)}
+                  disabled={actionLoading}
+                  className="flex-1 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-100 font-bold uppercase tracking-wider transition-colors disabled:opacity-50 cursor-pointer bg-white"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleConfirmRejection}
+                  disabled={actionLoading || !rejectionReason.trim()}
+                  className="flex-1 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 font-bold uppercase tracking-wider transition-all disabled:bg-gray-300 disabled:cursor-not-allowed shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  {actionLoading ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  ) : 'Confirmar Rechazo'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </SidebarLayout>
   )
 }

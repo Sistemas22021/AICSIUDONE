@@ -4,6 +4,7 @@ import { Settings, X, User, Move, MapPin, Info, Users, CheckCircle, AlertTriangl
 import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
 import { PieChart } from '@cell-component/PieChart'
+import TransferRequestModal from '../inmates/TransferRequestModal'
 
 const CANVAS_W = 900
 const CANVAS_H = 600
@@ -118,6 +119,14 @@ export default function CellMapPage() {
   const [reclusoSeleccionado, setReclusoSeleccionado] = useState('')
   const [reclusoExpediente, setReclusoExpediente] = useState<InmateDto | null>(null)
   const [, setCeldaArrastrando] = useState<string | null>(null)
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; inmate: InmateDto } | null>(null)
+  const [transferModalInmate, setTransferModalInmate] = useState<InmateDto | null>(null)
+
+  useEffect(() => {
+    const handleCloseMenu = () => setContextMenu(null)
+    window.addEventListener('click', handleCloseMenu)
+    return () => window.removeEventListener('click', handleCloseMenu)
+  }, [])
 
   const svgRef = useRef<SVGSVGElement | null>(null)
 
@@ -751,9 +760,27 @@ export default function CellMapPage() {
                         </button>
                       </div>
                     ) : (
-                      <div className="space-y-1 text-xs text-gray-700">
-                        <div className="flex justify-between"><span className="text-gray-500">Capacidad:</span><span className="font-bold">{celdaConTooltip.capacidad} internos</span></div>
-                        <div className="flex justify-between"><span className="text-gray-500">Ocupaci\u00f3n:</span><span className="font-bold">{celdaConTooltip.reclusosAsignados.length} ({calculatePct(celdaConTooltip)}%)</span></div>
+                      <div className="space-y-2 text-xs text-gray-700">
+                        <div className="flex justify-between border-b pb-1 border-gray-100"><span className="text-gray-500">Capacidad:</span><span className="font-bold">{celdaConTooltip.capacidad} internos</span></div>
+                        <div className="flex justify-between border-b pb-1 border-gray-100"><span className="text-gray-500">Ocupaci\u00f3n:</span><span className="font-bold">{celdaConTooltip.reclusosAsignados.length} ({calculatePct(celdaConTooltip)}%)</span></div>
+                        {celdaConTooltip.reclusosAsignados.length > 0 && (
+                          <div className="pt-1.5 space-y-1">
+                            <span className="text-gray-400 block text-[10px] font-bold uppercase">Internos:</span>
+                            <div className="space-y-1 max-h-24 overflow-y-auto pr-1">
+                              {celdaConTooltip.reclusosAsignados.map(r => (
+                                <Link
+                                  key={r.id}
+                                  to={`/internos/expediente/${r.id}`}
+                                  state={{ from: '/mapa' }}
+                                  className="block text-blue-600 hover:text-blue-800 hover:underline truncate"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  • {r.firstName} {r.firstLastname}
+                                </Link>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -837,12 +864,41 @@ export default function CellMapPage() {
                   ) : (
                     <div className="space-y-2.5">
                       {modalAsignacion.reclusosAsignados.map((recluso: InmateDto) => (
-                        <div key={recluso.id} className="flex items-center justify-between p-3 border border-gray-100 hover:border-gray-200 rounded-xl hover:bg-gray-50/50 transition-all shadow-sm">
+                        <div
+                          key={recluso.id}
+                          onContextMenu={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            setContextMenu({
+                              x: e.clientX,
+                              y: e.clientY,
+                              inmate: recluso
+                            })
+                          }}
+                          className="flex items-center justify-between p-3 border border-gray-100 hover:border-gray-200 rounded-xl hover:bg-gray-50/50 transition-all shadow-sm select-none"
+                        >
                           <div className="flex items-center gap-3">
                             <div className="w-9 h-9 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center font-bold">{recluso.firstName.charAt(0)}{recluso.firstLastname.charAt(0)}</div>
-                            <div><p className="text-sm font-bold text-gray-800">{recluso.firstName} {recluso.firstLastname}</p><p className="text-xs text-gray-400">C.I. {recluso.cedula}</p></div>
+                            <div>
+                              <Link
+                                to={`/internos/expediente/${recluso.id}`}
+                                state={{ from: '/mapa' }}
+                                className="text-sm font-bold text-gray-800 hover:text-blue-600 hover:underline transition-colors"
+                              >
+                                {recluso.firstName} {recluso.firstLastname}
+                              </Link>
+                              <p className="text-xs text-gray-400">C.I. {recluso.cedula}</p>
+                            </div>
                           </div>
-                          <button onClick={() => setReclusoExpediente(recluso)} className="text-xs text-blue-600 hover:text-blue-800 hover:underline font-bold">Ver Expediente</button>
+                          <div className="flex items-center gap-2">
+                            <Link
+                              to={`/internos/expediente/${recluso.id}`}
+                              state={{ from: '/mapa' }}
+                              className="text-xs text-blue-600 hover:text-blue-800 hover:underline font-bold"
+                            >
+                              Ver Expediente
+                            </Link>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -1008,6 +1064,56 @@ export default function CellMapPage() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Context Menu */}
+        {contextMenu && (
+          <div
+            className="fixed z-[75] bg-white border border-gray-250 rounded-xl shadow-2xl py-1.5 text-xs min-w-44 text-gray-700 animate-fade-in divide-y divide-gray-100"
+            style={{ top: contextMenu.y, left: contextMenu.x }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-3 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+              Acciones de Interno
+            </div>
+            <button
+              onClick={() => {
+                setTransferModalInmate(contextMenu.inmate)
+                setContextMenu(null)
+              }}
+              className="w-full text-left px-3.5 py-2.5 hover:bg-gray-50 hover:text-gray-900 transition-colors flex items-center gap-2 font-semibold cursor-pointer"
+            >
+              <Move className="w-3.5 h-3.5 text-gray-450" />
+              Solicitar Traslado
+            </button>
+            <Link
+              to={`/internos/expediente/${contextMenu.inmate.id}`}
+              state={{ from: '/mapa' }}
+              className="block w-full text-left px-3.5 py-2.5 hover:bg-gray-50 hover:text-gray-900 transition-colors flex items-center gap-2 font-semibold"
+              onClick={() => setContextMenu(null)}
+            >
+              <User className="w-3.5 h-3.5 text-gray-450" />
+              Ver Expediente
+            </Link>
+          </div>
+        )}
+
+        {/* Transfer Request Modal */}
+        {transferModalInmate && (
+          <TransferRequestModal
+            isOpen={!!transferModalInmate}
+            onClose={() => setTransferModalInmate(null)}
+            inmateId={transferModalInmate.id}
+            inmateName={`${transferModalInmate.firstName} ${transferModalInmate.firstLastname}`}
+            inmateCedula={transferModalInmate.cedula}
+            sourceCellId={transferModalInmate.cellId}
+            sourceCellIdentifier={transferModalInmate.cellIdentifier || 'Sin Celda'}
+            onSuccess={() => {
+              setTransferModalInmate(null)
+              setModalAsignacion(null)
+              loadData()
+            }}
+          />
         )}
       </div>
     </SidebarLayout>
