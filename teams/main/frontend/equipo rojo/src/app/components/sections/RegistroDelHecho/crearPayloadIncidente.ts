@@ -18,7 +18,6 @@ export interface CrearPayloadOptions {
 export function crearPayloadIncidente({
                                           formData,
                                           delitos,
-                                          gpsMode,
                                       }: CrearPayloadOptions): IncidentePayload {
 
     const tipoRegistro: string = formData.tipoRegistro ?? ''
@@ -46,8 +45,8 @@ export function crearPayloadIncidente({
             direccion:  formData.ubicacionDireccion ?? '',
             referencia: formData.referencia         ?? '',
             coordenadas:
-                gpsMode === 'actual'
-                    ? { lat: formData.lat ?? 0, lng: formData.lng ?? 0 }
+                formData.lat !== null && formData.lng !== null
+                    ? { lat: formData.lat, lng: formData.lng }
                     : null,
         },
 
@@ -83,16 +82,23 @@ export function crearPayloadIncidente({
 
         // ── Denuncia ─────────────────────────────────────────────────────────────
         esDenunciaFormal,
-        denunciante: requiresDenunciante
-            ? {
-                nombre:            formData.denuncianteNombre          ?? '',
-                identificacion:    formData.denuncianteIdentificacion  ?? '',
-                telefono:          formData.denuncianteTelefono        ?? '',
-                nacionalidad:      formData.denuncianteNacionalidad    ?? '',
-                direccion:         formData.denuncianteDireccion       ?? '',
-                relacionConCrimen: formData.denuncianteRelacion        ?? '',
+        denunciante: (() => {
+            if (!requiresDenunciante) return null;
+            const denuncianteEncontrado = (formData.involucrados ?? []).find(
+                (inv: any) => inv.tipoInvolucrado === 'denunciante'
+            );
+            if (denuncianteEncontrado) {
+                return {
+                    nombre: formData.denuncianteNombre ?? '',
+                    identificacion: formData.denuncianteIdentificacion ?? '',
+                    telefono: formData.denuncianteTelefono ?? '',
+                    nacionalidad: formData.denuncianteNacionalidad ?? '',
+                    direccion: formData.denuncianteDireccion ?? '',
+                    relacionConCrimen: formData.denuncianteRelacion ?? '',
+                };
             }
-            : null,
+            return null;
+        })(),
 
         // ── Reporte ──────────────────────────────────────────────────────────────
         reporte: {

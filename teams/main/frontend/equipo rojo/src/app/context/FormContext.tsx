@@ -117,7 +117,7 @@ const FormContext = createContext<FormContextType | undefined>(undefined)
 
 // ─── Estado inicial ───────────────────────────────────────────────────────────
 
-const initialFormData: FormData = {
+const getInitialFormData = (): FormData => ({
   tipoRegistro: '',
 
   involucrados: [
@@ -147,6 +147,7 @@ const initialFormData: FormData = {
   fechaReporte: new Date().toISOString().split('T')[0],
   horaReporte:  new Date().toTimeString().slice(0, 5),
 
+
   agenteRegistrador: new Date().toLocaleDateString('es-VE'),
   investigador:      'Agt. Ramírez',
 
@@ -156,12 +157,12 @@ const initialFormData: FormData = {
   denuncianteNacionalidad:   '',
   denuncianteDireccion:      '',
   denuncianteRelacion:       '',
-}
+})
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 export const FormProvider = ({ children }: { children: ReactNode }) => {
-  const [formData, setFormData] = useState<FormData>(initialFormData)
+  const [formData, setFormData] = useState<FormData>(getInitialFormData())
 
   const updateFormData = (data: Partial<FormData>) =>
       setFormData(prev => ({ ...prev, ...data }))
@@ -198,7 +199,7 @@ export const FormProvider = ({ children }: { children: ReactNode }) => {
         involucrados: prev.involucrados.map(v => (v.id === id ? { ...v, ...data } : v)),
       }))
 
-  const resetForm = () => setFormData(initialFormData)
+  const resetForm = () => setFormData(getInitialFormData())
 
   return (
       <FormContext.Provider

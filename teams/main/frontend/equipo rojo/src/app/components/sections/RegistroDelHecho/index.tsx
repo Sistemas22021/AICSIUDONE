@@ -1,6 +1,6 @@
 // Formulario completo de registro del hecho criminal (módulo A)
 import { useState, useRef, useEffect } from 'react'
-import { MapPin, Plus, X, AlertTriangle, Clock, AlignLeft, ChevronDown, FileText } from 'lucide-react'
+import { MapPin, Plus, X, AlertTriangle, Clock, AlignLeft, ChevronDown, FileText, Loader2 } from 'lucide-react'
 import { NeonPanel }    from '../../ui/NeonPanel'
 import { NeonInput }    from '../../ui/NeonInput'
 import { NeonSelect }   from '../../ui/NeonSelect'
@@ -16,11 +16,27 @@ import {
     TIPOS_REQUIEREN_DENUNCIANTE,
     type TipoInvolucrado,
     type TipoRegistro,
+    type Involucrado,
 } from '../../../context/FormContext'
 import { useDelitoCategories }   from '../../../hooks/useDelitoCategories'
+import { MapaPicker } from '../../ui/MapaPicker'
 import { useDelitoList }         from './useDelitoList'
 import { crearPayloadIncidente } from './crearPayloadIncidente'
 import { apiClient }             from '../../../services/api'
+
+// ─── Tipos de errores por involucrado ────────────────────────────────────────
+
+interface InvolucradoFieldErrors {
+    nombre?:         string
+    identificacion?: string
+    nacionalidad?:   string
+    telefono?:       string
+    direccion?:      string
+    foto?:           string
+}
+
+// Mapa: id del involucrado → sus errores de campo
+type InvolucradoErrorMap = Record<number, InvolucradoFieldErrors>
 
 // ─── Colores por tipo de registro ─────────────────────────────────────────────
 
@@ -34,20 +50,71 @@ const TIPO_REGISTRO_COLORS: Record<TipoRegistro, string> = {
     '':                 'border-cyan-400/30 bg-transparent    text-cyan-500',
 }
 
+// ─── Validación de identificación ─────────────────────────────────────────────
+// Acepta cédulas dominicanas/venezolanas: opcional prefijo V-/E- y luego dígitos.
+// Rechaza cadenas puramente alfabéticas (ej. "JUAN", "abc").
+function validarIdentificacion(valor: string): string | null {
+    const trimmed = valor.trim()
+    if (!trimmed) return 'La identificación es obligatoria'
+
+    // Eliminar prefijo V- / E- / v- / e- si existe
+    const sinPrefijo = trimmed.replace(/^[VEve]-?/, '')
+
+    // Debe contener SOLO dígitos después del prefijo
+    if (!/^\d+$/.test(sinPrefijo)) {
+        return 'La identificación solo puede contener números (ej. 12345678 o V-12345678)'
+    }
+    if (sinPrefijo.length < 5) {
+        return 'La identificación debe tener al menos 5 dígitos'
+    }
+    return null
+}
+
+// ─── Validación completa de un involucrado ────────────────────────────────────
+function validarInvolucrado(inv: Involucrado): InvolucradoFieldErrors {
+    const errors: InvolucradoFieldErrors = {}
+
+    if (!inv.nombre.trim())
+        errors.nombre = 'El nombre es obligatorio'
+
+    const idError = validarIdentificacion(inv.identificacion)
+    if (idError) errors.identificacion = idError
+
+    if (!inv.nacionalidad.trim())
+        errors.nacionalidad = 'La nacionalidad es obligatoria'
+
+    if (!inv.telefono.trim())
+        errors.telefono = 'El número de teléfono es obligatorio'
+
+    if (!inv.direccion.trim())
+        errors.direccion = 'La dirección es obligatoria'
+
+    // La foto solo es obligatoria para la víctima
+    if (inv.tipoInvolucrado === 'victima' && !inv.foto)
+        errors.foto = 'La fotografía es obligatoria para la víctima'
+
+    return errors
+}
+
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 export const RegistroDelHecho = () => {
-    const { showToast } = useNeonToast()
+    const { showToast, ToastContainer } = useNeonToast()
     const {
         formData,
         updateFormData,
         addInvolucrado,
         removeInvolucrado,
         updateInvolucrado,
+        resetForm,
     } = useFormContext()
 
     const { tipos, loading: loadingTipos, warning: tiposWarning } = useDelitoCategories()
-    const { delitos, updateDelito, addDelito, removeDelito, validateTiempos } = useDelitoList()
+    const { delitos, updateDelito, addDelito, removeDelito, validateTiempos, resetDelitos } = useDelitoList()
+
+    // ── Estado de envío y errores de involucrados ──────────────────────────────
+    const [isSubmitting, setIsSubmitting]           = useState(false)
+    const [involucradoErrors, setInvolucradoErrors] = useState<InvolucradoErrorMap>({})
 
     // ── Dropdown "Tipo de Registro" ────────────────────────────────────────────
     const [dropdownOpen, setDropdownOpen] = useState(false)
@@ -96,19 +163,82 @@ export const RegistroDelHecho = () => {
             .map(m => `[${m.hora || '--:--'}] ${m.texto}`)
             .join('\n')
 
+    // ── Limpiar error de un campo al escribir ──────────────────────────────────
+    const clearFieldError = (invId: number, field: keyof InvolucradoFieldErrors) => {
+        setInvolucradoErrors(prev => {
+            if (!prev[invId]) return prev
+            const updated = { ...prev[invId] }
+            delete updated[field]
+            return { ...prev, [invId]: updated }
+        })
+    }
+
     // ── Submit ────────────────────────────────────────────────────────────────
     const handleGuardar = async () => {
+        const newErrors: InvolucradoErrorMap = {}
+        let hayErrores = false
+        formData.involucrados.forEach(inv => {
+            const fieldErrors = validarInvolucrado(inv)
+            if (Object.keys(fieldErrors).length > 0) {
+                newErrors[inv.id] = fieldErrors
+                hayErrores = true
+            }
+        })
+        setInvolucradoErrors(newErrors)
+        if (hayErrores) {
+            showToast('Corrige los errores en los involucrados antes de guardar', 'error')
+            return
+        }
+
+        const tieneGps    = formData.lat !== null && formData.lng !== null
+        const tieneManual = formData.municipio.trim() !== '' ||
+            formData.ubicacionDireccion.trim() !== ''
+
+        if (!tieneGps && !tieneManual) {
+            showToast('Debes registrar la ubicación del hecho (GPS o manual)', 'error')
+            return
+        }
+
+        setIsSubmitting(true)
         const descripcionFinal = modoCronologia ? momentosToTexto() : formData.descripcion
         const payload = crearPayloadIncidente({
             formData: { ...formData, descripcion: descripcionFinal },
             delitos,
             gpsMode,
         })
+
         try {
-            await apiClient.post('/incidentes', payload)
-            showToast('Incidente guardado correctamente')
-        } catch {
-            showToast('Ocurrió un error al guardar el incidente', 'error')
+            // 1. Crear el expediente
+            const expedienteCreado = await apiClient.post<{ data: { id: number } }>('/incidentes', payload)
+
+            await fetch(`/api/expedientes/${expedienteCreado.data.id}/sellar?agenteSelladorId=1`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+            })
+
+            // 2. Sellarlo automáticamente (agenteSelladorId=1 por ahora)
+            try {
+                await fetch(`/api/expedientes/${expedienteCreado.data.id}/sellar?agenteSelladorId=1`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                })
+                showToast('Expediente registrado y sellado exitosamente', 'success')
+            } catch {
+                showToast('Expediente guardado, pero no se pudo sellar automáticamente', 'error')
+            }
+
+            resetForm()
+            resetDelitos()
+            setInvolucradoErrors({})
+            setGpsMode('actual')
+            setModoCronologia(false)
+            setMomentos([{ id: crypto.randomUUID(), hora: '', texto: '' }])
+
+        } catch (err) {
+            const mensaje = err instanceof Error ? err.message : 'Error desconocido'
+            showToast(`Error al guardar el incidente: ${mensaje}`, 'error')
+        } finally {
+            setIsSubmitting(false)
         }
     }
 
@@ -123,6 +253,9 @@ export const RegistroDelHecho = () => {
     // ─── Render ───────────────────────────────────────────────────────────────
     return (
         <div className="pb-6 space-y-4">
+
+            {/* Toast container global */}
+            <ToastContainer />
 
             {/* Aviso de backend no disponible */}
             {tiposWarning && (
@@ -192,7 +325,6 @@ export const RegistroDelHecho = () => {
                                         ].join(' ')}
                                     >
                                         {tipo.label}
-                                        {/* Etiqueta "requiere denunciante" */}
                                         {TIPOS_REQUIEREN_DENUNCIANTE.includes(tipo.value) && (
                                             <span className="ml-2 text-[9px] text-emerald-400/70 normal-case tracking-normal">
                                                 (requiere denunciante)
@@ -204,7 +336,6 @@ export const RegistroDelHecho = () => {
                         )}
                     </div>
 
-                    {/* Aviso si no se ha seleccionado */}
                     {!formData.tipoRegistro && (
                         <p className="mt-2 text-[10px] text-cyan-600 tracking-wide">
                             Seleccione el tipo de registro antes de continuar.
@@ -225,8 +356,9 @@ export const RegistroDelHecho = () => {
 
                     <div className="space-y-4">
                         {formData.involucrados.map((inv, index) => {
-                            // El primer involucrado es el denunciante obligatorio cuando aplica
                             const isDenuncianteFijo = requiresDenunciante && index === 0
+                            const esVictima         = inv.tipoInvolucrado === 'victima'
+                            const errs              = involucradoErrors[inv.id] ?? {}
 
                             return (
                                 <div
@@ -243,7 +375,7 @@ export const RegistroDelHecho = () => {
                                             : '0 2px 8px rgba(51,153,255,0.12), inset 0 1px 3px rgba(51,153,255,0.05)',
                                     }}
                                 >
-                                    {/* Botón eliminar — no disponible para el denunciante fijo */}
+                                    {/* Botón eliminar */}
                                     {!isDenuncianteFijo && formData.involucrados.length > 1 && (
                                         <button
                                             onClick={() => removeInvolucrado(inv.id)}
@@ -267,7 +399,7 @@ export const RegistroDelHecho = () => {
                                     )}
 
                                     <div className="space-y-3">
-                                        {/* Tipo de involucrado — bloqueado en "Denunciante" si es el fijo */}
+                                        {/* Tipo de involucrado */}
                                         <NeonSelect
                                             label="Tipo de Involucrado"
                                             required
@@ -281,59 +413,104 @@ export const RegistroDelHecho = () => {
                                         />
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            {/* Nombre */}
                                             <NeonInput
-                                                label="Nombre y Apellido" required
-                                                placeholder={isDenuncianteFijo ? 'Nombre completo del denunciante…' : 'Nombre completo del involucrado…'}
+                                                label="Nombre y Apellido"
+                                                required
+                                                placeholder={isDenuncianteFijo
+                                                    ? 'Nombre completo del denunciante…'
+                                                    : 'Nombre completo del involucrado…'}
                                                 value={inv.nombre}
-                                                onChange={e => updateInvolucrado(inv.id, { nombre: e.target.value })}
+                                                error={!!errs.nombre}
+                                                errorMessage={errs.nombre}
+                                                onChange={e => {
+                                                    updateInvolucrado(inv.id, { nombre: e.target.value })
+                                                    if (errs.nombre) clearFieldError(inv.id, 'nombre')
+                                                }}
                                             />
+                                            {/* Identificación */}
                                             <NeonInput
-                                                label="Identificación" required
-                                                placeholder="Número de cédula o identificación…"
+                                                label="Identificación"
+                                                required
+                                                placeholder="Ej. 12345678 o V-12345678"
                                                 value={inv.identificacion}
-                                                onChange={e => updateInvolucrado(inv.id, { identificacion: e.target.value })}
+                                                error={!!errs.identificacion}
+                                                errorMessage={errs.identificacion}
+                                                onChange={e => {
+                                                    updateInvolucrado(inv.id, { identificacion: e.target.value })
+                                                    if (errs.identificacion) clearFieldError(inv.id, 'identificacion')
+                                                }}
                                             />
                                         </div>
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            {/* Nacionalidad */}
                                             <NeonInput
                                                 label="Nacionalidad"
+                                                required
                                                 placeholder="Ej. Venezolana, Colombiana…"
                                                 value={inv.nacionalidad}
-                                                onChange={e => updateInvolucrado(inv.id, { nacionalidad: e.target.value })}
+                                                error={!!errs.nacionalidad}
+                                                errorMessage={errs.nacionalidad}
+                                                onChange={e => {
+                                                    updateInvolucrado(inv.id, { nacionalidad: e.target.value })
+                                                    if (errs.nacionalidad) clearFieldError(inv.id, 'nacionalidad')
+                                                }}
                                             />
+                                            {/* Teléfono */}
                                             <NeonInput
                                                 label="Número de Teléfono"
+                                                required
                                                 placeholder="Ej. +58 412-1234567…"
                                                 value={inv.telefono}
-                                                onChange={e => updateInvolucrado(inv.id, { telefono: e.target.value })}
+                                                error={!!errs.telefono}
+                                                errorMessage={errs.telefono}
+                                                onChange={e => {
+                                                    updateInvolucrado(inv.id, { telefono: e.target.value })
+                                                    if (errs.telefono) clearFieldError(inv.id, 'telefono')
+                                                }}
                                             />
                                         </div>
 
+                                        {/* Dirección */}
                                         <NeonInput
                                             label="Dirección"
+                                            required
                                             placeholder="Dirección de residencia…"
                                             value={inv.direccion}
-                                            onChange={e => updateInvolucrado(inv.id, { direccion: e.target.value })}
+                                            error={!!errs.direccion}
+                                            errorMessage={errs.direccion}
+                                            onChange={e => {
+                                                updateInvolucrado(inv.id, { direccion: e.target.value })
+                                                if (errs.direccion) clearFieldError(inv.id, 'direccion')
+                                            }}
                                         />
 
-                                        {/* Campo extra "Relación con el crimen" — solo para el denunciante fijo */}
+                                        {/* Campo Relación con el crimen — solo para denunciante */}
                                         {isDenuncianteFijo && (
                                             <NeonInput
-                                                label="Relación con el Crimen" required
+                                                label="Relación con el Crimen"
+                                                required
                                                 placeholder="Ej: Testigo, Familiar, Víctima indirecta…"
                                                 value={formData.denuncianteRelacion ?? ''}
                                                 onChange={e => updateFormData({ denuncianteRelacion: e.target.value })}
                                             />
                                         )}
 
-                                        {/* Fotografía */}
+                                        {/* Fotografía — (obligatoria para víctima) */}
                                         <div className="flex flex-col gap-1.5">
                                             <label className={[
                                                 'text-[11px] uppercase tracking-[0.1em] font-medium',
                                                 isDenuncianteFijo ? 'text-emerald-400' : 'text-cyan-400',
                                             ].join(' ')}>
-                                                {isDenuncianteFijo ? 'Fotografía del Denunciante' : 'Fotografía del Involucrado'}
+                                                {isDenuncianteFijo
+                                                    ? 'Fotografía del Denunciante'
+                                                    : `Fotografía del Involucrado${esVictima ? ' *' : ''}`}
+                                                {esVictima && (
+                                                    <span className="ml-2 normal-case text-[9px] text-cyan-500/60 tracking-normal font-normal">
+                                                        (obligatoria para víctima)
+                                                    </span>
+                                                )}
                                             </label>
                                             <label className="cursor-pointer">
                                                 <input
@@ -343,13 +520,18 @@ export const RegistroDelHecho = () => {
                                                     onChange={e => {
                                                         const file = e.target.files?.[0] ?? null
                                                         updateInvolucrado(inv.id, { foto: file })
+                                                        if (errs.foto) clearFieldError(inv.id, 'foto')
                                                     }}
                                                 />
                                                 {inv.foto ? (
                                                     <div
                                                         className={[
                                                             'relative w-24 h-24 border-2 rounded overflow-hidden group',
-                                                            isDenuncianteFijo ? 'border-emerald-400/60' : 'border-cyan-400/60',
+                                                            isDenuncianteFijo
+                                                                ? 'border-emerald-400/60'
+                                                                : errs.foto
+                                                                    ? 'border-red-400/70'
+                                                                    : 'border-cyan-400/60',
                                                         ].join(' ')}
                                                         style={{ boxShadow: isDenuncianteFijo ? '0 0 12px rgba(0,255,136,0.3)' : '0 0 12px rgba(51,153,255,0.3)' }}
                                                     >
@@ -368,15 +550,39 @@ export const RegistroDelHecho = () => {
                                                             'w-24 h-24 border-2 border-dashed rounded flex flex-col items-center justify-center gap-1 transition-all',
                                                             isDenuncianteFijo
                                                                 ? 'border-emerald-400/30 hover:border-emerald-400/60 hover:bg-emerald-400/5'
-                                                                : 'border-cyan-400/30 hover:border-cyan-400/60 hover:bg-cyan-400/5',
+                                                                : errs.foto
+                                                                    ? 'border-red-400/60 bg-red-400/5 hover:border-red-400/80'
+                                                                    : 'border-cyan-400/30 hover:border-cyan-400/60 hover:bg-cyan-400/5',
                                                         ].join(' ')}
                                                         style={{ boxShadow: 'inset 0 1px 3px rgba(51,153,255,0.05)' }}
                                                     >
-                                                        <span className={isDenuncianteFijo ? 'text-emerald-600' : 'text-cyan-600'} style={{ fontSize: 22 }}>＋</span>
-                                                        <span className={['text-[9px] uppercase tracking-wider', isDenuncianteFijo ? 'text-emerald-600' : 'text-cyan-600'].join(' ')}>Foto</span>
+                                                        <span className={
+                                                            isDenuncianteFijo
+                                                                ? 'text-emerald-600'
+                                                                : errs.foto
+                                                                    ? 'text-red-500'
+                                                                    : 'text-cyan-600'
+                                                        } style={{ fontSize: 22 }}>＋</span>
+                                                        <span className={[
+                                                            'text-[9px] uppercase tracking-wider',
+                                                            isDenuncianteFijo
+                                                                ? 'text-emerald-600'
+                                                                : errs.foto
+                                                                    ? 'text-red-500'
+                                                                    : 'text-cyan-600',
+                                                        ].join(' ')}>Foto</span>
                                                     </div>
                                                 )}
                                             </label>
+                                            {/* Mensaje de error de foto */}
+                                            {errs.foto && (
+                                                <span
+                                                    className="text-[10px] text-red-400 tracking-wide"
+                                                    style={{ textShadow: '0 0 5px rgba(255,75,75,0.4)' }}
+                                                >
+                                                    ⚠ {errs.foto}
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -612,21 +818,45 @@ export const RegistroDelHecho = () => {
                 </div>
 
                 {/* ══ CRONOLOGÍA DEL REPORTE ═══════════════════════════════ */}
+                {/* ══ CRONOLOGÍA DEL REPORTE ══ */}
                 <div>
                     <div className="text-[11px] uppercase tracking-[0.12em] text-cyan-400 mb-3 font-medium">
                         Cronología del Reporte
                     </div>
+
+                    {/* Display de solo lectura — el usuario no puede modificarlos */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <NeonInput
-                            label="Fecha del Reporte" required type="date"
-                            value={formData.fechaReporte}
-                            onChange={e => updateFormData({ fechaReporte: e.target.value })}
-                        />
-                        <NeonInput
-                            label="Hora del Reporte" required type="time"
-                            value={formData.horaReporte}
-                            onChange={e => updateFormData({ horaReporte: e.target.value })}
-                        />
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-[11px] uppercase tracking-[0.1em] text-cyan-400 font-medium">
+                                Fecha del Reporte
+                            </label>
+                            <div
+                                className="px-3 py-2.5 border border-cyan-400/20 rounded bg-cyan-400/5
+                                text-cyan-400 text-sm font-mono tracking-wider"
+                                style={{ boxShadow: 'inset 0 1px 3px rgba(51,153,255,0.06)' }}
+                            >
+                                {formData.fechaReporte}
+                            </div>
+                            <span className="text-[10px] text-cyan-700">
+                                Generado automáticamente
+                            </span>
+                        </div>
+
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-[11px] uppercase tracking-[0.1em] text-cyan-400 font-medium">
+                                Hora del Reporte
+                            </label>
+                            <div
+                                className="px-3 py-2.5 border border-cyan-400/20 rounded bg-cyan-400/5
+                                text-cyan-400 text-sm font-mono tracking-wider"
+                                style={{ boxShadow: 'inset 0 1px 3px rgba(51,153,255,0.06)' }}
+                            >
+                                {formData.horaReporte}
+                            </div>
+                            <span className="text-[10px] text-cyan-700">
+                                Generado automáticamente
+                            </span>
+                        </div>
                     </div>
                 </div>
 
@@ -636,7 +866,6 @@ export const RegistroDelHecho = () => {
                         <MapPin size={14} /> Ubicación y Mapa
                     </div>
 
-                    {/* Selector de modo GPS — ahora vive aquí */}
                     <div className="flex gap-6 mb-4">
                         <NeonRadio
                             label="Capturar GPS Actual"
@@ -653,15 +882,16 @@ export const RegistroDelHecho = () => {
                     </div>
 
                     {gpsMode === 'actual' ? (
-                        <div
-                            className="p-4 border-2 border-cyan-400/50 rounded bg-cyan-400/5 flex items-center justify-center gap-2"
-                            style={{ boxShadow: '0 2px 12px rgba(51,153,255,0.25), inset 0 1px 3px rgba(51,153,255,0.1)' }}
-                        >
-                            <MapPin size={16} className="text-cyan-400" style={{ filter: 'drop-shadow(0 0 3px rgba(51,153,255,0.7))' }} />
-                            <span className="text-xs text-cyan-300 uppercase tracking-[0.12em]">
-                                Ubicación obtenida por GPS — Coordenadas automáticas
-                            </span>
-                        </div>
+                        <MapaPicker
+                            onChange={(coords) =>
+                                updateFormData({ lat: coords.lat, lng: coords.lng })
+                            }
+                            initialCoords={
+                                formData.lat && formData.lng
+                                    ? { lat: formData.lat, lng: formData.lng }
+                                    : null
+                            }
+                        />
                     ) : (
                         <div className="space-y-3">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -713,14 +943,17 @@ export const RegistroDelHecho = () => {
 
                 {/* ══ ACCIONES ════════════════════════════════════════════ */}
                 <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
-                    <NeonButton variant="outline">Cancelar</NeonButton>
+                    <NeonButton variant="outline" disabled={isSubmitting}>
+                        Cancelar
+                    </NeonButton>
                     <NeonButton
                         variant="primary"
                         onClick={handleGuardar}
-                        disabled={!formData.tipoRegistro}
+                        disabled={!formData.tipoRegistro || isSubmitting}
                         title={!formData.tipoRegistro ? 'Seleccione el tipo de registro primero' : undefined}
+                        icon={isSubmitting ? <Loader2 size={14} className="animate-spin" /> : undefined}
                     >
-                        Guardar
+                        {isSubmitting ? 'Guardando…' : 'Guardar'}
                     </NeonButton>
                 </div>
 

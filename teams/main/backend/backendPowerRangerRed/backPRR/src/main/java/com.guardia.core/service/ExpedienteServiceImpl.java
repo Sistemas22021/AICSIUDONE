@@ -1,6 +1,7 @@
 package com.guardia.core.service;
 
 import com.guardia.core.dto.request.ExpedienteRequest;
+import com.guardia.core.dto.request.DelitoRequest;
 import com.guardia.core.dto.response.ExpedienteResponse;
 import com.guardia.core.dto.response.UsuarioResponse;
 import com.guardia.core.dto.response.TipoDelitoResponse;
@@ -131,7 +132,8 @@ public class ExpedienteServiceImpl implements ExpedienteService {
 
 
         // Mapear delitos (si vienen)
-        if (request.getDelitos() != null) {
+        // Mapear delitos (si vienen)
+        if (request.getDelitos() != null && !request.getDelitos().isEmpty()) {
             request.getDelitos().forEach(dReq -> {
                 DelitoEnExpediente delito = new DelitoEnExpediente();
                 delito.setSubtipoDelito(dReq.getDelito().toUpperCase());
@@ -141,6 +143,24 @@ public class ExpedienteServiceImpl implements ExpedienteService {
                 delito.setFechaHoraHecho(fechaHora);
                 expediente.getDelitos().add(delito);
             });
+
+            // Promover el primer delito a la FK directa del expediente
+            DelitoRequest primero = request.getDelitos().get(0);
+            tipoDelitoRepository.findByNombre(primero.getDelito())
+                    .ifPresent(expediente::setTipoDelito);
+
+            // Promover subtipo si el tipoDelito fue encontrado y tiene subDelito
+            if (expediente.getTipoDelito() != null && primero.getSubDelito() != null) {
+                String nombreSubtipo = primero.getSubDelito().getNombre();
+                if (nombreSubtipo != null && !nombreSubtipo.isBlank()) {
+                    subtipoDelitoRepository
+                            .findByTipoDelitoId(expediente.getTipoDelito().getId())
+                            .stream()
+                            .filter(s -> s.getNombre().equalsIgnoreCase(nombreSubtipo))
+                            .findFirst()
+                            .ifPresent(expediente::setSubtipoDelito);
+                }
+            }
         }
 
         // Mapear víctimas

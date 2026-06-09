@@ -74,6 +74,6 @@ export function useDelitoList() {
 
         updateDelito(id, { tiempoError: error, tiempoErrorMsg: msg })
     }
-
-    return { delitos, updateDelito, addDelito, removeDelito, validateTiempos }
+    const resetDelitos = () => setDelitos([makeDelitoEntry()])
+    return { delitos, updateDelito, addDelito, removeDelito, validateTiempos, resetDelitos  }
 }

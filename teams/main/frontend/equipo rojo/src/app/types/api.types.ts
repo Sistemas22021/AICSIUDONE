@@ -23,6 +23,28 @@ export interface ApiError {
   timestamp?: string
 }
 
+// ─── Expedientes activos ──────────────────────────────────────────────────────
+
+export type EstatusExpediente =
+    | 'ACTIVO'
+    | 'EN_PROCESO'
+    | 'SUSPENDIDO'
+    | 'CERRADO'
+
+export interface ExpedienteActivo {
+  id:                   string
+  folioCOPP:            string
+  tipoDelito:           string
+  subtipoDelito:        string
+  fechaHecho:           string
+  fechaCreacion:        string
+  investigadorAsignado: string
+  estatus:              EstatusExpediente
+  tieneAlertaPatron:    boolean
+  municipio:            string
+  sector:               string
+}
+
 // ─── Payload de creación de incidente ────────────────────────────────────────
 
 export interface DelitoPayload {

@@ -1,14 +1,21 @@
 /**
- * Cliente base para comunicación con el API Gateway (Spring Boot).
- * URL configurada via VITE_API_URL en .env
+ * Cliente base para comunicación con el backend (Spring Boot).
  *
- * Endpoints esperados del incident-service:
- *   GET  /api/v1/delitos/categorias     → DelitoTipo[]
- *   POST /api/v1/incidentes             → Incidente creado
+ * En DESARROLLO: VITE_API_URL debe estar vacío en .env
+ *   → las peticiones van a /api/v1/... y el proxy de Vite las redirige a
+ *     http://localhost:8080/api/v1/... sin problemas de CORS.
  *
+ * En PRODUCCIÓN: asignar VITE_API_URL con la URL real del servidor.
+ *   → las peticiones van directamente a https://mi-backend.com/api/v1/...
+ *
+ * Endpoints del backend:
+ *   GET  /api/v1/delitos/categorias     → DelitoTipo[]  (DelitoCategoriasController)
+ *   POST /api/v1/incidentes             → ExpedienteResponse  (IncidenteController)
  */
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080'
+// Si VITE_API_URL está vacío, las URLs quedan relativas (/api/v1/...)
+// y el proxy de Vite las reenvía a localhost:8080 sin CORS.
+const BASE_URL  = import.meta.env.VITE_API_URL ?? ''
 const API_PREFIX = '/api/v1'
 
 function getAuthHeader(): Record<string, string> {
@@ -22,7 +29,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
     const errorBody = await response.text().catch(() => '')
     throw new Error(`HTTP ${response.status}: ${errorBody || response.statusText}`)
   }
-  return await response.json() as Promise<T>
+  return response.json() as Promise<T>
 }
 
 export const apiClient = {
@@ -56,6 +63,18 @@ export const apiClient = {
         ...getAuthHeader(),
       },
       body: JSON.stringify(body),
+    })
+    return handleResponse<T>(response)
+  },
+
+  async patch<T>(path: string, body?: unknown): Promise<T> {
+    const response = await fetch(`${BASE_URL}${API_PREFIX}${path}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeader(),
+      },
+      body: body !== undefined ? JSON.stringify(body) : undefined,
     })
     return handleResponse<T>(response)
   },

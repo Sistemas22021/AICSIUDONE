@@ -1,4 +1,5 @@
 /* Estilos globales adicionales del proyecto ZAC */
+@import 'leaflet/dist/leaflet.css';
 
 /* Asegurar que los selects hereden el fondo oscuro en todos los navegadores */
 select option {
