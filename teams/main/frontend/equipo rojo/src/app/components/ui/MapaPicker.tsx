@@ -1,13 +1,19 @@
+// src/app/components/ui/MapaPicker.tsx
 import { useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import { Loader2, Navigation } from 'lucide-react'
 
+// ── Fix del ícono roto de Leaflet en Vite ─────────────────────────────────────
+// Leaflet busca sus imágenes por una ruta que Vite rompe al compilar.
+// Esta corrección lo resuelve de una vez.
 import iconUrl       from 'leaflet/dist/images/marker-icon.png'
 import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png'
 import shadowUrl     from 'leaflet/dist/images/marker-shadow.png'
 
 delete (L.Icon.Default.prototype as any)._getIconUrl
 L.Icon.Default.mergeOptions({ iconUrl, iconRetinaUrl, shadowUrl })
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 export interface MapaCoordenadas {
     lat:       number
@@ -20,6 +26,7 @@ interface MapaPickerProps {
     initialCoords?: MapaCoordenadas | null
 }
 
+// Centro por defecto: UDONE
 const DEFAULT_CENTER: [number, number] = [10.995508626789533, -63.86910977871679]
 const DEFAULT_ZOOM = 14
 
@@ -33,6 +40,7 @@ export function MapaPicker({ onChange, initialCoords }: MapaPickerProps) {
         initialCoords ?? null
     )
 
+    // ── Inicializar el mapa (solo una vez al montar) ───────────────────────────
     useEffect(() => {
         if (!mapDivRef.current || mapRef.current) return
 
@@ -40,6 +48,7 @@ export function MapaPicker({ onChange, initialCoords }: MapaPickerProps) {
             ? [initialCoords.lat, initialCoords.lng]
             : DEFAULT_CENTER
 
+        // Crear el mapa
         const map = L.map(mapDivRef.current, {
             center,
             zoom:              DEFAULT_ZOOM,
@@ -47,13 +56,16 @@ export function MapaPicker({ onChange, initialCoords }: MapaPickerProps) {
             attributionControl: true,
         })
 
+        // Capa de tiles de OpenStreetMap — completamente gratuita
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
             maxZoom: 19,
         }).addTo(map)
 
+        // Marcador arrastrable
         const marker = L.marker(center, { draggable: true }).addTo(map)
 
+        // Actualizar al arrastrar
         marker.on('dragend', () => {
             const pos     = marker.getLatLng()
             const nuevas  = { lat: pos.lat, lng: pos.lng }
@@ -61,6 +73,7 @@ export function MapaPicker({ onChange, initialCoords }: MapaPickerProps) {
             onChange(nuevas)
         })
 
+        // Mover el marcador al hacer clic en el mapa
         map.on('click', (e: L.LeafletMouseEvent) => {
             marker.setLatLng(e.latlng)
             const nuevas = { lat: e.latlng.lat, lng: e.latlng.lng }
@@ -73,6 +86,7 @@ export function MapaPicker({ onChange, initialCoords }: MapaPickerProps) {
 
         if (initialCoords) onChange(initialCoords)
 
+        // Limpieza al desmontar el componente
         return () => {
             map.remove()
             mapRef.current    = null
@@ -80,6 +94,7 @@ export function MapaPicker({ onChange, initialCoords }: MapaPickerProps) {
         }
     }, [])
 
+    // ── Botón "Mi ubicación" ───────────────────────────────────────────────────
     const usarMiUbicacion = () => {
         if (!navigator.geolocation) return
         setLoadingGps(true)
@@ -99,15 +114,18 @@ export function MapaPicker({ onChange, initialCoords }: MapaPickerProps) {
                 setLoadingGps(false)
             },
             () => {
+                // GPS no disponible en este entorno — el usuario usa el clic en el mapa
                 setLoadingGps(false)
             },
             { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
         )
     }
 
+    // ── Render ─────────────────────────────────────────────────────────────────
     return (
         <div className="space-y-2">
 
+            {/* Barra superior del mapa */}
             <div className="flex items-center justify-between">
         <span className="text-[10px] uppercase tracking-wider text-cyan-500/70">
           {coordenadas
@@ -131,6 +149,7 @@ export function MapaPicker({ onChange, initialCoords }: MapaPickerProps) {
                 </button>
             </div>
 
+            {/* El mapa */}
             <div
                 className="relative border-2 border-cyan-400/50 rounded overflow-hidden"
                 style={{
@@ -141,6 +160,7 @@ export function MapaPicker({ onChange, initialCoords }: MapaPickerProps) {
                 <div ref={mapDivRef} style={{ height: '100%', width: '100%' }} />
             </div>
 
+            {/* Coordenadas capturadas */}
             {coordenadas && (
                 <div className="space-y-1.5">
                     <div className="grid grid-cols-2 gap-2">
