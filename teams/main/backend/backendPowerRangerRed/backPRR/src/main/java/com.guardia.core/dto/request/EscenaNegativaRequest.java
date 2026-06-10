@@ -22,4 +22,5 @@ public record EscenaNegativaRequest(
     public String getResultado() { return this.resultado; }
     public String getObservacion() { return this.observacion; }
     public Long getEscenaId() { return this.escenaId; }
+    public Boolean getSinElementosNegativos() { return this.sinElementosNegativos; }
 }

@@ -34,10 +34,15 @@ public class EvidenciaServiceImpl implements EvidenciaService {
         long total = evidenciaRepository.countByEscenaId(request.escenaId());
         String numeroItem = String.format("EV-%03d", total + 1);
 
-        Usuario investigador = escena.getLevantadaPor() != null
-                ? usuarioRepository.findById(escena.getLevantadaPor().getId())
-                  .orElse(null)
-                : null;
+        Usuario investigador;
+        if (request.investigadorId() != null) {
+            investigador = usuarioRepository.findById(request.investigadorId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Usuario", request.investigadorId()));
+        } else {
+            investigador = escena.getLevantadaPor() != null
+                    ? usuarioRepository.findById(escena.getLevantadaPor().getId()).orElse(null)
+                    : null;
+        }
 
         Evidencia evidencia = new Evidencia();
         evidencia.registrarEvidencia(

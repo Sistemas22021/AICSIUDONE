@@ -23,6 +23,14 @@ export interface ApiError {
   timestamp?: string
 }
 
+export interface ExpedienteDetalleResponse {
+  id: number
+  folio: string
+  estadoExpediente: string
+  fechaCreacion: string
+  descripcionHecho: string
+}
+
 // ─── Expedientes activos ──────────────────────────────────────────────────────
 
 export type EstatusExpediente =

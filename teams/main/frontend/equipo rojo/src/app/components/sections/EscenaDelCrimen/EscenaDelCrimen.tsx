@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useEscenaCrimen } from '../../../hooks/useEscenaCrimen'
 import { NeonButton } from '../../ui/NeonButton'
 import { NeonInput } from '../../ui/NeonInput'
@@ -9,7 +9,12 @@ import { AlertaIntegridad } from '../../ui/AlertaIntegridad'
 import { HistorialEscenas } from './HistorialEscenas'
 import { tiposEvidencia, tiposEmbalaje, resultadoNegativo } from './index'
 
-export const EscenaDelCrimen = () => {
+interface EscenaDelCrimenProps {
+    expedienteIdInicial?: number
+    folioInicial?: string
+}
+
+export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDelCrimenProps) => {
     const [mostrarHistorial, setMostrarHistorial] = useState(false)
 
     const {
@@ -27,6 +32,7 @@ export const EscenaDelCrimen = () => {
         updatePerimetro,
         setTipoEscena,
         setFolioExpediente,
+        vincularExpediente,
         addEvidencia,
         removeEvidencia,
         updateEvidencia,
@@ -39,6 +45,12 @@ export const EscenaDelCrimen = () => {
         limpiarAlertas,
         resetEscena,
     } = useEscenaCrimen()
+    useEffect(() => {
+        if (expedienteIdInicial && folioInicial && !state.expedienteId) {
+            vincularExpediente(expedienteIdInicial, folioInicial)
+        }
+    }, [expedienteIdInicial, folioInicial])
+
 
     const pasosCompletadosArray = [
         state.paso1_completado ? 1 : null,
@@ -107,12 +119,27 @@ export const EscenaDelCrimen = () => {
 
                         {/* Folio del expediente - NUEVO */}
                         <div style={{ marginBottom: '16px' }}>
+                            {state.expedienteId && (
+                                <div style={{
+                                    padding: '8px 12px',
+                                    background: '#00ffff11',
+                                    border: '1px solid #00ffff44',
+                                    borderRadius: '6px',
+                                    marginBottom: '8px',
+                                    fontSize: '12px',
+                                    color: '#00ffff',
+                                }}>
+                                    ✅ Expediente vinculado desde Búsqueda y Casos:{' '}
+                                    <strong style={{ fontFamily: 'monospace' }}>{state.folioExpediente}</strong>
+                                    {state.sincronizado && <span style={{ marginLeft: '8px', color: '#00ff88' }}>(sincronizado)</span>}
+                                </div>
+                            )}
                             <NeonInput
                                 label="Folio del Expediente (EXP-XXXX-XXXXXXXX)"
                                 value={state.folioExpediente || ''}
                                 onChange={(e: any) => setFolioExpediente(e.target.value)}
-                                disabled={isPaso1Completado}
-                                placeholder="Ej: EXP-2026-92B0762D"
+                                disabled={isPaso1Completado || !!state.expedienteId}
+                                placeholder="Ej: EXP-2026-92B0762D — o selecciona desde Búsqueda y Casos"
                             />
                         </div>
 
@@ -368,7 +395,7 @@ export const EscenaDelCrimen = () => {
                         </div>
 
                         <NeonButton
-                            onClick={completarPaso2}
+                            onClick={() => completarPaso2().catch(err => console.error('Error al persistir paso 2:', err))}
                             disabled={!canCompletarPaso2 || state.paso2_completado}
                         >
                             {state.paso2_completado ? '✓ Completado' : 'Completar Paso 2'}

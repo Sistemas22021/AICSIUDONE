@@ -6,17 +6,23 @@ import { RegistroDelHecho } from './components/sections/RegistroDelHecho'
 import { ExpedientesPanel } from './components/ExpedientesPanel'
 import { EscenaDelCrimen } from './components/sections/EscenaDelCrimen'
 import { NeonPanel } from './components/ui/NeonPanel'
+import type { ExpedienteActivo } from './types/api.types'
 
 type ActiveTab = 'registro' | 'escena' | 'inteligencia'
 
-const PLACEHOLDER_LABELS: Record<Exclude<ActiveTab, 'registro'>, string> = {
-    escena:       'B — ESCENA Y EVIDENCIA',
-    inteligencia: 'C — INTELIGENCIA IA / MODUS OPERANDI',
-}
-
 export default function App() {
-    const [activeTab, setActiveTab] = useState<ActiveTab>('registro')
+    const [activeTab, setActiveTab]     = useState<ActiveTab>('registro')
     const [isPanelOpen, setIsPanelOpen] = useState(false)
+    const [expedienteSeleccionado, setExpedienteSeleccionado] = useState<{
+        id: number
+        folio: string
+    } | null>(null)
+
+    const handleAbrirEnModuloB = (exp: ExpedienteActivo) => {
+        setExpedienteSeleccionado({ id: Number(exp.id), folio: exp.folioCOPP })
+        setActiveTab('escena')
+        setIsPanelOpen(false)
+    }
 
     return (
         <FormProvider>
@@ -29,7 +35,10 @@ export default function App() {
 
                     {activeTab === 'escena' && (
                         <div className="pb-6">
-                            <EscenaDelCrimen />
+                            <EscenaDelCrimen
+                                expedienteIdInicial={expedienteSeleccionado?.id}
+                                folioInicial={expedienteSeleccionado?.folio}
+                            />
                         </div>
                     )}
 
@@ -41,13 +50,13 @@ export default function App() {
                                         className="text-xs uppercase tracking-[0.2em] text-cyan-500"
                                         style={{ fontFamily: 'Orbitron, monospace' }}
                                     >
-                                        {PLACEHOLDER_LABELS.inteligencia}
+                                        C — INTELIGENCIA IA / MODUS OPERANDI
                                     </div>
                                     <div className="flex items-center justify-center gap-3 mt-4">
                                         <div className="h-px flex-1 bg-cyan-400/20" />
                                         <span className="text-[10px] uppercase tracking-[0.15em] text-cyan-400/50">
-                      Módulo en desarrollo
-                    </span>
+                                            Módulo en desarrollo
+                                        </span>
                                         <div className="h-px flex-1 bg-cyan-400/20" />
                                     </div>
                                 </div>
@@ -59,10 +68,7 @@ export default function App() {
                 <ExpedientesPanel
                     isOpen={isPanelOpen}
                     onClose={() => setIsPanelOpen(false)}
-                    onAbrirExpediente={(exp) => {
-                        console.log('Abrir expediente:', exp.folioCOPP)
-                        setIsPanelOpen(false)
-                    }}
+                    onAbrirExpediente={handleAbrirEnModuloB}
                 />
             </div>
         </FormProvider>

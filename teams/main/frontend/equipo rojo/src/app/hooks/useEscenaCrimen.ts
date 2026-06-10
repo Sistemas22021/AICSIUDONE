@@ -14,6 +14,7 @@ export interface Evidencia {
     horaRecoleccion: string
     hashIntegridad?: string
     timestamp?: string
+    investigadorId?: number
 }
 
 export interface EscenaNegativaItem {
@@ -21,7 +22,7 @@ export interface EscenaNegativaItem {
     elemento: string
     lugar: string
     resultado: string
-    observacion: string  // Campo nuevo
+    observacion: string
 }
 
 export interface EscenaCrimenState {
@@ -31,7 +32,10 @@ export interface EscenaCrimenState {
     paso3_completado: boolean
     paso4_completado: boolean
     tipoEscena: 'escena_completa' | 'solo_evidencia'
-    folioExpediente: string | null  // Nuevo: folio del expediente vinculado
+    folioExpediente: string | null
+    expedienteId: number | null          // ID numérico del expediente en el backend
+    escenaId: number | null              // ID de la Escena creada en el backend
+    sincronizado: boolean                // true = estado viene del backend
     perimetro: {
         sellado: boolean
         agentes: number
@@ -43,7 +47,7 @@ export interface EscenaCrimenState {
     }
     escenaNegativa: EscenaNegativaItem[]
     noHayEscenaNegativa: boolean
-    alertasIntegridad: Array<{  // Nuevo: alertas de integridad
+    alertasIntegridad: Array<{
         evidenciaId: string
         mensaje: string
         integro: boolean
@@ -70,6 +74,9 @@ function makeInitialState(): EscenaCrimenState {
         paso4_completado: false,
         tipoEscena: 'escena_completa',
         folioExpediente: null,
+        expedienteId: null,
+        escenaId: null,
+        sincronizado: false,
         perimetro: {
             sellado: false,
             agentes: 0,
@@ -94,14 +101,39 @@ export function useEscenaCrimen() {
             try {
                 const parsed = JSON.parse(saved)
                 if (!parsed.evidencias) parsed.evidencias = []
+                parsed.evidencias = parsed.evidencias.map((e: any) => ({
+                    id: e.id ?? crypto.randomUUID(),
+                    numeroSecuencial: e.numeroSecuencial ?? '',
+                    tipo: e.tipo ?? '',
+                    descripcion: e.descripcion ?? '',
+                    ubicacion: e.ubicacion ?? '',
+                    responsable: e.responsable ?? '',
+                    embalaje: e.embalaje ?? '',
+                    horaRecoleccion: e.horaRecoleccion ?? '',
+                    hashIntegridad: e.hashIntegridad,
+                    timestamp: e.timestamp,
+                }))
+
                 if (!parsed.escenaNegativa) parsed.escenaNegativa = []
+                parsed.escenaNegativa = parsed.escenaNegativa.map((en: any) => ({
+                    id: en.id ?? crypto.randomUUID(),
+                    elemento: en.elemento ?? '',
+                    lugar: en.lugar ?? '',
+                    resultado: en.resultado ?? '',
+                    observacion: en.observacion ?? '',
+                }))
+
                 if (parsed.tipoEscena === undefined) parsed.tipoEscena = 'escena_completa'
                 if (parsed.noHayEscenaNegativa === undefined) parsed.noHayEscenaNegativa = false
                 if (!parsed.liberacion?.pin) {
                     parsed.liberacion = { hora: parsed.liberacion?.hora || '' }
                 }
                 if (parsed.alertasIntegridad === undefined) parsed.alertasIntegridad = []
-                // Actualizar contador para nuevos IDs
+
+                if (parsed.expedienteId === undefined) parsed.expedienteId = null
+                if (parsed.escenaId === undefined) parsed.escenaId = null
+                if (parsed.sincronizado === undefined) parsed.sincronizado = false
+
                 if (parsed.evidencias.length > 0) {
                     const ultimo = parsed.evidencias[parsed.evidencias.length - 1]
                     const match = ultimo.numeroSecuencial?.match(/\d+/)
@@ -116,8 +148,29 @@ export function useEscenaCrimen() {
     })
 
     useEffect(() => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
-    }, [state])
+        const escenaId = state.escenaId
+        if (!escenaId) return
+        import('../services/escenaService').then(({ obtenerEscena }) => {
+            obtenerEscena(escenaId).then(escenaDTO => {
+                const pasoMap: Record<string, 1 | 2 | 3 | 4> = {
+                    ASEGURAR: 1, DOCUMENTAR: 2, RECOLECTAR: 3, LIBERAR: 4,
+                }
+                const pasoBackend = pasoMap[escenaDTO.pasoActual] ?? 1
+                const completado = escenaDTO.estadoChecklist === 'COMPLETADO'
+                setState(prev => ({
+                    ...prev,
+                    paso_actual: pasoBackend,
+                    paso1_completado: pasoBackend > 1 || completado,
+                    paso2_completado: pasoBackend > 2 || completado,
+                    paso3_completado: pasoBackend > 3 || completado,
+                    paso4_completado: completado,
+                    sincronizado: true,
+                }))
+            }).catch(() => {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+            })
+        })
+    }, [state.escenaId])
 
     const isPaso1Completado = state.paso1_completado
     const isPaso2Completado = state.paso2_completado
@@ -149,6 +202,19 @@ export function useEscenaCrimen() {
         setState((prev: EscenaCrimenState) => ({ ...prev, folioExpediente: folio }))
     }
 
+    const vincularExpediente = (expedienteId: number, folio: string) => {
+        setState((prev: EscenaCrimenState) => ({
+            ...prev,
+            expedienteId,
+            folioExpediente: folio,
+            sincronizado: false,
+        }))
+    }
+
+    const setEscenaId = (id: number) => {
+        setState((prev: EscenaCrimenState) => ({ ...prev, escenaId: id, sincronizado: true }))
+    }
+
     const completarPaso1 = () => {
         if (!canCompletarPaso1) return
         if (isPaso1Completado) return
@@ -159,9 +225,19 @@ export function useEscenaCrimen() {
         }))
     }
 
-    const completarPaso2 = () => {
+    const completarPaso2 = async () => {
         if (!canCompletarPaso2) return
         if (isPaso2Completado) return
+        if (state.escenaId) {
+            if (state.noHayEscenaNegativa) {
+                await persistirNoHayEscenaNegativa()          // ← NUEVO
+            } else {
+                const pendientes = state.escenaNegativa.filter(en => en.id.includes('-'))
+                for (const en of pendientes) {
+                    await guardarEscenaNegativaEnBackend(en.id)
+                }
+            }
+        }
         setState((prev: EscenaCrimenState) => ({
             ...prev,
             paso_actual: 3,
@@ -215,6 +291,40 @@ export function useEscenaCrimen() {
         }))
     }
 
+    const guardarEvidenciaEnBackend = async (localId: string) => {
+        if (!state.escenaId) return
+        const ev = state.evidencias.find(e => e.id === localId)
+        if (!ev) return
+        const { crearEvidencia } = await import('../services/escenaService')
+        try {
+            const dto = {
+                numeroItem: ev.numeroSecuencial,
+                tipo: ev.tipo,
+                descripcion: ev.descripcion,
+                escenaId: state.escenaId,
+                investigadorId: ev.investigadorId ?? undefined,
+            }
+            const saved = await crearEvidencia(dto)
+            // Actualizar el ID local → ID del backend, y volcar el hash recibido
+            setState((prev: EscenaCrimenState) => ({
+                ...prev,
+                evidencias: prev.evidencias.map(e =>
+                    e.id === localId
+                        ? {
+                            ...e,
+                            id: String(saved.id),        // reemplaza el UUID temporal
+                            hashIntegridad: saved.hashIntegridad,
+                            timestamp: saved.timestampRegistro,
+                        }
+                        : e
+                ),
+            }))
+        } catch (err) {
+            console.error('Error al guardar evidencia en backend:', err)
+            throw err   // El componente puede mostrar un toast de error
+        }
+    }
+
     const removeEvidencia = (id: string) => {
         if (isPaso2Completado) return
         setState((prev: EscenaCrimenState) => ({
@@ -250,12 +360,68 @@ export function useEscenaCrimen() {
         }))
     }
 
-    const removeEscenaNegativa = (id: string) => {
+    const removeEscenaNegativa = async (id: string) => {
         if (isPaso2Completado) return
+        const isBackendId = !id.includes('-')   // UUIDs tienen guiones; IDs del backend son numéricos
+        if (isBackendId) {
+            const { eliminarEscenaNegativa } = await import('../services/escenaService')
+            try {
+                await eliminarEscenaNegativa(Number(id))
+            } catch (err: any) {
+                // Si el backend rechaza la eliminación (BusinessException → 422/400),
+                // no se elimina localmente tampoco. OCP: la regla vive en el backend.
+                console.error('El backend no permitió eliminar la escena negativa:', err.message)
+                throw err   // El componente muestra el error al usuario
+            }
+        }
         setState((prev: EscenaCrimenState) => ({
             ...prev,
             escenaNegativa: prev.escenaNegativa.filter(e => e.id !== id),
         }))
+    }
+
+    const guardarEscenaNegativaEnBackend = async (localId: string) => {
+        if (!state.escenaId) return
+        const en = state.escenaNegativa.find(e => e.id === localId)
+        if (!en) return
+        const { crearEscenaNegativa } = await import('../services/escenaService')
+        try {
+            const dto = {
+                elementoBuscado: en.elemento,        // mapping frontend → backend
+                areaInspeccionada: en.lugar,         // mapping frontend → backend
+                resultado: en.resultado,
+                observacion: en.observacion,
+                escenaId: state.escenaId,
+            }
+            const saved = await crearEscenaNegativa(dto)
+            setState((prev: EscenaCrimenState) => ({
+                ...prev,
+                escenaNegativa: prev.escenaNegativa.map(e =>
+                    e.id === localId ? { ...e, id: String(saved.id) } : e
+                ),
+            }))
+        } catch (err) {
+            console.error('Error al guardar escena negativa en backend:', err)
+            throw err
+        }
+    }
+
+    const persistirNoHayEscenaNegativa = async () => {
+        if (!state.escenaId) return
+        const { crearEscenaNegativa } = await import('../services/escenaService')
+        try {
+            await crearEscenaNegativa({
+                elementoBuscado: 'SIN_ELEMENTOS_NEGATIVOS',
+                areaInspeccionada: 'N/A',
+                resultado: 'SIN_HALLAZGOS',
+                observacion: 'El investigador confirmó que no hay elementos negativos a reportar.',
+                escenaId: state.escenaId,
+                sinElementosNegativos: true,
+            })
+        } catch (err) {
+            console.error('Error al persistir flag sinElementosNegativos:', err)
+            throw err
+        }
     }
 
     const updateEscenaNegativa = (id: string, patch: Partial<EscenaNegativaItem>) => {
@@ -275,16 +441,29 @@ export function useEscenaCrimen() {
         }))
     }
 
-    // Simular verificación de integridad (conectar con backend después)
-    const verificarIntegridad = async (expedienteId: string) => {
-        // Aquí iría la llamada al endpoint /expedientes/{id}/verificar-integridad
-        console.log(`Verificando integridad del expediente: ${expedienteId}`)
-        // Por ahora simulamos
-        const nuevasAlertas = state.evidencias.map(ev => ({
-            evidenciaId: ev.id,
-            mensaje: `La evidencia ${ev.numeroSecuencial} ha sido modificada`,
-            integro: false
-        }))
+    const verificarIntegridad = async (_expedienteId?: string) => {
+        if (!state.escenaId) {
+            console.warn('No hay escenaId — la escena aún no fue persistida en el backend.')
+            return
+        }
+        const { verificarHashEvidencia } = await import('../services/escenaService')
+        const resultados = await Promise.allSettled(
+            state.evidencias
+                .filter(ev => ev.id && !ev.id.includes('-'))   // IDs numéricos son del backend
+                .map(async ev => {
+                    const integro = await verificarHashEvidencia(Number(ev.id))
+                    return { evidenciaId: ev.id, integro }
+                })
+        )
+        const nuevasAlertas = resultados
+            .filter((r): r is PromiseFulfilledResult<{ evidenciaId: string; integro: boolean }> => r.status === 'fulfilled')
+            .map(r => ({
+                evidenciaId: r.value.evidenciaId,
+                mensaje: r.value.integro
+                    ? `Evidencia ${r.value.evidenciaId}: integridad verificada ✓`
+                    : `⚠ Evidencia ${r.value.evidenciaId}: discrepancia de hash detectada`,
+                integro: r.value.integro,
+            }))
         setState((prev: EscenaCrimenState) => ({ ...prev, alertasIntegridad: nuevasAlertas }))
     }
 
@@ -315,12 +494,17 @@ export function useEscenaCrimen() {
         updatePerimetro,
         setTipoEscena,
         setFolioExpediente,
+        vincularExpediente,
+        setEscenaId,
         addEvidencia,
+        guardarEvidenciaEnBackend,
         removeEvidencia,
         updateEvidencia,
         updateLiberacion,
         addEscenaNegativa,
         removeEscenaNegativa,
+        guardarEscenaNegativaEnBackend,
+        persistirNoHayEscenaNegativa,
         updateEscenaNegativa,
         setNoHayEscenaNegativa,
         verificarIntegridad,
