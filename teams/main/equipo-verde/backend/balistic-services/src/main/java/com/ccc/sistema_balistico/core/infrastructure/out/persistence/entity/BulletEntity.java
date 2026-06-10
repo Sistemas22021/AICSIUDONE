@@ -5,12 +5,15 @@ import com.ccc.sistema_balistico.core.domain.enums.PercussionType;
 import com.ccc.sistema_balistico.core.domain.enums.TwistDirection;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.envers.Audited;
+import org.hibernate.envers.RelationTargetAuditMode;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+@Audited
 @Getter
 @Setter
 @NoArgsConstructor
@@ -33,6 +36,7 @@ public class BulletEntity {
     private TwistDirection twistDirection;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
     @JoinColumn(name = "id_caliber")
     private CaliberEntity caliberEntity;
 
