@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { MapPin, Users, CheckCircle, AlertTriangle, Info, DoorOpen, Gauge, BarChart3, Move, Check, X, Clock } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { MapPin, Users, CheckCircle, AlertTriangle, Info, DoorOpen, Gauge, BarChart3, Move, Check, X, Clock, UserPlus, Search, ArrowRight, Activity } from 'lucide-react'
 import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
 
@@ -18,6 +18,8 @@ interface InmateData {
   id: string
   status: string
   cellId: string | null
+  admissionDate?: string
+  dischargeDate?: string
 }
 
 interface TransferRequestDto {
@@ -36,10 +38,11 @@ interface TransferRequestDto {
 }
 
 export default function DashboardPage() {
+  const navigate = useNavigate()
   const [celdas, setCeldas] = useState<CellData[]>([])
   const [reclusos, setReclusos] = useState<InmateData[]>([])
   const [transfers, setTransfers] = useState<TransferRequestDto[]>([])
-  const [loading, setLoading] = useState(true)
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
 
   const [rejectionModalTransfer, setRejectionModalTransfer] = useState<TransferRequestDto | null>(null)
   const [rejectionReason, setRejectionReason] = useState('')
@@ -48,7 +51,7 @@ export default function DashboardPage() {
 
   const currentUser = sessionStorage.getItem('username') || 'Oficial'
 
-  const loadDashboard = async () => {
+  const loadDashboard = async (isPolling = false) => {
     try {
       const [cellsRes, inmatesRes, transfersRes] = await Promise.all([
         api.get<CellData[]>('/cells'),
@@ -61,12 +64,16 @@ export default function DashboardPage() {
     } catch (err) {
       console.error('Error loading dashboard data', err)
     } finally {
-      setLoading(false)
+      if (!isPolling) setIsInitialLoad(false)
     }
   }
 
   useEffect(() => {
-    loadDashboard()
+    loadDashboard(false)
+    const interval = setInterval(() => {
+      loadDashboard(true)
+    }, 5000)
+    return () => clearInterval(interval)
   }, [])
 
   const handleApprove = async (transfer: TransferRequestDto) => {
@@ -124,27 +131,76 @@ export default function DashboardPage() {
     }
   }
 
+  const handleSearchExpediente = () => {
+    const id = prompt('Ingrese la Cédula o el ID del recluso:')
+    if (id && id.trim() !== '') {
+      navigate(`/internos/expediente/${id.trim()}`)
+    }
+  }
+
+  const isToday = (dateString?: string) => {
+    if (!dateString) return false;
+    const today = new Date();
+    const parts = dateString.split('-');
+    if (parts.length < 3) return false;
+    return parseInt(parts[0]) === today.getFullYear() &&
+           parseInt(parts[1]) === today.getMonth() + 1 &&
+           parseInt(parts[2]) === today.getDate();
+  };
+
   const totalCeldas = celdas.length
   const totalReclusos = celdas.reduce((s, c) => s + (c.currentOccupancy ?? 0), 0)
   const capacidadTotal = celdas.reduce((s, c) => s + c.maxCapacity, 0)
   const capacidadDisponible = capacidadTotal - totalReclusos
-  const pctOcupacion = capacidadTotal > 0 ? ((totalReclusos / capacidadTotal) * 100).toFixed(1) : '0'
-  const celdasLlenas = celdas.filter(c => (c.currentOccupancy ?? 0) >= c.maxCapacity).length
-  const celdasLimite = celdas.filter(c => {
-    const pct = (c.currentOccupancy ?? 0) / c.maxCapacity
-    return pct >= 0.8 && pct < 1
-  }).length
-  const reclusosSinCelda = reclusos.filter(r => r.status === 'ACTIVO_SIN_CELDA').length
-  const reclusosConCelda = reclusos.filter(r => r.status === 'ACTIVO_CON_CELDA').length
-
+  const pctOcupacionNum = capacidadTotal > 0 ? (totalReclusos / capacidadTotal) * 100 : 0
+  const pctOcupacion = pctOcupacionNum.toFixed(1)
+  
+  const ingresosHoy = reclusos.filter(r => isToday(r.admissionDate)).length
+  const egresosHoy = reclusos.filter(r => r.status === 'EGRESADO' && isToday(r.dischargeDate)).length
+  const celdasDisponibles = celdas.filter(c => (c.currentOccupancy ?? 0) < c.maxCapacity).length
+  
+  const isCritical = pctOcupacionNum >= 90
+  
   const cards = [
-    { label: 'Total de Celdas', valor: totalCeldas, sub: celdasLlenas + ' llenas - ' + celdasLimite + ' al limite', icon: DoorOpen, color: 'text-gray-900' },
-    { label: 'Reclusos Activos', valor: totalReclusos, sub: reclusosConCelda + ' con celda - ' + reclusosSinCelda + ' sin celda', icon: Users, color: 'text-blue-600' },
-    { label: 'Capacidad Disponible', valor: capacidadDisponible, sub: 'De ' + capacidadTotal + ' plazas totales', icon: CheckCircle, color: 'text-emerald-600' },
-    { label: 'Ocupacion General', valor: pctOcupacion + '%', sub: parseFloat(pctOcupacion) >= 80 ? 'Nivel critico' : 'Nivel normal', icon: Gauge, color: parseFloat(pctOcupacion) >= 80 ? 'text-amber-600' : 'text-gray-900' },
+    { 
+      label: 'Ocupación General', 
+      valor: pctOcupacion + '%', 
+      sub: isCritical ? 'Nivel Crítico (>=90%)' : 'Nivel Normal', 
+      icon: isCritical ? AlertTriangle : Gauge, 
+      color: isCritical ? 'text-red-600' : 'text-blue-600',
+      bg: isCritical ? 'bg-red-50 border-red-200' : 'bg-white border-gray-200',
+      iconBg: isCritical ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-blue-50 text-blue-500'
+    },
+    { 
+      label: 'Celdas Disponibles', 
+      valor: celdasDisponibles, 
+      sub: celdasDisponibles === 0 ? 'Sin espacio disponible' : 'Listas para ingreso', 
+      icon: DoorOpen, 
+      color: celdasDisponibles === 0 ? 'text-red-600' : 'text-emerald-600',
+      bg: celdasDisponibles === 0 ? 'bg-red-50 border-red-200' : 'bg-white border-gray-200',
+      iconBg: celdasDisponibles === 0 ? 'bg-red-100 text-red-600' : 'bg-emerald-50 text-emerald-500'
+    },
+    { 
+      label: 'Ingresos Hoy', 
+      valor: ingresosHoy, 
+      sub: 'Nuevos registros', 
+      icon: UserPlus, 
+      color: 'text-indigo-600',
+      bg: 'bg-white border-gray-200',
+      iconBg: 'bg-indigo-50 text-indigo-500'
+    },
+    { 
+      label: 'Egresos Hoy', 
+      valor: egresosHoy, 
+      sub: 'Liberaciones / Traslados', 
+      icon: ArrowRight, 
+      color: 'text-amber-600',
+      bg: 'bg-white border-gray-200',
+      iconBg: 'bg-amber-50 text-amber-500'
+    },
   ]
 
-  if (loading) {
+  if (isInitialLoad) {
     return (
       <SidebarLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
@@ -161,37 +217,59 @@ export default function DashboardPage() {
     <SidebarLayout>
       <div className="max-w-7xl mx-auto space-y-6">
 
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-200 pb-5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2">
           <div>
             <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2">
-              <BarChart3 className="w-8 h-8 text-blue-600" />
-              Dashboard
+              <Activity className="w-8 h-8 text-blue-600" />
+              Dashboard Operativo
+              {!isInitialLoad && <span className="flex h-3 w-3 ml-2 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+              </span>}
             </h1>
             <p className="text-sm text-gray-500 mt-1">
-              Resumen general del estado del penal y ocupacion de celdas.
+              Monitoreo en tiempo real del estado del penal y métricas clave.
             </p>
           </div>
+        </div>
+
+        {/* Accesos Rápidos */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <Link
+            to="/internos/registrar"
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all font-semibold shadow-md hover:shadow-lg hover:-translate-y-0.5"
+          >
+            <UserPlus className="w-5 h-5" />
+            Registrar Ingreso
+          </Link>
           <Link
             to="/mapa"
-            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-semibold shadow-sm"
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all font-semibold shadow-md hover:shadow-lg hover:-translate-y-0.5"
           >
-            <MapPin className="w-4 h-4" />
+            <MapPin className="w-5 h-5" />
             Ver Mapa de Celdas
           </Link>
+          <button
+            onClick={handleSearchExpediente}
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all font-semibold shadow-md hover:shadow-lg hover:-translate-y-0.5 cursor-pointer"
+          >
+            <Search className="w-5 h-5" />
+            Consultar Expediente
+          </button>
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {cards.map((card, i) => {
             const CardIcon = card.icon
             return (
-              <div key={i} className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm flex items-center justify-between">
+              <div key={i} className={`rounded-xl border p-5 shadow-sm flex items-center justify-between transition-all duration-300 ${card.bg}`}>
                 <div className="space-y-1">
-                  <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">{card.label}</p>
-                  <p className={'text-2xl font-black ' + card.color}>{card.valor}</p>
-                  <p className="text-[11px] text-gray-400 font-medium">{card.sub}</p>
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">{card.label}</p>
+                  <p className={'text-3xl font-black ' + card.color}>{card.valor}</p>
+                  <p className={`text-[11px] font-bold ${card.color} opacity-80`}>{card.sub}</p>
                 </div>
-                <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
-                  <CardIcon className="w-5 h-5 text-gray-400" />
+                <div className={`p-3 rounded-xl ${card.iconBg}`}>
+                  <CardIcon className="w-6 h-6" />
                 </div>
               </div>
             )

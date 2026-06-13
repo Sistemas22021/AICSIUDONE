@@ -13,7 +13,8 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "types": ["node"]
   },
   "include": ["vite.config.ts", "tailwind.config.js", "postcss.config.js", "eslint.config.js"]
 }

@@ -40,8 +40,13 @@ public class InmateController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<InmateDto> getById(@PathVariable UUID id) {
-        return ResponseEntity.ok(inmateService.getInmateById(id));
+    public ResponseEntity<InmateDto> getByIdOrCedula(@PathVariable String id) {
+        try {
+            UUID uuid = UUID.fromString(id);
+            return ResponseEntity.ok(inmateService.getInmateById(uuid));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.ok(inmateService.getInmateByCedula(id));
+        }
     }
 
     @GetMapping("/cell/{cellId}")

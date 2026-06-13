@@ -15,7 +15,6 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings("null")
 public class CellService {
 
     private final CellRepository cellRepository;

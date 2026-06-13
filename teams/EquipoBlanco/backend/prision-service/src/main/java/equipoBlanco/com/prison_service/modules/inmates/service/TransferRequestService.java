@@ -20,7 +20,6 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings("null")
 public class TransferRequestService {
 
     private final TransferRequestRepository transferRequestRepository;

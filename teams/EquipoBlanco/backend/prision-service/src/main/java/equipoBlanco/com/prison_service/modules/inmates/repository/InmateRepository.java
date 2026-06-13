@@ -11,6 +11,7 @@ import java.util.UUID;
 public interface InmateRepository extends JpaRepository<Inmate, UUID> {
     Optional<Inmate> findByCedulaAndStatusNot(String cedula, InmateStatus status);
     boolean existsByCedulaAndStatusNot(String cedula, InmateStatus status);
+    Optional<Inmate> findByCedula(String cedula);
 
     @Query("SELECT COUNT(i) FROM Inmate i WHERE i.cell.id = :cellId AND i.status = 'ACTIVO_CON_CELDA'")
     int countByCellId(UUID cellId);

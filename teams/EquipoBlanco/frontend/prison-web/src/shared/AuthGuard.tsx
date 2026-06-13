@@ -26,9 +26,11 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     const token = sessionStorage.getItem('token')
 
     if (!token) {
-      const loginUrl = import.meta.env.VITE_LOGIN_MFE_URL as string
-      const redirect = encodeURIComponent(window.location.href)
-      window.location.href = `${loginUrl}?redirect=${redirect}`
+      // BYPASS DE LOGIN PARA DESARROLLO
+      console.warn("Bypass de Login activado. Usando sesión de prueba.");
+      sessionStorage.setItem('token', 'mock.token.dev')
+      sessionStorage.setItem('username', 'Oficial (Modo Dev)')
+      requestIdleCallback(() => setChecked(true))
       return
     }
 

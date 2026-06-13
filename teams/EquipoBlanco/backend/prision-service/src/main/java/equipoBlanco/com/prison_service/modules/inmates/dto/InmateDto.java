@@ -20,6 +20,7 @@ public class InmateDto {
     private String caseNumber;
     private String court;
     private LocalDate admissionDate;
+    private LocalDate dischargeDate;
     private Integer sentenceYears;
     private Integer sentenceMonths;
     private LocalDate estimatedReleaseDate;

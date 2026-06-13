@@ -16,7 +16,6 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings("null")
 public class InmateService {
 
     private final InmateRepository inmateRepository;
@@ -99,25 +98,31 @@ public class InmateService {
 
     public List<InmateDto> getByStatus(InmateStatus status) {
         return inmateRepository.findByStatus(status).stream()
-            .map(this::toDetailedDto).toList();
+            .map(this::toDto).toList();
     }
 
     public List<InmateDto> getAllInmates() {
         return inmateRepository.findAll().stream()
-            .map(this::toDetailedDto)
+            .map(this::toDto)
             .toList();
     }
 
     public InmateDto getInmateById(UUID id) {
         Inmate inmate = inmateRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Recluso no encontrado"));
+            .orElseThrow(() -> new RuntimeException("Recluso no encontrado con ID: " + id));
+        return toDetailedDto(inmate);
+    }
+
+    public InmateDto getInmateByCedula(String cedula) {
+        Inmate inmate = inmateRepository.findByCedula(cedula)
+            .orElseThrow(() -> new RuntimeException("Recluso no encontrado con Cédula: " + cedula));
         return toDetailedDto(inmate);
     }
 
     public List<InmateDto> getInmatesByCell(UUID cellId) {
         return inmateRepository.findAll().stream()
             .filter(i -> i.getCell() != null && i.getCell().getId().equals(cellId))
-            .map(this::toDetailedDto)
+            .map(this::toDto)
             .toList();
     }
 
@@ -128,6 +133,8 @@ public class InmateService {
             .firstName(i.getFirstName())
             .firstLastname(i.getFirstLastname())
             .status(i.getStatus())
+            .admissionDate(i.getAdmissionDate())
+            .dischargeDate(i.getDischargeDate())
             .estimatedReleaseDate(i.getEstimatedReleaseDate())
             .cellId(i.getCell() != null ? i.getCell().getId() : null)
             .cellIdentifier(i.getCell() != null ? i.getCell().getIdentifier() : null)
@@ -186,6 +193,7 @@ public class InmateService {
             .caseNumber(i.getCaseNumber())
             .court(i.getCourt())
             .admissionDate(i.getAdmissionDate())
+            .dischargeDate(i.getDischargeDate())
             .sentenceYears(i.getSentenceYears())
             .sentenceMonths(i.getSentenceMonths())
             .estimatedReleaseDate(i.getEstimatedReleaseDate())
