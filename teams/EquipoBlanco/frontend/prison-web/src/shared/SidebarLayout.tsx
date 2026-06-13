@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
+import { getMockUser } from './AuthGuard'
 
 const MENU_ITEMS = [
   { label: 'Dashboard', to: '/dashboard' },
@@ -7,15 +8,17 @@ const MENU_ITEMS = [
   { label: 'Mapa de Celdas', to: '/mapa' },
   { label: 'Post-Penitenciario', to: '/post' },
   { label: 'Control y Disciplina', to: '/control' },
-  { label: 'Configuraci\u00f3n de Celdas', to: '/celdas/configurar' },
+  { label: 'Configuración de Celdas', to: '/celdas/configurar' },
 ]
 
 export default function SidebarLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false)
+  const mockUser = getMockUser()
 
   function handleLogout() {
-    sessionStorage.removeItem('token')
-    window.location.href = import.meta.env.VITE_LOGIN_MFE_URL || '/login'
+    localStorage.removeItem('mock_user')
+    sessionStorage.clear()
+    window.location.reload()
   }
 
   return (
@@ -56,8 +59,8 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
         <div className="border-t border-gray-100">
           {!collapsed && (
             <div className="px-4 py-3">
-              <p className="text-sm font-medium text-gray-900">Usuario Oficial</p>
-              <p className="text-xs text-gray-400">Administrador</p>
+              <p className="text-sm font-medium text-gray-900">{mockUser.username}</p>
+              <p className="text-xs text-gray-400">{mockUser.role}</p>
             </div>
           )}
           <button
