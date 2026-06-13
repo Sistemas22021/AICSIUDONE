@@ -1,0 +1,9 @@
+CREATE TABLE bookings (
+    id UUID PRIMARY KEY,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    cedula VARCHAR(50) UNIQUE NOT NULL,
+    photo_path VARCHAR(255),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(20) NOT NULL DEFAULT 'OPEN'
+);

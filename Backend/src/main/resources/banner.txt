@@ -1,0 +1,4 @@
+=================================================
+PROYECTO: ${spring.application.name}
+URL LOCAL: http://localhost:${server.port:8080}
+=================================================
