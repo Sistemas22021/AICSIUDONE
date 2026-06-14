@@ -26,7 +26,56 @@ build/
 *.ipr
 
 # ─── VS Code ─────────────────────────────────────────────────────────────────
-.vscode/
+.vscode/# Java / Maven
+**/target/
+**/*.class
+**/*.jar
+**/*.war
+**/.mvn/
+**/mvnw
+**/mvnw.cmd
+**/HELP.md
+
+# IDEs
+**/.idea/
+**/*.iml
+**/.vscode/
+**/.classpath
+**/.project
+**/.settings/
+**/*.swp
+
+# Logs
+**/*.log
+**/logs/
+
+# OS
+**/.DS_Store
+**/Thumbs.db
+
+# Node / Frontend
+**/node_modules/
+**/dist/
+**/build/
+**/.vite/
+**/coverage/
+
+# Environment variables
+.env
+.env.local
+.env.production
+**/.env
+**/.env.local
+
+# Uploads del backend (NO subir fotos al repo)
+backend/uploads/
+**/uploads/
+
+# Application properties con secretos (opcional, depende de tu enfoque)
+# application-prod.properties
+
+# Archivos del sistema operativo
+*.lock
 !.vscode/extensions.json
 
 # ─── OS ──────────────────────────────────────────────────────────────────────
@@ -43,3 +92,4 @@ Thumbs.db
 # ─── Logs ────────────────────────────────────────────────────────────────────
 *.log
 logs/
+
