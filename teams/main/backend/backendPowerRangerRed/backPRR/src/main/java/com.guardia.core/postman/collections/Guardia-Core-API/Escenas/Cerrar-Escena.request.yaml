@@ -1,0 +1,4 @@
+$kind: http-request
+name: Cerrar Escena
+method: PATCH
+url: '{{baseUrl}}/api/v1/escenas/{{escenaId}}/cerrar'

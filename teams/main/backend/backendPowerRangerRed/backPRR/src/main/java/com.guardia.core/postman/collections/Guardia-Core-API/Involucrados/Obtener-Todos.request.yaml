@@ -1,0 +1,4 @@
+$kind: http-request
+name: Obtener Todos los Involucrados
+method: GET
+url: '{{baseUrl}}/api/v1/involucrados'

@@ -1,0 +1,4 @@
+$kind: http-request
+name: "Obtener Localización por ID"
+method: GET
+url: '{{baseUrl}}/api/v1/localizaciones/{{localizacionId}}'

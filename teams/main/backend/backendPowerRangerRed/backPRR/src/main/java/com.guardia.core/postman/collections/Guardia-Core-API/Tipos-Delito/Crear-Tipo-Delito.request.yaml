@@ -1,0 +1,15 @@
+$kind: http-request
+name: Crear Tipo de Delito
+method: POST
+url: '{{baseUrl}}/api/v1/tipos-delito'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "nombre": "Nombre del tipo de delito",
+      "descripcion": "Descripción del tipo de delito",
+      "requiereSubtipo": false
+    }

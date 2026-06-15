@@ -1,0 +1,16 @@
+$kind: http-request
+name: Actualizar Usuario
+method: PUT
+url: '{{baseUrl}}/api/v1/usuarios/{{usuarioId}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "nombre": "Juan",
+      "apellido": "Pérez Actualizado",
+      "identificacion": "12345678",
+      "rol": "INVESTIGADOR"
+    }

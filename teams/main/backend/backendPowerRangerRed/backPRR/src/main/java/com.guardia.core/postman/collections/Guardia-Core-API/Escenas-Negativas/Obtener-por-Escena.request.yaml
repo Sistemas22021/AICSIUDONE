@@ -1,0 +1,4 @@
+$kind: http-request
+name: Obtener Escenas Negativas por Escena
+method: GET
+url: '{{baseUrl}}/api/v1/escenas-negativas/por-escena/{{escenaId}}'

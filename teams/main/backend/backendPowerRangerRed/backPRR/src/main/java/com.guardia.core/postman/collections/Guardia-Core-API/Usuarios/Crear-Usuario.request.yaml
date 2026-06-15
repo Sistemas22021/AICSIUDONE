@@ -1,0 +1,17 @@
+$kind: http-request
+name: Crear Usuario
+method: POST
+url: '{{baseUrl}}/api/v1/usuarios'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "nombre": "Juan",
+      "apellido": "Pérez",
+      "identificacion": "12345678",
+      "rol": "INVESTIGADOR",
+      "credencial": "credencial-secreta"
+    }

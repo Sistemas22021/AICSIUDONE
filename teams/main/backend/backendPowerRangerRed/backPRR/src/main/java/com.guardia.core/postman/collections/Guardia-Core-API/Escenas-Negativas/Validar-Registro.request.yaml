@@ -1,0 +1,4 @@
+$kind: http-request
+name: Validar Registro de Escena Negativa
+method: GET
+url: '{{baseUrl}}/api/v1/escenas-negativas/{{escenaNegativaId}}/validar'

@@ -1,0 +1,13 @@
+$kind: http-request
+name: Verificar Hash de Evidencia
+method: POST
+url: '{{baseUrl}}/api/v1/evidencias/{{evidenciaId}}/verificar-hash'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "hash": "sha256-hash-value-here"
+    }

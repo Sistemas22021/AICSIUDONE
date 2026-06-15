@@ -1,0 +1,8 @@
+# Use this workspace to collaborate
+workspace:
+  id: ""
+
+localResources:
+  collections:
+    - ..\AICSIUDONE_postman_full_collection.json
+    - ..\AICSIUDONE_postman_full_collection_assertions.json
