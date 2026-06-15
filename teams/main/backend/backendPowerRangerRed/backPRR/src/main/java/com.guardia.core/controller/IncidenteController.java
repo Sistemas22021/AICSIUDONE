@@ -137,15 +137,22 @@ public class IncidenteController {
         }).collect(Collectors.toList());
     }
 
-    private DenuncianteRequest mapDenunciante(IncidenteRequest.DenuncianteFrontRequest src) {
-        DenuncianteRequest d = new DenuncianteRequest();
-        d.setIdentificacion(src.getIdentificacion());
-        d.setNombre(src.getNombre());
+    private InvolucradosRequest mapDenunciante(IncidenteRequest.DenuncianteFrontRequest src) {
+        InvolucradosRequest d = new InvolucradosRequest();
+
+        // Reusar la lógica de separación de nombre y apellido como en víctimas
+        String[] partes = splitNombreApellido(src.getNombre());
+        d.setNombre(partes[0]);
+        d.setApellido(partes[1]);
+
+        d.setCedula(src.getIdentificacion());
         d.setNacionalidad(src.getNacionalidad());
         d.setTelefono(src.getTelefono());
         d.setDireccion(src.getDireccion());
-        // Frontend usa relacionConCrimen → Backend usa relacionConHecho
+
+        // Frontend usa relacionConCrimen -> InvolucradosRequest usa relacionConHecho
         d.setRelacionConHecho(src.getRelacionConCrimen());
+
         return d;
     }
 
