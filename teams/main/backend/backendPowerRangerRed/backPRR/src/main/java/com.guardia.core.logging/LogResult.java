@@ -1,4 +1,4 @@
-package com.guardia.core;
+package com.guardia.core.logging;
 
 public enum LogResult {
     EXITOSO,

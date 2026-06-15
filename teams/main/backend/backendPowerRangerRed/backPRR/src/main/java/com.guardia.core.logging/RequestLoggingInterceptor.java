@@ -1,4 +1,4 @@
-package com.guardia.core;
+package com.guardia.core.logging;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

@@ -1,4 +1,4 @@
-package com.guardia.core;
+package com.guardia.core.logging;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
