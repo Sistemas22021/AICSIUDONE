@@ -5,6 +5,9 @@ import com.guardia.core.dto.response.SubtipoDelitoResponse;
 
 import java.util.List;
 
+/**
+ * Servicio para gestionar subtipos de delito (listas por tipo, validaciones, CRUD).
+ */
 public interface SubtipoDelitoService {
     SubtipoDelitoResponse crear(SubtipoDelitoRequest request);
     SubtipoDelitoResponse obtenerPorId(Long id);

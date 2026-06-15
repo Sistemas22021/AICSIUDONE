@@ -12,6 +12,10 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+/**
+ * Entidad que representa una localización física (dirección o coordenadas).
+ * Soporta registro por GPS o por dirección manual y resumen legible.
+ */
 public class Localizacion {
 
     @Id

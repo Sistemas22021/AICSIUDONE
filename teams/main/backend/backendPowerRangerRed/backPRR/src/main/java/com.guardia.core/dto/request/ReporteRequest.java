@@ -7,6 +7,9 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
+/**
+ * DTO de solicitud para información del reporte (fecha, hora e investigador responsable).
+ */
 public class ReporteRequest {
 
     @NotNull

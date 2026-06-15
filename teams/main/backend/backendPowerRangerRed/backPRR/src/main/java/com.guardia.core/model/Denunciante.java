@@ -10,27 +10,50 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+/**
+ * Entidad que representa un denunciante (persona que realiza la denuncia).
+ * Almacena identificación, contacto y relación con el hecho.
+ */
 public class Denunciante {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /**
+     * Identificación única del denunciante (p. ej. cédula o pasaporte).
+     * Valor único en la tabla y usado para búsquedas por identificación.
+     */
     @Column(nullable = false, unique = true)
     private String identificacion; // antes cedula
 
+    /**
+     * Nombre completo del denunciante.
+     */
     @Column(nullable = false)
     private String nombre;
 
+    /**
+     * Dirección postal o física del denunciante.
+     */
     @Column
     private String direccion;
 
+    /**
+     * Número telefónico de contacto del denunciante.
+     */
     @Column
     private String telefono;
 
+    /**
+     * Nacionalidad del denunciante (por compatibilidad con el frontend).
+     */
     @Column
     private String nacionalidad;
 
+    /**
+     * Descripción de la relación del denunciante con el hecho (p. ej. "testigo", "víctima").
+     */
     @Column(name = "relacion_con_hecho")
     private String relacionConHecho; // antes relacionConVictima
 
@@ -50,6 +73,10 @@ public class Denunciante {
     public void setNacionalidad(String nacionalidad) { this.nacionalidad = nacionalidad; }
     public void setRelacionConHecho(String relacion) { this.relacionConHecho = relacion; }
 
+    /**
+     * Registra/actualiza la relación del denunciante con el hecho.
+     * @param relacion cadena descriptiva de la relación (por ejemplo "testigo" o "víctima").
+     */
     public void registrarRelacion(String relacion) { this.relacionConHecho = relacion; }
 
 

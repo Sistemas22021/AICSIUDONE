@@ -13,6 +13,11 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/involucrados")
 @RequiredArgsConstructor
+/**
+ * Controlador REST para gestionar involucrados en expedientes (víctimas, testigos, sospechosos).
+ * Exponer operaciones de consulta y eliminación por expediente o rol.
+ * Rutas principales: /api/v1/involucrados
+ */
 public class InvolucradoController {
 
     private final InvolucradoService involucradoService;

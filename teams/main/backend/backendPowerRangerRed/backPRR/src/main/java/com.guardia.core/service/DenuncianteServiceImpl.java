@@ -19,6 +19,9 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional
+/**
+ * Implementación de DenuncianteService: contiene lógica para crear y buscar denunciantes.
+ */
 public class DenuncianteServiceImpl implements DenuncianteService {
 
     private final InvolucradoRepository involucradoRepository;

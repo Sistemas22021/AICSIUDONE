@@ -6,6 +6,9 @@ import com.guardia.core.dto.response.EscenaChecklistResponse;
 
 import java.util.List;
 
+/**
+ * Servicio para la gestión de escenas de levantamiento: checklist, avance, cierre y consultas.
+ */
 public interface EscenaService {
     EscenaResponse crear(EscenaRequest request);
     EscenaResponse obtenerPorId(Long id);

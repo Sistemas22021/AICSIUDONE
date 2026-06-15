@@ -8,6 +8,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
+/**
+ * Repositorio JPA para involucrados en expedientes.
+ * Provee consultas por expediente, rol y verificación por identificación+rol.
+ */
 public interface InvolucradoRepository extends JpaRepository<Involucrado, Long> {
 
     List<Involucrado> findByExpedienteId(Long expedienteId);

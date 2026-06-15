@@ -17,6 +17,9 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional
+/**
+ * Implementación de SubtipoDelitoService: contiene lógica para la gestión de subtipos.
+ */
 public class SubtipoDelitoServiceImpl implements SubtipoDelitoService {
 
     private final SubtipoDelitoRepository subtipoDelitoRepository;

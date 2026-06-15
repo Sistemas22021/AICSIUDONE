@@ -16,6 +16,11 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/escenas")
 @RequiredArgsConstructor
+/**
+ * Controlador REST para la gestión de escenas de levantamiento.
+ * Incluye creación, control de checklist, cierre, bloqueo y avance de pasos.
+ * Rutas principales: /api/v1/escenas
+ */
 public class EscenaController {
 
     private final EscenaService escenaService;

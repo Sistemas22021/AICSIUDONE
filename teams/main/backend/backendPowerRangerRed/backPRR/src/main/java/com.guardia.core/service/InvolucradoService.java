@@ -5,6 +5,9 @@ import com.guardia.core.model.enums.TipoRol;
 
 import java.util.List;
 
+/**
+ * Servicio para gestionar personas involucradas en expedientes (víctimas, testigos, sospechosos).
+ */
 public interface InvolucradoService {
     InvolucradoResponse obtenerPorId(Long id);
     List<InvolucradoResponse> obtenerTodos();

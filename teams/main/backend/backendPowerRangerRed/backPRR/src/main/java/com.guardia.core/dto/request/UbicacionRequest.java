@@ -5,6 +5,10 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
+/**
+ * DTO de solicitud para una ubicación detallada.
+ * Incluye municipio, sector, dirección, referencia y coordenadas.
+ */
 public class UbicacionRequest {
     @NotBlank
     private String municipio;

@@ -26,6 +26,11 @@ import java.util.List;
  * }
  */
 @Data
+/**
+ * DTO que representa exactamente el payload que envía el frontend para un incidente.
+ * Contiene estructuras internas (UbicacionFrontRequest, DelitoFrontRequest, etc.)
+ * y se usa como adaptador en IncidenteController para convertir a ExpedienteRequest.
+ */
 public class IncidenteRequest {
 
     private String tipoRegistro;

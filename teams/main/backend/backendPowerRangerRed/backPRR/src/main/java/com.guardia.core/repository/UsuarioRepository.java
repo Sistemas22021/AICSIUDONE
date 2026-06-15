@@ -7,6 +7,10 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
+/**
+ * Repositorio JPA para usuarios del sistema.
+ * Soporta búsquedas por identificación o correo y operaciones de existencia.
+ */
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     Optional<Usuario> findByIdentificacion(String identificacion);
     Optional<Usuario> findByCorreo(String correo);

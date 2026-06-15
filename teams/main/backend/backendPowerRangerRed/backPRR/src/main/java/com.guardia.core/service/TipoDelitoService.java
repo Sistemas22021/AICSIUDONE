@@ -5,6 +5,9 @@ import com.guardia.core.dto.response.TipoDelitoResponse;
 
 import java.util.List;
 
+/**
+ * Servicio para gestionar tipos de delito y operaciones asociadas (CRUD, filtros).
+ */
 public interface TipoDelitoService {
     TipoDelitoResponse crear(TipoDelitoRequest request);
     TipoDelitoResponse obtenerPorId(Long id);

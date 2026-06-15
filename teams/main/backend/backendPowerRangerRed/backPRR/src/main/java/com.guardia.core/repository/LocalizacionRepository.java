@@ -7,6 +7,10 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
+/**
+ * Repositorio JPA para localizaciones.
+ * Permite búsquedas por municipio o sector.
+ */
 public interface LocalizacionRepository extends JpaRepository<Localizacion, Long> {
     List<Localizacion> findByMunicipio(String municipio);
     List<Localizacion> findBySector(String sector);

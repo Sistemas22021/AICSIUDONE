@@ -5,6 +5,9 @@ import com.guardia.core.model.enums.EstadoExpediente;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * DTO de respuesta que resume un expediente completo con escenas, involucrados y hashes.
+ */
 public record ExpedienteResponse(
         Long id,
         String folio,

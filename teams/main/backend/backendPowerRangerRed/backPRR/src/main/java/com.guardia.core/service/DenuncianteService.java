@@ -5,6 +5,9 @@ import com.guardia.core.dto.response.DenuncianteResponse;
 
 import java.util.List;
 
+/**
+ * Servicio para gestión de denunciantes: CRUD y búsquedas por identificación.
+ */
 public interface DenuncianteService {
     DenuncianteResponse crear(DenuncianteRequest request);
     DenuncianteResponse obtenerPorId(Long id);

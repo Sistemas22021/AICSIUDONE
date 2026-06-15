@@ -7,6 +7,10 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
+/**
+ * DTO de solicitud para crear un expediente completo.
+ * Incluye ubicacion, lista de delitos, victimas, descripción y denunciante opcional.
+ */
 public class ExpedienteRequest {
 
     @NotNull

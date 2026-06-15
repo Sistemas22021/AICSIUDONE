@@ -16,6 +16,11 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/localizaciones")
 @RequiredArgsConstructor
+/**
+ * Controlador REST para gestionar localizaciones (direcciones y coordenadas).
+ * Provee endpoints para registrar GPS, registrar dirección manual y validar ubicaciones.
+ * Rutas principales: /api/v1/localizaciones
+ */
 public class LocalizacionController {
 
     private final LocalizacionService localizacionService;

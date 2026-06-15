@@ -14,6 +14,10 @@ import com.guardia.core.model.enums.EstadoExpediente;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+/**
+ * Entidad principal que representa un expediente de investigación.
+ * Agrupa folio, estado, escenas, involucrados, delitos y metadatos de integridad.
+ */
 public class Expediente {
 
     @Id

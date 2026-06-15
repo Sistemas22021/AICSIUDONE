@@ -15,6 +15,9 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional
+/**
+ * Implementación de LocalizacionService que gestiona la persistencia y validación de ubicaciones.
+ */
 public class LocalizacionServiceImpl implements LocalizacionService {
 
     private final LocalizacionRepository localizacionRepository;

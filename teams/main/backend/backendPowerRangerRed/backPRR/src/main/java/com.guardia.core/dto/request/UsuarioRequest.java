@@ -3,6 +3,10 @@ package com.guardia.core.dto.request;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
+/**
+ * DTO de solicitud para crear o actualizar un usuario del sistema.
+ * Campos: nombre, identificación, credenciales y correo.
+ */
 public record UsuarioRequest(
         @NotBlank(message = "El nombre es obligatorio")
         String nombre,

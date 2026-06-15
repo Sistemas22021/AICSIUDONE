@@ -5,6 +5,10 @@ import com.guardia.core.dto.response.VictimaResponse;
 
 import java.util.List;
 
+/**
+ * Servicio de dominio para operaciones sobre víctimas.
+ * Define las operaciones CRUD y consultas relacionadas con víctimas de expedientes.
+ */
 public interface VictimaService {
     VictimaResponse crear(VictimaRequest request);
     VictimaResponse obtenerPorId(Long id);

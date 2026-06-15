@@ -5,6 +5,9 @@ import com.guardia.core.dto.response.EscenaNegativaResponse;
 
 import java.util.List;
 
+/**
+ * Servicio para gestionar registros de escenas negativas (sin hallazgos).
+ */
 public interface EscenaNegativaService {
     EscenaNegativaResponse crear(EscenaNegativaRequest request);
     EscenaNegativaResponse obtenerPorId(Long id);

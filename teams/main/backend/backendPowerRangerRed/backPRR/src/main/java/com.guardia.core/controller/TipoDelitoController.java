@@ -15,6 +15,11 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/tipos-delito")
 @RequiredArgsConstructor
+/**
+ * Controlador REST para gestionar los tipos de delito.
+ * Exposa endpoints CRUD y consultas relacionadas con tipos de delito.
+ * Rutas principales: /api/v1/tipos-delito
+ */
 public class TipoDelitoController {
 
     private final TipoDelitoService tipoDelitoService;

@@ -4,6 +4,10 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
+/**
+ * DTO de solicitud para crear o actualizar un denunciante.
+ * Incluye identificacion, nombre, telefono, direccion y su relación con el hecho.
+ */
 public class DenuncianteRequest {
 
     @NotBlank(message = "La identificación del denunciante es obligatoria")

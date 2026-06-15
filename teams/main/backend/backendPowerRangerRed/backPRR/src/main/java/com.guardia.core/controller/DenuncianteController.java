@@ -16,6 +16,11 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/denunciantes")
 @RequiredArgsConstructor
+/**
+ * Controlador REST para gestionar denunciantes.
+ * Provee operaciones CRUD y registro de la relación del denunciante con el hecho.
+ * Rutas principales: /api/v1/denunciantes
+ */
 public class DenuncianteController {
 
     private final DenuncianteService denuncianteService;

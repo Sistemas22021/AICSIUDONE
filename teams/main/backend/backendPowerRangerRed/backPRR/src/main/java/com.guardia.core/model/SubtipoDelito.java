@@ -10,6 +10,9 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+/**
+ * Entidad que representa un subtipo de delito y su asociación con el tipo padre.
+ */
 public class SubtipoDelito {
 
     @Id

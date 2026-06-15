@@ -19,6 +19,9 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional
+/**
+ * Implementación de ModusOperandiService: operaciones para crear, buscar y comparar patrones.
+ */
 public class ModusOperandiServiceImpl implements ModusOperandiService {
 
     private final ModusOperandiRepository modusOperandiRepository;

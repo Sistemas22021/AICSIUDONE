@@ -8,6 +8,10 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
+/**
+ * Repositorio JPA para la entidad Victima.
+ * Proporciona operaciones CRUD y consultas por expediente o identificación.
+ */
 public interface VictimaRepository extends JpaRepository<Victima, Long> {
     List<Victima> findByExpedienteId(Long expedienteId);
     Optional<Victima> findByIdentificacion(String identificacion);

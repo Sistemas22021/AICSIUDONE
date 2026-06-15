@@ -3,6 +3,10 @@ package com.guardia.core.dto.request;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
+/**
+ * DTO de solicitud para crear o modificar un tipo de delito.
+ * Campos: nombre, descripcion y flag que indica si requiere subtipo.
+ */
 public record TipoDelitoRequest(
         @NotBlank(message = "El nombre es obligatorio")
         String nombre,

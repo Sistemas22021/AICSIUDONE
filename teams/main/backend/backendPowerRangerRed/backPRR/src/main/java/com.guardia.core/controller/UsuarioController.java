@@ -16,6 +16,11 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/usuarios")
 @RequiredArgsConstructor
+/**
+ * Controlador REST para gestionar usuarios del sistema (investigadores, agentes).
+ * Soporta creación, consulta, actualización, eliminación y autenticación básica.
+ * Rutas principales: /api/v1/usuarios
+ */
 public class UsuarioController {
 
     private final UsuarioService usuarioService;

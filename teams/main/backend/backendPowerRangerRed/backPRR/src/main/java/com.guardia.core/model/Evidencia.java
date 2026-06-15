@@ -13,6 +13,10 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+/**
+ * Entidad que representa una evidencia forense vinculada a una escena.
+ * Maneja hash de integridad, timestamp y metadatos del investigador.
+ */
 public class Evidencia {
 
     @Id

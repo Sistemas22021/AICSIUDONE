@@ -11,6 +11,10 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+/**
+ * Entidad que representa una persona involucrada en un expediente.
+ * Puede ser víctima, testigo o sospechoso; incluye rol y datos de contacto.
+ */
 public class Involucrado {
 
     @Id

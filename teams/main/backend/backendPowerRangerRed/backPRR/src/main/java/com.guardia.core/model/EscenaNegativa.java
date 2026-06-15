@@ -10,6 +10,10 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+/**
+ * Entidad que representa un registro de escena negativa (inspección sin hallazgos).
+ * Contiene el elemento buscado, área inspeccionada, resultado y observaciones. 
+ */
 public class EscenaNegativa {
 
     @Id

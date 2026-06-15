@@ -9,6 +9,10 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
+/**
+ * Repositorio JPA para expedientes.
+ * Incluye búsquedas por folio, estado y creador.
+ */
 public interface ExpedienteRepository extends JpaRepository<Expediente, Long> {
     Optional<Expediente> findByFolio(String folio);
     List<Expediente> findByEstadoExpediente(EstadoExpediente estado);

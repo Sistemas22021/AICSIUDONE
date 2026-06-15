@@ -15,6 +15,11 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/victimas")
 @RequiredArgsConstructor
+/**
+ * Controlador REST para gestionar víctimas.
+ * Provee endpoints CRUD y operaciones de validación de identificación.
+ * Rutas principales: /api/v1/victimas
+ */
 public class VictimaController {
 
     private final VictimaService victimaService;

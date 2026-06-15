@@ -10,6 +10,10 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
+/**
+ * Repositorio JPA para escenas de levantamiento.
+ * Incluye consultas por expediente, investigador y una query fetch para investigador.
+ */
 public interface EscenaRepository extends JpaRepository<Escena, Long> {
     List<Escena> findByExpedienteId(Long expedienteId);
     List<Escena> findByLevantadaPorId(Long usuarioId);

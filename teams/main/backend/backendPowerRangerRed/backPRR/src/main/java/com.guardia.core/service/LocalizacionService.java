@@ -5,6 +5,9 @@ import com.guardia.core.dto.response.LocalizacionResponse;
 
 import java.util.List;
 
+/**
+ * Servicio para gestionar localizaciones: registrar GPS, dirección manual y validaciones.
+ */
 public interface LocalizacionService {
     LocalizacionResponse crear(LocalizacionRequest request);
     LocalizacionResponse obtenerPorId(Long id);
