@@ -13,6 +13,10 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+/**
+ * Entidad que representa un paso del checklist de una escena.
+ * Incluye orden, estado de completado y timestamps de inicio/cierre.
+ */
 public class EscenaChecklist {
 
     @Id

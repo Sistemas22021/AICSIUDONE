@@ -5,6 +5,9 @@ import com.guardia.core.dto.response.ModusOperandiResponse;
 
 import java.util.List;
 
+/**
+ * Servicio para análisis y gestión de modus operandi (patrones de actuación).
+ */
 public interface ModusOperandiService {
     ModusOperandiResponse crear(ModusOperandiRequest request);
     ModusOperandiResponse obtenerPorId(Long id);

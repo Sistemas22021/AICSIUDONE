@@ -12,6 +12,10 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+/**
+ * Entidad que representa un usuario del sistema (investigador/agente).
+ * Incluye credenciales, correo y relaciones con expedientes y escenas.
+ */
 public class Usuario {
 
     @Id

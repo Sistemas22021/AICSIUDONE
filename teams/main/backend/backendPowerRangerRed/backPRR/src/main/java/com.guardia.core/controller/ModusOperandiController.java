@@ -16,6 +16,11 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/modus-operandi")
 @RequiredArgsConstructor
+/**
+ * Controlador REST para gestionar modus operandi (patrones de actuación).
+ * Soporta CRUD, búsqueda por patrón y vinculación/desvinculación con expedientes.
+ * Rutas principales: /api/v1/modus-operandi
+ */
 public class ModusOperandiController {
 
     private final ModusOperandiService modusOperandiService;

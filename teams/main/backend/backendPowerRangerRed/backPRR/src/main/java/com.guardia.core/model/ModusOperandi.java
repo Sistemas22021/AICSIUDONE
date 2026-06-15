@@ -13,6 +13,10 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+/**
+ * Entidad que representa un modus operandi (patrón de actuación).
+ * Puede relacionarse con múltiples expedientes para análisis de patrones.
+ */
 public class ModusOperandi {
 
     @Id

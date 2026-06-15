@@ -19,6 +19,9 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional
+/**
+ * Implementación de EvidenciaService: lógica para persistencia y verificación de evidencias.
+ */
 public class EvidenciaServiceImpl implements EvidenciaService {
 
     private final EvidenciaRepository evidenciaRepository;

@@ -5,6 +5,9 @@ import com.guardia.core.dto.response.UsuarioResponse;
 
 import java.util.List;
 
+/**
+ * Servicio para gestión de usuarios: creación, autenticación y búsquedas.
+ */
 public interface UsuarioService {
     UsuarioResponse crear(UsuarioRequest request);
     UsuarioResponse obtenerPorId(Long id);

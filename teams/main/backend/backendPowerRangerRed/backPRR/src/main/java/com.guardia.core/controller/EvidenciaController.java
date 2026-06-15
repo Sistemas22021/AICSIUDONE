@@ -16,6 +16,11 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/evidencias")
 @RequiredArgsConstructor
+/**
+ * Controlador REST para gestionar evidencias forenses.
+ * Soporta CRUD, asignación de número, firma de levantamiento y verificación de integridad/hash.
+ * Rutas principales: /api/v1/evidencias
+ */
 public class EvidenciaController {
 
     private final EvidenciaService evidenciaService;

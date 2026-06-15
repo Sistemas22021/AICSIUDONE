@@ -18,6 +18,9 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional
+/**
+ * Implementación de EscenaNegativaService: lógica para creación, actualización y validación de registros negativos.
+ */
 public class EscenaNegativaServiceImpl implements EscenaNegativaService {
 
     private final EscenaNegativaRepository escenaNegativaRepository;

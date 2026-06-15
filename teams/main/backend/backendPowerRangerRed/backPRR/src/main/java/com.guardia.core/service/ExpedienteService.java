@@ -7,6 +7,9 @@ import com.guardia.core.model.enums.EstadoExpediente;
 
 import java.util.List;
 
+/**
+ * Servicio central para la gestión de expedientes: creación, sellado y verificación de integridad.
+ */
 public interface ExpedienteService {
     ExpedienteResponse crear(ExpedienteRequest request);
     ExpedienteResponse obtenerPorId(Long id);

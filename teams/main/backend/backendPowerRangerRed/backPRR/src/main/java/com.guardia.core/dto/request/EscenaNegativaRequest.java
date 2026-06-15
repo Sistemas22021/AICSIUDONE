@@ -3,6 +3,10 @@ package com.guardia.core.dto.request;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
+/**
+ * DTO de solicitud para registrar una escena negativa (sin hallazgos).
+ * Campos: elemento buscado, área, resultado y observaciones, vinculado a una escena.
+ */
 public record EscenaNegativaRequest(
         @NotBlank(message = "El elemento buscado es obligatorio")
         String elementoBuscado,

@@ -20,6 +20,10 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional
+/**
+ * Implementación del servicio VictimaService.
+ * Contiene la lógica de negocio para crear, actualizar y consultar víctimas.
+ */
 public class VictimaServiceImpl implements VictimaService {
 
     private final InvolucradoRepository involucradoRepository;

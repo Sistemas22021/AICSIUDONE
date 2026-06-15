@@ -8,6 +8,10 @@ import java.time.LocalTime;
 import lombok.Data;
 
 @Data
+/**
+ * DTO de solicitud que representa un delito dentro de un expediente.
+ * Contiene tipo, subtipo, fecha y horas del hecho y flag de hecho en curso.
+ */
 public class DelitoRequest {
     @NotBlank(message = "El delito es obligatorio")
     private String delito;

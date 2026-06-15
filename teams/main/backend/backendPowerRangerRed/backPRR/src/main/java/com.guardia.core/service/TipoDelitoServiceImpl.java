@@ -17,6 +17,9 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional
+/**
+ * Implementación de TipoDelitoService con lógica de persistencia y validaciones.
+ */
 public class TipoDelitoServiceImpl implements TipoDelitoService {
 
     private final TipoDelitoRepository tipoDelitoRepository;

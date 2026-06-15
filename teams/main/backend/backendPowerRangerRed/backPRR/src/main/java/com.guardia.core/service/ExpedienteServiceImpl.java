@@ -40,6 +40,10 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional
+/**
+ * Implementación de ExpedienteService que contiene la lógica de negocio principal
+ * para crear, sellar y verificar expedientes, así como validaciones asociadas.
+ */
 public class ExpedienteServiceImpl implements ExpedienteService {
 
     private final ExpedienteRepository expedienteRepository;

@@ -17,6 +17,11 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @RequestMapping("/api/expedientes")
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
+/**
+ * Controlador central para la gestión de expedientes.
+ * Maneja registro, sellado y verificación de integridad (hash) de expedientes.
+ * Ruta principal: /api/expedientes
+ */
 public class ExpedienteController {
 
     private final ExpedienteService expedienteService;

@@ -14,6 +14,9 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional
+/**
+ * Implementación de InvolucradoService: lógica para CRUD y consultas por rol/expediente.
+ */
 public class InvolucradoServiceImpl implements InvolucradoService {
 
     private final InvolucradoRepository involucradoRepository;

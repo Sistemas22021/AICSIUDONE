@@ -8,6 +8,10 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
+/**
+ * Repositorio JPA para tipos de delito.
+ * Incluye consultas por nombre y filtrado por si requieren subtipo.
+ */
 public interface TipoDelitoRepository extends JpaRepository<TipoDelito, Long> {
     Optional<TipoDelito> findByNombre(String nombre);
     List<TipoDelito> findByRequiereSubtipo(Boolean requiereSubtipo);

@@ -16,6 +16,11 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/escenas-negativas")
 @RequiredArgsConstructor
+/**
+ * Controlador REST para gestionar escenas negativas (sin hallazgos).
+ * Permite registrar resultados no encontrados, agregar observaciones y validar registros.
+ * Rutas principales: /api/v1/escenas-negativas
+ */
 public class EscenaNegativaController {
 
     private final EscenaNegativaService escenaNegativaService;

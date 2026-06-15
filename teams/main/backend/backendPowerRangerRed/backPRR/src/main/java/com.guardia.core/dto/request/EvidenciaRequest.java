@@ -3,6 +3,10 @@ package com.guardia.core.dto.request;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
+/**
+ * DTO de solicitud para registrar una evidencia.
+ * Campos: numeroItem, tipo, descripcion, escenaId, investigadorId y hash enviado por cliente.
+ */
 public record EvidenciaRequest(
         String numeroItem,
 
@@ -14,7 +18,7 @@ public record EvidenciaRequest(
         @NotNull(message = "La escena es obligatoria")
         Long escenaId,
 
-        Long investigadorId
+        Long investigadorId,
 
         String hashArchivoCliente
 ) {

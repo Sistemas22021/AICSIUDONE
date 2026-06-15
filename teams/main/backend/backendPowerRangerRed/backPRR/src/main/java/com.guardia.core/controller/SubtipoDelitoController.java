@@ -15,6 +15,11 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/subtipos-delito")
 @RequiredArgsConstructor
+/**
+ * Controlador REST para gestionar subtipos de delito.
+ * Permite crear, actualizar, listar y validar correspondencia con un tipo de delito.
+ * Rutas principales: /api/v1/subtipos-delito
+ */
 public class SubtipoDelitoController {
 
     private final SubtipoDelitoService subtipoDelitoService;

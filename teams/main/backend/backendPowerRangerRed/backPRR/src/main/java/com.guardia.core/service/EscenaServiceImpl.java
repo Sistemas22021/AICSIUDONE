@@ -29,6 +29,9 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional
+/**
+ * Implementación de EscenaService: maneja la lógica de checklist, pasos y estados de escena.
+ */
 public class EscenaServiceImpl implements EscenaService {
 
     private final EscenaRepository escenaRepository;

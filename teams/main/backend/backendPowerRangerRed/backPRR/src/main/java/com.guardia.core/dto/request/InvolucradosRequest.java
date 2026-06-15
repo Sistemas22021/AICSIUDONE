@@ -6,6 +6,10 @@ import lombok.Data;
 import java.util.List;
 
 @Data
+/**
+ * DTO de solicitud para involucrados dentro de un expediente.
+ * Incluye datos personales, rol, fotografía y relación con el hecho.
+ */
 public class InvolucradosRequest {
 
     @NotBlank

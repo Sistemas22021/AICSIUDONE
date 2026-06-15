@@ -16,6 +16,10 @@ import java.util.Comparator;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+/**
+ * Entidad que representa una escena de levantamiento asociada a un expediente.
+ * Gestiona checklist, evidencias, timestamps y estado del proceso.
+ */
 public class Escena {
 
     @Id

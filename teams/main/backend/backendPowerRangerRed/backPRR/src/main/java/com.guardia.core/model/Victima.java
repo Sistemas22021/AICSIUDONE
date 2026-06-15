@@ -13,6 +13,10 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+/**
+ * Entidad que representa una víctima vinculada a un expediente.
+ * Almacena datos personales y referencia al expediente correspondiente.
+ */
 public class Victima {
 
     @Id

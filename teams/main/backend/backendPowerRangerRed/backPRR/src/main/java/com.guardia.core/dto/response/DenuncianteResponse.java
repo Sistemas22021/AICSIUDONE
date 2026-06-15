@@ -1,5 +1,8 @@
 package com.guardia.core.dto.response;
 
+/**
+ * DTO de respuesta para un denunciante registrado.
+ */
 public record DenuncianteResponse(
         Long id,
         String nombre,

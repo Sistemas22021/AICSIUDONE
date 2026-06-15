@@ -1,5 +1,8 @@
 package com.guardia.core.dto.response;
 
+/**
+ * DTO de respuesta para localizaciones con resumen legible y coordenadas.
+ */
 public record LocalizacionResponse(
         Long id,
         String municipio,

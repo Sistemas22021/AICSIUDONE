@@ -1,5 +1,9 @@
 package com.guardia.core.dto.request;
 
+/**
+ * DTO de solicitud alternativo para localización (flat lat/lng).
+ * Útil para endpoints que esperan latitud/longitud en lugar de CoordenadasRequest.
+ */
 public record LocalizacionRequest(
         String municipio,
         String sector,
