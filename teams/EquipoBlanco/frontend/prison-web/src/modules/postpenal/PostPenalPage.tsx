@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { FileText, Users, UserCheck, Clock, ArrowRight, X, AlertTriangle, CheckCircle, RefreshCw, History } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { FileText, Users, UserCheck, Clock, X, AlertTriangle, CheckCircle, RefreshCw, History } from 'lucide-react'
 import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
 
@@ -47,8 +47,13 @@ export default function PostPenalPage() {
         }
     }
 
+    const initialLoadDone = useRef(false)
+
     useEffect(() => {
-        loadData()
+        if (!initialLoadDone.current) {
+            initialLoadDone.current = true
+            loadData()
+        }
     }, [])
 
     const filteredExpedientes = expedientes.filter(e => {
@@ -86,8 +91,8 @@ export default function PostPenalPage() {
             setSelectedExpediente(null)
             setMotivoCambio('')
             await loadData()
-        } catch (err: any) {
-            setError(err.response?.data?.message || 'Error al asignar el oficial.')
+        } catch (err) {
+            console.error('Error asignando oficial', err)
         } finally {
             setAssigning(false)
         }

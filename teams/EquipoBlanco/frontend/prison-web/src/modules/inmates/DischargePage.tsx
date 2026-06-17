@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, UserMinus, FileText, ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react'
+import { Search, UserMinus, ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react'
 import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
 
@@ -51,6 +51,7 @@ export default function DischargePage() {
             }
         } catch (err) {
             setError('Error al buscar reclusos.')
+            console.log(err)
         } finally {
             setLoading(false)
         }
@@ -73,8 +74,8 @@ export default function DischargePage() {
             })
             alert('Egreso registrado exitosamente.')
             navigate('/dashboard')
-        } catch (err: any) {
-            setError(err.response?.data?.message || 'Error al registrar el egreso.')
+        } catch (err) {
+            console.log(err)
             setLoading(false)
         }
     }

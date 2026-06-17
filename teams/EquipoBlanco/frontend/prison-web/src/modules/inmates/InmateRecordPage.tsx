@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
-import { useParams, useLocation, useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, User, Calendar, Scale, Fingerprint, FileText, Check, X, Clock, HelpCircle, AlertCircle, Move } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { useParams, useLocation, useNavigate, } from 'react-router-dom'
+import { ArrowLeft, User, Scale, Fingerprint, FileText, Check, X, Clock, AlertCircle, Move } from 'lucide-react'
 import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
 import TransferRequestModal from './TransferRequestModal'
@@ -96,9 +96,14 @@ export default function InmateRecordPage() {
     }
   }
 
+  const initialLoadDone = useRef(false)
+
   useEffect(() => {
-    loadData()
-  }, [id])
+    if (!initialLoadDone.current) {
+      initialLoadDone.current = true
+      loadData()
+    }
+  })
 
   const calculateAge = (birthDate?: string | null) => {
     if (!birthDate) return '—'

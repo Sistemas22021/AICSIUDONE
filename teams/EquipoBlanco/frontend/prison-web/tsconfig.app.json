@@ -16,9 +16,8 @@
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
-    "baseUrl": ".",
     "paths": {
-      "@cell-component/*": ["../../../main/frontend/lib-react-component/src/components/*"]
+      "@cell-component/*": ["./../../../main/frontend/lib-react-component/src/components/*"]
     }
   },
   "include": ["src"]

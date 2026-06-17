@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { X, Search, FileText, AlertCircle } from 'lucide-react'
 import api from '../../shared/api'
 
@@ -38,8 +38,14 @@ export default function TransferRequestModal({
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
 
+  const hasOpened = useRef(false)
+
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !hasOpened.current) {
+      hasOpened.current = true
+      setSelectedCellId('')
+      setReason('')
+      setErrorMsg('')
       const fetchCells = async () => {
         try {
           const res = await api.get<CellData[]>('/cells')
@@ -49,9 +55,8 @@ export default function TransferRequestModal({
         }
       }
       fetchCells()
-      setSelectedCellId('')
-      setReason('')
-      setErrorMsg('')
+    } else if (!isOpen) {
+      hasOpened.current = false
     }
   }, [isOpen])
 

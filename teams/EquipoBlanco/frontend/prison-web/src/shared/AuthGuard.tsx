@@ -60,12 +60,3 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   if (!checked) return <div className="p-4 text-center text-gray-500">Verificando sesión...</div>
   return children
 }
-
-/** Utilidad para leer el usuario mock actual desde cualquier componente */
-export function getMockUser(): { username: string; role: string } {
-  try {
-    return JSON.parse(localStorage.getItem('mock_user') || '{}')
-  } catch {
-    return { username: 'Oficial', role: 'Oficial Penitenciario' }
-  }
-}

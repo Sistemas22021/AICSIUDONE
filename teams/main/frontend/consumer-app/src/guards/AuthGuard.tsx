@@ -20,7 +20,7 @@ type AuthState = 'loading' | 'authenticated' | 'unauthenticated';
  *
  * Mientras resuelve el token, muestra un estado de carga.
  */
-export function AuthGuard({ children }: AuthGuardProps) {
+export default function AuthGuard({ children }: AuthGuardProps) {
   const [authState, setAuthState] = useState<AuthState>('loading');
 
   useEffect(() => {

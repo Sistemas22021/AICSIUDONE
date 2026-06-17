@@ -1,4 +1,4 @@
-import { AuthGuard } from './guards/AuthGuard';
+import AuthGuard from './guards/AuthGuard';
 import { WelcomePage } from './components/WelcomePage';
 
 /**

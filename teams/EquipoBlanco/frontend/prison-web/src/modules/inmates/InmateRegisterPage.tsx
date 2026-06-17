@@ -74,7 +74,7 @@ export default function InmateRegisterPage() {
       setCedulaExists(res.data.hasActiveRecord)
       setCedulaChecked(true)
     } catch {
-      setError('Error al verificar c\u00e9dula')
+      setError('Error al verificar cédula')
     }
   }
 
@@ -145,7 +145,7 @@ export default function InmateRegisterPage() {
           <h2 className="text-lg font-medium mb-4">Datos personales</h2>
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-              <label className="text-sm text-gray-600">C\u00e9dula de identidad *</label>
+              <label className="text-sm text-gray-600">Cédula de identidad *</label>
               <div className="flex gap-2 mt-1">
                 <input name="cedula" className="flex-1 border rounded-lg px-3 py-2"
                   value={form.cedula} onChange={handleChange} placeholder="V-12345678" required />
@@ -156,7 +156,7 @@ export default function InmateRegisterPage() {
               </div>
               {cedulaChecked && (
                 <p className={`text-sm mt-1 ${cedulaExists ? 'text-red-600' : 'text-green-600'}`}>
-                  {cedulaExists ? 'Esta c\u00e9dula ya tiene un expediente activo' : 'C\u00e9dula disponible'}
+                  {cedulaExists ? 'Esta cédula ya tiene un expediente activo' : 'Cédula disponible'}
                 </p>
               )}
             </div>
@@ -184,13 +184,13 @@ export default function InmateRegisterPage() {
               <label className="text-sm text-gray-600">Fecha de nacimiento</label>
               <input type="date" name="birthDate" className="w-full border rounded-lg px-3 py-2 mt-1"
                 value={form.birthDate} onChange={handleChange} />
-              {age && <p className="text-xs text-gray-500 mt-1">Edad: {age} a\u00f1os</p>}
+              {age && <p className="text-xs text-gray-500 mt-1">Edad: {age} años</p>}
             </div>
           </div>
         </section>
 
         <section className="bg-white border border-gray-200 rounded-xl p-5">
-          <h2 className="text-lg font-medium mb-4">Informaci\u00f3n judicial</h2>
+          <h2 className="text-lg font-medium mb-4">Información judicial</h2>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-sm text-gray-600">Delito imputado</label>
@@ -198,7 +198,7 @@ export default function InmateRegisterPage() {
                 value={form.crime} onChange={handleChange} />
             </div>
             <div>
-              <label className="text-sm text-gray-600">N\u00b0 de expediente</label>
+              <label className="text-sm text-gray-600">N° de expediente</label>
               <input name="caseNumber" className="w-full border rounded-lg px-3 py-2 mt-1"
                 value={form.caseNumber} onChange={handleChange} />
             </div>
@@ -219,7 +219,7 @@ export default function InmateRegisterPage() {
                 value={form.admissionDate} onChange={handleChange} />
             </div>
             <div>
-              <label className="text-sm text-gray-600">A\u00f1os de condena</label>
+              <label className="text-sm text-gray-600">Años de condena</label>
               <input type="number" min="0" name="sentenceYears" className="w-full border rounded-lg px-3 py-2 mt-1"
                 value={form.sentenceYears} onChange={handleChange} />
             </div>
@@ -229,7 +229,7 @@ export default function InmateRegisterPage() {
                 value={form.sentenceMonths} onChange={handleChange} />
             </div>
             <div>
-              <label className="text-sm text-gray-600">Fecha estimada de liberaci\u00f3n</label>
+              <label className="text-sm text-gray-600">Fecha estimada de liberación</label>
               <input type="date" className="w-full border rounded-lg px-3 py-2 mt-1 bg-gray-50"
                 value={releaseDate} disabled />
             </div>
@@ -237,7 +237,7 @@ export default function InmateRegisterPage() {
         </section>
 
         <section className="bg-white border border-gray-200 rounded-xl p-5">
-          <h2 className="text-lg font-medium mb-4">Caracter\u00edsticas f\u00edsicas</h2>
+          <h2 className="text-lg font-medium mb-4">Características físicas</h2>
           <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="text-sm text-gray-600">Color de ojos</label>
@@ -250,7 +250,7 @@ export default function InmateRegisterPage() {
                 value={form.hairColor} onChange={handleChange} />
             </div>
             <div>
-              <label className="text-sm text-gray-600">Complexi\u00f3n</label>
+              <label className="text-sm text-gray-600">Complexión</label>
               <input name="bodyBuild" className="w-full border rounded-lg px-3 py-2 mt-1"
                 value={form.bodyBuild} onChange={handleChange} />
             </div>
@@ -265,9 +265,9 @@ export default function InmateRegisterPage() {
                 value={form.weightKg} onChange={handleChange} />
             </div>
             <div className="col-span-3">
-              <label className="text-sm text-gray-600">Se\u00f1as particulares</label>
+              <label className="text-sm text-gray-600">Señas particulares</label>
               <textarea name="distinguishingMarks" className="w-full border rounded-lg px-3 py-2 mt-1"
-                rows="2" value={form.distinguishingMarks} onChange={handleChange} />
+                rows={2} value={form.distinguishingMarks} onChange={handleChange} />
             </div>
           </div>
         </section>
@@ -275,12 +275,12 @@ export default function InmateRegisterPage() {
         <section className="bg-white border border-gray-200 rounded-xl p-5">
           <h2 className="text-lg font-medium mb-4 flex items-center gap-2 text-gray-800">
             <Camera className="w-5 h-5 text-gray-500" />
-            Registro de Biom\u00e9tricos
+            Registro de Biométricos
           </h2>
           
           <div className="space-y-6">
             <div>
-              <label className="text-sm font-semibold text-gray-700 block mb-3">Fotograf\u00edas del interno (M\u00e1x. 3)</label>
+              <label className="text-sm font-semibold text-gray-700 block mb-3">Fotografías del interno (Máx. 3)</label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[
                   { key: 'photoUrl' as const, label: 'Foto Frontal' },
@@ -367,7 +367,7 @@ export default function InmateRegisterPage() {
           {belongings.map((b, i) => (
             <div key={i} className="flex gap-2 mb-2 items-start">
               <div className="flex-1">
-                <input placeholder="Descripci\u00f3n" className="w-full border rounded-lg px-3 py-2"
+                <input placeholder="Descripción" className="w-full border rounded-lg px-3 py-2"
                   value={b.description} onChange={e => updateBelonging(i, 'description', e.target.value)} />
               </div>
               <div className="w-20">

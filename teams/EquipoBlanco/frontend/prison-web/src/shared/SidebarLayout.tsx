@@ -1,26 +1,62 @@
 import { useState } from 'react'
-import { NavLink } from 'react-router-dom'
-import { getMockUser } from './AuthGuard'
+import { NavLink, useLocation } from 'react-router-dom'
+import { getMockUser } from './mockUser'
 
-const MENU_ITEMS = [
+type MenuItem = {
+  label: string
+  to?: string
+  children?: MenuItem[]
+}
+
+const MENU_ITEMS: MenuItem[] = [
   { label: 'Dashboard', to: '/dashboard' },
   { label: 'Registro de recluso', to: '/internos/registrar' },
-  { label: 'Registro de egreso', to: '/internos/egreso' },
-  { label: 'Mapa de Celdas', to: '/mapa' },
-  { label: 'Post-Penitenciario', to: '/post' },
+  {
+    label: 'Mapa de Celdas',
+    children: [
+      { label: 'Mapa de Celdas', to: '/mapa' },
+      { label: 'Configuración de Celdas', to: '/celdas/configurar' },
+    ],
+  },
+  {
+    label: 'Post-Penitenciario',
+    children: [
+      { label: 'Post-Penitenciario', to: '/post' },
+      { label: 'Registro de egreso', to: '/internos/egreso' },
+    ],
+  },
   { label: 'Control y Disciplina', to: '/control' },
-  { label: 'Configuración de Celdas', to: '/celdas/configurar' },
 ]
 
 export default function SidebarLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false)
   const mockUser = getMockUser()
+  const { pathname } = useLocation()
+
+  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {}
+    for (const item of MENU_ITEMS) {
+      if (item.children) {
+        initial[item.label] = item.children.some(c => c.to === pathname)
+      }
+    }
+    return initial
+  })
+
+  function toggleMenu(label: string) {
+    setExpandedMenus(prev => ({ ...prev, [label]: !prev[label] }))
+  }
 
   function handleLogout() {
     localStorage.removeItem('mock_user')
     sessionStorage.clear()
     window.location.reload()
   }
+
+  const linkBase = (isActive: boolean) =>
+    `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+      isActive ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+    }`
 
   return (
     <>
@@ -41,20 +77,70 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
         </div>
 
         <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
-          {MENU_ITEMS.map(item => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                  isActive ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                } ${collapsed ? 'justify-center' : ''}`
+          {MENU_ITEMS.map(item => {
+            if (item.children) {
+              const hasActiveChild = item.children.some(c => c.to === pathname)
+              const isExpanded = expandedMenus[item.label]
+
+              if (collapsed) {
+                return (
+                  <div key={item.label} className="space-y-1">
+                    <div className="flex items-center justify-center px-3 py-2.5 rounded-lg text-xs text-gray-400 uppercase tracking-wider">
+                      {item.label.slice(0, 1)}
+                    </div>
+                  </div>
+                )
               }
-              title={collapsed ? item.label : undefined}
-            >
-              {!collapsed && <span className="truncate">{item.label}</span>}
-            </NavLink>
-          ))}
+
+              return (
+                <div key={item.label} className="space-y-0.5">
+                  <button
+                    onClick={() => toggleMenu(item.label)}
+                    className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                      hasActiveChild ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    }`}
+                  >
+                    <span className="truncate">{item.label}</span>
+                    <svg
+                      className={`w-4 h-4 shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                      fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {isExpanded && (
+                    <div className="ml-3 pl-3 border-l border-gray-200 space-y-0.5">
+                      {item.children.map(child => (
+                        <NavLink
+                          key={child.to}
+                          to={child.to!}
+                          className={({ isActive }) =>
+                            `${linkBase(isActive)} ${collapsed ? 'justify-center' : ''}`
+                          }
+                          title={collapsed ? child.label : undefined}
+                        >
+                          {!collapsed && <span className="truncate text-xs">{child.label}</span>}
+                        </NavLink>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            }
+
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to!}
+                className={({ isActive }) =>
+                  `${linkBase(isActive)} ${collapsed ? 'justify-center' : ''}`
+                }
+                title={collapsed ? item.label : undefined}
+              >
+                {!collapsed && <span className="truncate">{item.label}</span>}
+              </NavLink>
+            )
+          })}
         </nav>
 
         <div className="border-t border-gray-100">
@@ -67,12 +153,12 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
           <button
             onClick={handleLogout}
             className={`flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors ${collapsed ? 'justify-center' : ''}`}
-            title={collapsed ? 'Cerrar Sesi\u00f3n' : undefined}
+            title={collapsed ? 'Cerrar Sesión' : undefined}
           >
             <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
-            {!collapsed && <span>Cerrar Sesi\u00f3n</span>}
+            {!collapsed && <span>Cerrar Sesión</span>}
           </button>
         </div>
       </aside>

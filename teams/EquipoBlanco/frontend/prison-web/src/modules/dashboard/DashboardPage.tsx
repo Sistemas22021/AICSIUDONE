@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { MapPin, Users, CheckCircle, AlertTriangle, Info, DoorOpen, Gauge, BarChart3, Move, Check, X, Clock, UserPlus, Search, ArrowRight, Activity } from 'lucide-react'
+import { MapPin, AlertTriangle, Info, DoorOpen, Gauge, X, Clock, UserPlus, Search, ArrowRight, Activity } from 'lucide-react'
 import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
 
@@ -68,8 +68,13 @@ export default function DashboardPage() {
     }
   }
 
+  const initialLoadDone = useRef(false)
+
   useEffect(() => {
-    loadDashboard(false)
+    if (!initialLoadDone.current) {
+      initialLoadDone.current = true
+      loadDashboard(false)
+    }
     const interval = setInterval(() => {
       loadDashboard(true)
     }, 5000)
@@ -90,9 +95,8 @@ export default function DashboardPage() {
       })
       alert('Traslado aprobado con éxito.')
       loadDashboard()
-    } catch (err: any) {
-      const message = err.response?.data?.message || 'Error al aprobar el traslado.'
-      alert(message)
+    } catch (err) {
+      console.log(err)
     } finally {
       setActionLoading(false)
     }
@@ -123,9 +127,8 @@ export default function DashboardPage() {
       alert('Solicitud de traslado rechazada con éxito.')
       setRejectionModalTransfer(null)
       loadDashboard()
-    } catch (err: any) {
-      const message = err.response?.data?.message || 'Error al rechazar el traslado.'
-      setRejectionError(message)
+    } catch (err) {
+      console.log(err)
     } finally {
       setActionLoading(false)
     }
@@ -151,7 +154,6 @@ export default function DashboardPage() {
   const totalCeldas = celdas.length
   const totalReclusos = celdas.reduce((s, c) => s + (c.currentOccupancy ?? 0), 0)
   const capacidadTotal = celdas.reduce((s, c) => s + c.maxCapacity, 0)
-  const capacidadDisponible = capacidadTotal - totalReclusos
   const pctOcupacionNum = capacidadTotal > 0 ? (totalReclusos / capacidadTotal) * 100 : 0
   const pctOcupacion = pctOcupacionNum.toFixed(1)
   
