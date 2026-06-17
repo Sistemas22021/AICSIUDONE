@@ -5,9 +5,10 @@ import InmateRegisterPage from './modules/inmates/InmateRegisterPage'
 import InmateRecordPage from './modules/inmates/InmateRecordPage'
 import DischargePage from './modules/inmates/DischargePage'
 import DashboardPage from './modules/dashboard/DashboardPage'
+import PostPenalPage from './modules/postpenal/PostPenalPage'
 import PlaceholderPage from './shared/PlaceholderPage'
 import AuthGuard from './shared/AuthGuard'
-import { FileText, ShieldAlert } from 'lucide-react'
+import { ShieldAlert } from 'lucide-react'
 
 export default function App() {
     return (
@@ -21,13 +22,7 @@ export default function App() {
                     <Route path="/internos/expediente/:id" element={<InmateRecordPage />} />
                     <Route path="/internos/egreso" element={<DischargePage />} />
                     <Route path="/dashboard" element={<DashboardPage />} />
-                    <Route path="/post" element={
-                        <PlaceholderPage
-                            title="Post-Penitenciario"
-                            description="Gestion de seguimiento post-penitenciario, libertad condicional y reinsercion social."
-                            icon={FileText}
-                        />
-                    } />
+                    <Route path="/post" element={<PostPenalPage />} />
                     <Route path="/control" element={
                         <PlaceholderPage
                             title="Control y Disciplina"

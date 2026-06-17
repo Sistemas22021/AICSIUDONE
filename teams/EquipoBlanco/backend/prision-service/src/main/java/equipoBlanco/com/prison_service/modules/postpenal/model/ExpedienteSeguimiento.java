@@ -25,6 +25,15 @@ public class ExpedienteSeguimiento {
     private String nivelRiesgo;
     private String estado;
 
+    private String oficialAsignadoNombre;
+    private String oficialAsignadoCedula;
+
+    @ElementCollection
+    @CollectionTable(name = "expediente_historial_asignacion", joinColumns = @JoinColumn(name = "expediente_id"))
+    @Column(name = "registro")
+    @Builder.Default
+    private java.util.List<String> historialAsignaciones = new java.util.ArrayList<>();
+
     public void completarPerfil() {
         this.estado = "completado";
     }
