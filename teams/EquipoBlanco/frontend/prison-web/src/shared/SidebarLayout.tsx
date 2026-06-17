@@ -5,6 +5,7 @@ import { getMockUser } from './AuthGuard'
 const MENU_ITEMS = [
   { label: 'Dashboard', to: '/dashboard' },
   { label: 'Registro de recluso', to: '/internos/registrar' },
+  { label: 'Registro de egreso', to: '/internos/egreso' },
   { label: 'Mapa de Celdas', to: '/mapa' },
   { label: 'Post-Penitenciario', to: '/post' },
   { label: 'Control y Disciplina', to: '/control' },

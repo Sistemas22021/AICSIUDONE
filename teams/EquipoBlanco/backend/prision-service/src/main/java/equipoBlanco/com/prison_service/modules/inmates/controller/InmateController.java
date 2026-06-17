@@ -53,4 +53,9 @@ public class InmateController {
     public ResponseEntity<List<InmateDto>> getByCell(@PathVariable UUID cellId) {
         return ResponseEntity.ok(inmateService.getInmatesByCell(cellId));
     }
+
+    @PostMapping("/{id}/discharge")
+    public ResponseEntity<InmateDto> discharge(@PathVariable UUID id, @RequestBody equipoBlanco.com.prison_service.modules.inmates.dto.DischargeDto dto) {
+        return ResponseEntity.ok(inmateService.dischargeInmate(id, dto));
+    }
 }

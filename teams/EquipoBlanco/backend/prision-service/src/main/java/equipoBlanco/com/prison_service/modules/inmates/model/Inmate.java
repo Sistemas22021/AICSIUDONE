@@ -45,6 +45,10 @@ public class Inmate {
     @Column(columnDefinition = "TEXT")
     private String distinguishingMarks;
 
+    private String motivoEgreso;
+    @Column(columnDefinition = "TEXT")
+    private String observacionesEgreso;
+
     @OneToMany(mappedBy = "inmate", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<InmatePhoto> photos;
 

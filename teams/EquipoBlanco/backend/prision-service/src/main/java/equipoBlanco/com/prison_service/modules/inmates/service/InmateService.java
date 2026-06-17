@@ -8,6 +8,8 @@ import equipoBlanco.com.prison_service.modules.inmates.model.InmatePhoto;
 import equipoBlanco.com.prison_service.modules.inmates.model.InmateFingerprint;
 import equipoBlanco.com.prison_service.modules.inmates.model.Inmate.InmateStatus;
 import equipoBlanco.com.prison_service.modules.inmates.repository.InmateRepository;
+import equipoBlanco.com.prison_service.modules.inmates.dto.DischargeDto;
+import equipoBlanco.com.prison_service.modules.postpenal.service.PostPenalService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
@@ -19,6 +21,7 @@ import java.util.UUID;
 public class InmateService {
 
     private final InmateRepository inmateRepository;
+    private final PostPenalService postPenalService;
 
     public boolean cedulaHasActiveRecord(String cedula) {
         return inmateRepository.existsByCedulaAndStatusNot(cedula, InmateStatus.EGRESADO);
@@ -126,6 +129,28 @@ public class InmateService {
             .toList();
     }
 
+    public InmateDto dischargeInmate(UUID inmateId, DischargeDto dto) {
+        Inmate inmate = inmateRepository.findById(inmateId)
+            .orElseThrow(() -> new RuntimeException("Recluso no encontrado con ID: " + inmateId));
+
+        if (inmate.getStatus() == InmateStatus.EGRESADO) {
+            throw new RuntimeException("El recluso ya se encuentra egresado");
+        }
+
+        inmate.setStatus(InmateStatus.EGRESADO);
+        inmate.setCell(null);
+        inmate.setDischargeDate(dto.getFechaEgreso() != null ? dto.getFechaEgreso() : LocalDate.now());
+        inmate.setMotivoEgreso(dto.getMotivoEgreso());
+        inmate.setObservacionesEgreso(dto.getObservacionesEgreso());
+
+        if ("Cumplimiento de condena".equalsIgnoreCase(dto.getMotivoEgreso()) ||
+            "Libertad condicional".equalsIgnoreCase(dto.getMotivoEgreso())) {
+            postPenalService.createBaseProfile(inmate, inmate.getDischargeDate());
+        }
+
+        return toDto(inmateRepository.save(inmate));
+    }
+
     private InmateDto toDto(Inmate i) {
         return InmateDto.builder()
             .id(i.getId())
@@ -135,6 +160,8 @@ public class InmateService {
             .status(i.getStatus())
             .admissionDate(i.getAdmissionDate())
             .dischargeDate(i.getDischargeDate())
+            .motivoEgreso(i.getMotivoEgreso())
+            .observacionesEgreso(i.getObservacionesEgreso())
             .estimatedReleaseDate(i.getEstimatedReleaseDate())
             .cellId(i.getCell() != null ? i.getCell().getId() : null)
             .cellIdentifier(i.getCell() != null ? i.getCell().getIdentifier() : null)
@@ -194,6 +221,8 @@ public class InmateService {
             .court(i.getCourt())
             .admissionDate(i.getAdmissionDate())
             .dischargeDate(i.getDischargeDate())
+            .motivoEgreso(i.getMotivoEgreso())
+            .observacionesEgreso(i.getObservacionesEgreso())
             .sentenceYears(i.getSentenceYears())
             .sentenceMonths(i.getSentenceMonths())
             .estimatedReleaseDate(i.getEstimatedReleaseDate())

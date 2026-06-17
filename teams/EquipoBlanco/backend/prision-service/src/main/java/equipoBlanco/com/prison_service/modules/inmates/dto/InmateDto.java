@@ -21,6 +21,8 @@ public class InmateDto {
     private String court;
     private LocalDate admissionDate;
     private LocalDate dischargeDate;
+    private String motivoEgreso;
+    private String observacionesEgreso;
     private Integer sentenceYears;
     private Integer sentenceMonths;
     private LocalDate estimatedReleaseDate;
