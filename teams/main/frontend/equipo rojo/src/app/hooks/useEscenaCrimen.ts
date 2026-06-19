@@ -127,7 +127,7 @@ export function useEscenaCrimen() {
                 if (parsed.tipoEscena === undefined) parsed.tipoEscena = 'escena_completa'
                 if (parsed.noHayEscenaNegativa === undefined) parsed.noHayEscenaNegativa = false
                 if (!parsed.liberacion?.pin) {
-                    parsed.liberacion = { hora: parsed.liberacion?.hora || '' }
+                    parsed.liberacion = {hora: parsed.liberacion?.hora || ''}
                 }
                 if (parsed.alertasIntegridad === undefined) parsed.alertasIntegridad = []
 
@@ -151,7 +151,7 @@ export function useEscenaCrimen() {
     useEffect(() => {
         const escenaId = state.escenaId
         if (!escenaId) return
-        import('../services/escenaService').then(({ obtenerEscena }) => {
+        import('../services/escenaService').then(({obtenerEscena}) => {
             obtenerEscena(escenaId).then(escenaDTO => {
                 const pasoMap: Record<string, 1 | 2 | 3 | 4> = {
                     ASEGURAR: 1, DOCUMENTAR: 2, RECOLECTAR: 3, LIBERAR: 4,
@@ -200,7 +200,7 @@ export function useEscenaCrimen() {
     // --- Acciones ---
 
     const setFolioExpediente = (folio: string) => {
-        setState((prev: EscenaCrimenState) => ({ ...prev, folioExpediente: folio }))
+        setState((prev: EscenaCrimenState) => ({...prev, folioExpediente: folio}))
     }
 
     const vincularExpediente = (expedienteId: number, folio: string) => {
@@ -213,14 +213,14 @@ export function useEscenaCrimen() {
     }
 
     const setEscenaId = (id: number) => {
-        setState((prev: EscenaCrimenState) => ({ ...prev, escenaId: id, sincronizado: true }))
+        setState((prev: EscenaCrimenState) => ({...prev, escenaId: id, sincronizado: true}))
     }
 
     const completarPaso1 = async () => {
         if (!canCompletarPaso1) return
         if (isPaso1Completado) return
         if (state.escenaId) {
-            const { avanzarPasoEscena } = await import('../services/escenaService')
+            const {avanzarPasoEscena} = await import('../services/escenaService')
             await avanzarPasoEscena(state.escenaId)
         }
         setState((prev: EscenaCrimenState) => ({
@@ -235,7 +235,7 @@ export function useEscenaCrimen() {
         if (isPaso2Completado) return
         if (state.escenaId) {
             if (state.noHayEscenaNegativa) {
-                await persistirNoHayEscenaNegativa()          // ← NUEVO
+                await persistirNoHayEscenaNegativa()
             } else {
                 const pendientes = state.escenaNegativa.filter(en => en.id.includes('-'))
                 for (const en of pendientes) {
@@ -254,7 +254,7 @@ export function useEscenaCrimen() {
         if (!canCompletarPaso3) return
         if (isPaso3Completado) return
         if (state.escenaId) {
-            const { avanzarPasoEscena } = await import('../services/escenaService')
+            const {avanzarPasoEscena} = await import('../services/escenaService')
             await avanzarPasoEscena(state.escenaId)
         }
         setState((prev: EscenaCrimenState) => ({
@@ -268,20 +268,20 @@ export function useEscenaCrimen() {
         if (!canCompletarPaso4) return
         if (isPaso4Completado) return
         if (state.escenaId) {
-            const { avanzarPasoEscena } = await import('../services/escenaService')
+            const {avanzarPasoEscena} = await import('../services/escenaService')
             await avanzarPasoEscena(state.escenaId)
         }
-        setState((prev: EscenaCrimenState) => ({ ...prev, paso4_completado: true }))
+        setState((prev: EscenaCrimenState) => ({...prev, paso4_completado: true}))
     }
 
     const updatePerimetro = (patch: Partial<EscenaCrimenState['perimetro']>) => {
         if (isPaso1Completado) return
-        setState((prev: EscenaCrimenState) => ({ ...prev, perimetro: { ...prev.perimetro, ...patch } }))
+        setState((prev: EscenaCrimenState) => ({...prev, perimetro: {...prev.perimetro, ...patch}}))
     }
 
     const setTipoEscena = (tipo: 'escena_completa' | 'solo_evidencia') => {
         if (isPaso1Completado) return
-        setState((prev: EscenaCrimenState) => ({ ...prev, tipoEscena: tipo }))
+        setState((prev: EscenaCrimenState) => ({...prev, tipoEscena: tipo}))
     }
 
     const addEvidencia = () => {
@@ -308,7 +308,7 @@ export function useEscenaCrimen() {
         if (!state.escenaId) return
         const ev = state.evidencias.find(e => e.id === localId)
         if (!ev) return
-        const { crearEvidencia } = await import('../services/escenaService')
+        const {crearEvidencia} = await import('../services/escenaService')
         try {
             const dto = {
                 numeroItem: ev.numeroSecuencial,
@@ -318,14 +318,13 @@ export function useEscenaCrimen() {
                 investigadorId: ev.investigadorId ?? undefined,
             }
             const saved = await crearEvidencia(dto)
-            // Actualizar el ID local → ID del backend, y volcar el hash recibido
             setState((prev: EscenaCrimenState) => ({
                 ...prev,
                 evidencias: prev.evidencias.map(e =>
                     e.id === localId
                         ? {
                             ...e,
-                            id: String(saved.id),        // reemplaza el UUID temporal
+                            id: String(saved.id),
                             hashIntegridad: saved.hashIntegridad,
                             timestamp: saved.timestampRegistro,
                         }
@@ -334,7 +333,7 @@ export function useEscenaCrimen() {
             }))
         } catch (err) {
             console.error('Error al guardar evidencia en backend:', err)
-            throw err   // El componente puede mostrar un toast de error
+            throw err
         }
     }
 
@@ -346,17 +345,19 @@ export function useEscenaCrimen() {
         }))
     }
 
-    const updateEvidencia = (id: string, patch: Partial<Evidencia>) => {
-        if (isPaso2Completado) return
+    // FUNCIÓN PARA EDITAR EN PASO 3 (y ahora también en Paso 2)
+    const updateEvidenciaPaso3 = (id: string, patch: Partial<Evidencia>) => {
+        // Permitir edición en PASO 2 también (cuando no está completado)
+        // La lógica de bloqueo está en el componente con disabled={isPaso2Completado}
         setState((prev: EscenaCrimenState) => ({
             ...prev,
-            evidencias: prev.evidencias.map(e => e.id === id ? { ...e, ...patch, timestamp: new Date().toISOString() } : e),
+            evidencias: prev.evidencias.map(e => e.id === id ? {...e, ...patch, timestamp: new Date().toISOString()} : e),
         }))
     }
 
     const updateLiberacion = (patch: Partial<EscenaCrimenState['liberacion']>) => {
         if (isPaso4Completado) return
-        setState((prev: EscenaCrimenState) => ({ ...prev, liberacion: { ...prev.liberacion, ...patch } }))
+        setState((prev: EscenaCrimenState) => ({...prev, liberacion: {...prev.liberacion, ...patch}}))
     }
 
     const addEscenaNegativa = () => {
@@ -375,16 +376,14 @@ export function useEscenaCrimen() {
 
     const removeEscenaNegativa = async (id: string) => {
         if (isPaso2Completado) return
-        const isBackendId = !id.includes('-')   // UUIDs tienen guiones; IDs del backend son numéricos
+        const isBackendId = !id.includes('-')
         if (isBackendId) {
-            const { eliminarEscenaNegativa } = await import('../services/escenaService')
+            const {eliminarEscenaNegativa} = await import('../services/escenaService')
             try {
                 await eliminarEscenaNegativa(Number(id))
             } catch (err: any) {
-                // Si el backend rechaza la eliminación (BusinessException → 422/400),
-                // no se elimina localmente tampoco. OCP: la regla vive en el backend.
                 console.error('El backend no permitió eliminar la escena negativa:', err.message)
-                throw err   // El componente muestra el error al usuario
+                throw err
             }
         }
         setState((prev: EscenaCrimenState) => ({
@@ -397,11 +396,11 @@ export function useEscenaCrimen() {
         if (!state.escenaId) return
         const en = state.escenaNegativa.find(e => e.id === localId)
         if (!en) return
-        const { crearEscenaNegativa } = await import('../services/escenaService')
+        const {crearEscenaNegativa} = await import('../services/escenaService')
         try {
             const dto = {
-                elementoBuscado: en.elemento,        // mapping frontend → backend
-                areaInspeccionada: en.lugar,         // mapping frontend → backend
+                elementoBuscado: en.elemento,
+                areaInspeccionada: en.lugar,
                 resultado: en.resultado,
                 observacion: en.observacion,
                 escenaId: state.escenaId,
@@ -410,7 +409,7 @@ export function useEscenaCrimen() {
             setState((prev: EscenaCrimenState) => ({
                 ...prev,
                 escenaNegativa: prev.escenaNegativa.map(e =>
-                    e.id === localId ? { ...e, id: String(saved.id) } : e
+                    e.id === localId ? {...e, id: String(saved.id)} : e
                 ),
             }))
         } catch (err) {
@@ -421,7 +420,7 @@ export function useEscenaCrimen() {
 
     const persistirNoHayEscenaNegativa = async () => {
         if (!state.escenaId) return
-        const { crearEscenaNegativa } = await import('../services/escenaService')
+        const {crearEscenaNegativa} = await import('../services/escenaService')
         try {
             await crearEscenaNegativa({
                 elementoBuscado: 'SIN_ELEMENTOS_NEGATIVOS',
@@ -441,7 +440,7 @@ export function useEscenaCrimen() {
         if (isPaso2Completado) return
         setState((prev: EscenaCrimenState) => ({
             ...prev,
-            escenaNegativa: prev.escenaNegativa.map(e => e.id === id ? { ...e, ...patch } : e),
+            escenaNegativa: prev.escenaNegativa.map(e => e.id === id ? {...e, ...patch} : e),
         }))
     }
 
@@ -459,17 +458,20 @@ export function useEscenaCrimen() {
             console.warn('No hay escenaId — la escena aún no fue persistida en el backend.')
             return
         }
-        const { verificarHashEvidencia } = await import('../services/escenaService')
+        const {verificarHashEvidencia} = await import('../services/escenaService')
         const resultados = await Promise.allSettled(
             state.evidencias
-                .filter(ev => ev.id && !ev.id.includes('-'))   // IDs numéricos son del backend
+                .filter(ev => ev.id && !ev.id.includes('-'))
                 .map(async ev => {
                     const integro = await verificarHashEvidencia(Number(ev.id))
-                    return { evidenciaId: ev.id, integro }
+                    return {evidenciaId: ev.id, integro}
                 })
         )
         const nuevasAlertas = resultados
-            .filter((r): r is PromiseFulfilledResult<{ evidenciaId: string; integro: boolean }> => r.status === 'fulfilled')
+            .filter((r): r is PromiseFulfilledResult<{
+                evidenciaId: string;
+                integro: boolean
+            }> => r.status === 'fulfilled')
             .map(r => ({
                 evidenciaId: r.value.evidenciaId,
                 mensaje: r.value.integro
@@ -477,17 +479,26 @@ export function useEscenaCrimen() {
                     : `⚠ Evidencia ${r.value.evidenciaId}: discrepancia de hash detectada`,
                 integro: r.value.integro,
             }))
-        setState((prev: EscenaCrimenState) => ({ ...prev, alertasIntegridad: nuevasAlertas }))
+        setState((prev: EscenaCrimenState) => ({...prev, alertasIntegridad: nuevasAlertas}))
     }
 
     const limpiarAlertas = () => {
-        setState((prev: EscenaCrimenState) => ({ ...prev, alertasIntegridad: [] }))
+        setState((prev: EscenaCrimenState) => ({...prev, alertasIntegridad: []}))
     }
 
     const resetEscena = () => {
         localStorage.removeItem(STORAGE_KEY)
         contadorEvidencias = 0
         setState(makeInitialState())
+    }
+
+    const desbloquearPaso3 = () => {
+        setState((prev: EscenaCrimenState) => ({...prev, paso3_completado: false}))
+    }
+
+    // NUEVA FUNCIÓN: Desbloquear Paso 2
+    const desbloquearPaso2 = () => {
+        setState((prev: EscenaCrimenState) => ({...prev, paso2_completado: false}))
     }
 
     return {
@@ -512,7 +523,7 @@ export function useEscenaCrimen() {
         addEvidencia,
         guardarEvidenciaEnBackend,
         removeEvidencia,
-        updateEvidencia,
+        updateEvidenciaPaso3,
         updateLiberacion,
         addEscenaNegativa,
         removeEscenaNegativa,
@@ -523,5 +534,7 @@ export function useEscenaCrimen() {
         verificarIntegridad,
         limpiarAlertas,
         resetEscena,
+        desbloquearPaso3,
+        desbloquearPaso2,
     }
 }
