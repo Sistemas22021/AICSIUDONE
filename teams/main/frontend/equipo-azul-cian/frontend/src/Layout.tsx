@@ -1,20 +1,20 @@
 import React from 'react';
 
 // Custom inline SVG icons matching the wireframes
-export const IconShield = () => (
+export const IconShield: React.FC = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
   </svg>
 );
 
-export const IconHome = () => (
+export const IconHome: React.FC = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
     <polyline points="9 22 9 12 15 12 15 22"/>
   </svg>
 );
 
-export const IconIncident = () => (
+export const IconIncident: React.FC = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
     <line x1="12" y1="9" x2="12" y2="13"/>
@@ -22,7 +22,7 @@ export const IconIncident = () => (
   </svg>
 );
 
-export const IconCar = () => (
+export const IconCar: React.FC = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="1" y="3" width="15" height="13" rx="2" ry="2"/>
     <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
@@ -31,7 +31,7 @@ export const IconCar = () => (
   </svg>
 );
 
-export const IconMap = () => (
+export const IconMap: React.FC = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
     <line x1="9" y1="3" x2="9" y2="18"/>
@@ -39,22 +39,34 @@ export const IconMap = () => (
   </svg>
 );
 
-export const IconLink = () => (
+export const IconLink: React.FC = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
     <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
   </svg>
 );
 
-export const IconUser = () => (
+export const IconUser: React.FC = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
     <circle cx="12" cy="7" r="4"/>
   </svg>
 );
 
-const Layout = ({ children, currentView, onViewChange }) => {
-  const menuItems = [
+interface LayoutProps {
+  children: React.ReactNode;
+  currentView: string;
+  onViewChange: (view: string) => void;
+}
+
+interface MenuItem {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+}
+
+const Layout: React.FC<LayoutProps> = ({ children, currentView, onViewChange }) => {
+  const menuItems: MenuItem[] = [
     { id: 'inicio', label: 'Inicio', icon: <IconHome /> },
     { id: 'incidentes', label: 'Incidentes', icon: <IconIncident /> },
     { id: 'patrullas', label: 'Patrullas', icon: <IconCar /> },
@@ -134,7 +146,7 @@ const Layout = ({ children, currentView, onViewChange }) => {
   );
 };
 
-const styles = {
+const styles: Record<string, React.CSSProperties> = {
   container: {
     display: 'flex',
     minHeight: '100vh',

@@ -1,19 +1,39 @@
 import React, { useState, useEffect } from 'react';
 
-const Patrullas = () => {
+export type PatrolStatus = 'AVAILABLE' | 'EN_ROUTE' | 'BUSY' | 'OUT_OF_SERVICE';
+
+export interface Patrol {
+  id: number;
+  code: string;
+  officerName: string;
+  latitude: number;
+  longitude: number;
+  status: PatrolStatus;
+  lastUpdated?: string;
+}
+
+interface NewPatrol {
+  code: string;
+  officerName: string;
+  latitude: string;
+  longitude: string;
+  status: PatrolStatus;
+}
+
+const Patrullas: React.FC = () => {
   // Estado para las patrullas
-  const [patrols, setPatrols] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [patrols, setPatrols] = useState<Patrol[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Estado para filtros
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('ALL');
 
   // Estado para el modal de registro
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [newPatrol, setNewPatrol] = useState({
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [newPatrol, setNewPatrol] = useState<NewPatrol>({
     code: '',
     officerName: '',
     latitude: '',
@@ -22,17 +42,17 @@ const Patrullas = () => {
   });
 
   // Cargar patrullas desde el backend
-  const fetchPatrols = async () => {
+  const fetchPatrols = async (): Promise<void> => {
     setLoading(true);
     try {
       const response = await fetch('http://localhost:8080/api/patrols');
       if (!response.ok) {
         throw new Error('Error al obtener la lista de patrullas');
       }
-      const data = await response.json();
+      const data: Patrol[] = await response.json();
       setPatrols(data);
       setError(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
       setError(err.message || 'No se pudo conectar con el servidor de patrullas.');
     } finally {
@@ -41,11 +61,11 @@ const Patrullas = () => {
   };
 
   useEffect(() => {
-    fetchPatrols();
+    void fetchPatrols();
   }, []);
 
   // Actualizar el estado de una patrulla
-  const handleStatusChange = async (id, newStatus) => {
+  const handleStatusChange = async (id: number, newStatus: string): Promise<void> => {
     try {
       const response = await fetch(`http://localhost:8080/api/patrols/${id}/status`, {
         method: 'PATCH',
@@ -59,17 +79,17 @@ const Patrullas = () => {
         throw new Error('Error al actualizar el estado de la patrulla');
       }
 
-      const updatedPatrol = await response.json();
+      const updatedPatrol: Patrol = await response.json();
       setPatrols(prevPatrols =>
         prevPatrols.map(patrol => (patrol.id === id ? updatedPatrol : patrol))
       );
-    } catch (err) {
+    } catch (err: any) {
       alert(`Error: ${err.message}`);
     }
   };
 
   // Crear una nueva patrulla
-  const handleCreatePatrol = async (e) => {
+  const handleCreatePatrol = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     if (!newPatrol.code || !newPatrol.officerName || !newPatrol.latitude || !newPatrol.longitude) {
       alert('Por favor complete todos los campos requeridos.');
@@ -97,7 +117,7 @@ const Patrullas = () => {
         throw new Error(errorData || 'Error al crear la patrulla. Asegúrese de que el código sea único.');
       }
 
-      const createdPatrol = await response.json();
+      const createdPatrol: Patrol = await response.json();
       setPatrols(prev => [createdPatrol, ...prev]);
       setIsModalOpen(false);
       setNewPatrol({
@@ -107,7 +127,7 @@ const Patrullas = () => {
         longitude: '',
         status: 'AVAILABLE'
       });
-    } catch (err) {
+    } catch (err: any) {
       alert(`Error al registrar patrulla: ${err.message}`);
     } finally {
       setIsSubmitting(false);
@@ -133,7 +153,7 @@ const Patrullas = () => {
   });
 
   // Traducción y badges de estado
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (status: PatrolStatus): React.ReactNode => {
     switch (status) {
       case 'AVAILABLE':
         return <span className="badge badge-green">Disponible</span>;
@@ -239,7 +259,7 @@ const Patrullas = () => {
           <div style={styles.errorIcon}>⚠️</div>
           <h3 style={{ marginBottom: '8px' }}>Error de Conexión</h3>
           <p style={{ color: 'var(--text-muted)' }}>{error}</p>
-          <button className="btn btn-secondary" style={{ marginTop: '16px' }} onClick={fetchPatrols}>
+          <button className="btn btn-secondary" style={{ marginTop: '16px' }} onClick={() => void fetchPatrols()}>
             Reintentar Conexión
           </button>
         </div>
@@ -279,7 +299,7 @@ const Patrullas = () => {
                   <td style={{ textAlign: 'right' }}>
                     <select
                       value={patrol.status}
-                      onChange={(e) => handleStatusChange(patrol.id, e.target.value)}
+                      onChange={(e) => void handleStatusChange(patrol.id, e.target.value)}
                       style={{
                         ...styles.tableSelect,
                         borderColor:
@@ -365,7 +385,7 @@ const Patrullas = () => {
                 <label style={styles.formLabel}>Estado Inicial</label>
                 <select
                   value={newPatrol.status}
-                  onChange={(e) => setNewPatrol({ ...newPatrol, status: e.target.value })}
+                  onChange={(e) => setNewPatrol({ ...newPatrol, status: e.target.value as PatrolStatus })}
                   style={styles.formInput}
                 >
                   <option value="AVAILABLE">Disponible</option>
@@ -400,7 +420,7 @@ const Patrullas = () => {
   );
 };
 
-const styles = {
+const styles: Record<string, React.CSSProperties> = {
   container: {
     display: 'flex',
     flexDirection: 'column',

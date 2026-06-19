@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Asignaciones = () => {
+const Asignaciones: React.FC = () => {
   return (
     <div>
       <h1 style={{ marginBottom: '8px', fontSize: '2rem', fontWeight: 600 }}>Asignaciones</h1>
