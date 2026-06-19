@@ -195,7 +195,11 @@ export function useEscenaCrimen() {
         ))
 
     const canCompletarPaso2 = todasEvidenciasCompletas && escenaNegativaValida
-    const canCompletarPaso3 = state.tipoEscena === 'solo_evidencia' || state.paso2_completado
+    const canCompletarPaso3 = state.evidencias.length > 0 &&
+        state.evidencias.every(ev =>
+            ev.embalaje.trim() !== '' &&
+            ev.horaRecoleccion.trim() !== ''
+        )
     const canCompletarPaso4 = !!state.liberacion.hora
 
     // --- Acciones ---
@@ -204,13 +208,30 @@ export function useEscenaCrimen() {
         setState((prev: EscenaCrimenState) => ({...prev, folioExpediente: folio}))
     }
 
-    const vincularExpediente = (expedienteId: number, folio: string) => {
+    const vincularExpediente = async (expedienteId: number, folio: string) => {
         setState((prev: EscenaCrimenState) => ({
             ...prev,
             expedienteId,
             folioExpediente: folio,
             sincronizado: false,
         }))
+
+        // Crear la escena en el backend automáticamente
+        try {
+            const { crearEscena } = await import('../services/escenaService')
+            const escena = await crearEscena({
+                expedienteId: expedienteId,
+                levantadaPorId: 1 // o el ID del usuario actual
+            })
+            setState((prev: EscenaCrimenState) => ({
+                ...prev,
+                escenaId: escena.id,
+                sincronizado: true,
+            }))
+            console.log('✅ Escena creada en el backend:', escena.id)
+        } catch (error) {
+            console.error('❌ Error al crear la escena:', error)
+        }
     }
 
     const setEscenaId = (id: number) => {
