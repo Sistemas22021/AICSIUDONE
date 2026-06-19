@@ -16,6 +16,10 @@ interface EscenaDelCrimenProps {
 
 export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDelCrimenProps) => {
     const [mostrarHistorial, setMostrarHistorial] = useState(false)
+    const [mensajeIntegridad, setMensajeIntegridad] = useState<{
+        texto: string
+        tipo: 'info' | 'success' | 'warning' | 'error'
+    } | null>(null)
 
     const {
         state,
@@ -33,6 +37,7 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
         setTipoEscena,
         setFolioExpediente,
         vincularExpediente,
+        setEscenaId,
         addEvidencia,
         removeEvidencia,
         updateEvidenciaPaso3,
@@ -51,6 +56,7 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
     useEffect(() => {
         if (expedienteIdInicial && folioInicial && !state.expedienteId) {
             vincularExpediente(expedienteIdInicial, folioInicial)
+                .catch((err: any) => console.error('Error al vincular expediente:', err))
         }
     }, [expedienteIdInicial, folioInicial, state.expedienteId, vincularExpediente])
 
@@ -76,24 +82,89 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
         return '✅ Puedes completar el paso 2'
     }
 
+    // ─── HANDLE VERIFICAR INTEGRIDAD ──────────────────────────────────────────
     const handleVerificarIntegridad = async () => {
-        if (!state.escenaId) {
-            alert('⚠️ Primero debes guardar la escena en el backend. Completa el Paso 2 primero.')
-            return
-        }
-
         if (!state.folioExpediente) {
-            alert('⚠️ Primero vincula este formulario a un expediente usando el campo "Folio del Expediente"')
+            setMensajeIntegridad({
+                texto: '⚠️ Primero vincula este formulario a un expediente usando el campo "Folio del Expediente"',
+                tipo: 'error'
+            })
             return
         }
 
-        try {
-            await verificarIntegridad(state.folioExpediente)
-            console.log('✅ Verificación de integridad completada')
-        } catch (error) {
-            console.error('❌ Error al verificar integridad:', error)
-            alert('Error al verificar la integridad del expediente')
+        // Si ya existe escenaId, verificar directamente
+        if (state.escenaId) {
+            try {
+                setMensajeIntegridad({
+                    texto: '🔄 Verificando integridad del expediente...',
+                    tipo: 'info'
+                })
+                await verificarIntegridad(state.folioExpediente)
+
+                if (state.alertasIntegridad.length > 0) {
+                    const alertas = state.alertasIntegridad.filter(a => !a.integro)
+                    if (alertas.length > 0) {
+                        setMensajeIntegridad({
+                            texto: `⚠️ Se detectaron ${alertas.length} evidencias con problemas de integridad`,
+                            tipo: 'warning'
+                        })
+                    } else {
+                        setMensajeIntegridad({
+                            texto: '✅ Todas las evidencias han pasado la verificación de integridad',
+                            tipo: 'success'
+                        })
+                    }
+                } else {
+                    setMensajeIntegridad({
+                        texto: '✅ Verificación completada. Sin problemas de integridad.',
+                        tipo: 'success'
+                    })
+                }
+                return
+            } catch (error) {
+                console.error('❌ Error al verificar integridad:', error)
+                setMensajeIntegridad({
+                    texto: '❌ Error al verificar la integridad del expediente',
+                    tipo: 'error'
+                })
+                return
+            }
         }
+
+        // Si no hay escenaId y hay expedienteId, crear la escena
+        if (state.expedienteId) {
+            try {
+                setMensajeIntegridad({
+                    texto: '🔄 Creando escena y verificando integridad...',
+                    tipo: 'info'
+                })
+                const { crearEscena } = await import('../../../services/escenaService')
+                const escena = await crearEscena({
+                    expedienteId: state.expedienteId,
+                    levantadaPorId: 1
+                })
+                setEscenaId(escena.id)
+
+                // Verificar integridad después de crear la escena
+                await verificarIntegridad(state.folioExpediente)
+                setMensajeIntegridad({
+                    texto: '✅ Escena creada y verificación completada',
+                    tipo: 'success'
+                })
+            } catch (error) {
+                console.error('❌ Error:', error)
+                setMensajeIntegridad({
+                    texto: '❌ Error al crear la escena o verificar integridad',
+                    tipo: 'error'
+                })
+            }
+            return
+        }
+
+        setMensajeIntegridad({
+            texto: '⚠️ No se encontró un expediente válido. Verifica el folio.',
+            tipo: 'error'
+        })
     }
 
     const renderPasoActual = () => {
@@ -204,6 +275,47 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
                     <NeonPanel>
                         <h3>Paso 2: Documentación</h3>
 
+                        {/* ── MENSAJE DE INTEGRIDAD ── */}
+                        {mensajeIntegridad && (
+                            <div style={{
+                                padding: '12px 16px',
+                                borderRadius: '8px',
+                                marginBottom: '16px',
+                                backgroundColor:
+                                    mensajeIntegridad.tipo === 'success' ? '#00ff0033' :
+                                        mensajeIntegridad.tipo === 'warning' ? '#ffaa0033' :
+                                            mensajeIntegridad.tipo === 'error' ? '#ff000033' :
+                                                '#00ffff33',
+                                border: `1px solid ${
+                                    mensajeIntegridad.tipo === 'success' ? '#00ff00' :
+                                        mensajeIntegridad.tipo === 'warning' ? '#ffaa00' :
+                                            mensajeIntegridad.tipo === 'error' ? '#ff0000' :
+                                                '#00ffff'
+                                }`,
+                                color:
+                                    mensajeIntegridad.tipo === 'success' ? '#00ff00' :
+                                        mensajeIntegridad.tipo === 'warning' ? '#ffaa00' :
+                                            mensajeIntegridad.tipo === 'error' ? '#ff0000' :
+                                                '#00ffff',
+                            }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span>{mensajeIntegridad.texto}</span>
+                                    <button
+                                        onClick={() => setMensajeIntegridad(null)}
+                                        style={{
+                                            background: 'none',
+                                            border: 'none',
+                                            color: 'inherit',
+                                            cursor: 'pointer',
+                                            fontSize: '16px'
+                                        }}
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
                         {/* BOTÓN DE DESBLOQUEO PARA PASO 2 */}
                         {state.paso2_completado && (
                             <div style={{
@@ -225,7 +337,6 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
                             </div>
                         )}
 
-                        {/* ── FOLIO VISIBLE EN PASO 2 ── */}
                         {state.folioExpediente && (
                             <div style={{
                                 padding: '8px 12px',
@@ -439,7 +550,7 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
                         </div>
 
                         <NeonButton
-                            onClick={() => completarPaso2().catch(err => console.error('Error al persistir paso 2:', err))}
+                            onClick={() => completarPaso2().catch((err: any) => console.error('Error al persistir paso 2:', err))}
                             disabled={!canCompletarPaso2 || state.paso2_completado}
                         >
                             {state.paso2_completado ? '✓ Completado' : 'Completar Paso 2'}
@@ -495,7 +606,7 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
                                         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                                             <div style={{ flex: 2, minWidth: '150px' }}>
                                                 <label style={{ display: 'block', marginBottom: '4px', color: '#00ffffaa', fontSize: '12px' }}>
-                                                    Tipo de embalaje
+                                                    Tipo de embalaje <span style={{ color: '#ff0000' }}>*</span>
                                                 </label>
                                                 <select
                                                     value={ev.embalaje || ''}
@@ -509,13 +620,12 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
                                                         width: '100%',
                                                         padding: '8px',
                                                         backgroundColor: '#0a0a0a',
-                                                        border: '1px solid #00ffff33',
+                                                        border: ev.embalaje ? '1px solid #00ffff33' : '1px solid #ff000066',
                                                         color: '#00ffff',
                                                         borderRadius: '4px',
                                                         fontSize: '14px'
                                                     }}
                                                 >
-                                                    <option value="">Seleccionar...</option>
                                                     {tiposEmbalaje.map((t: string) => (
                                                         <option key={t} value={t}>{t}</option>
                                                     ))}
@@ -550,7 +660,7 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
 
                                             <div style={{ flex: 1, minWidth: '120px' }}>
                                                 <label style={{ display: 'block', marginBottom: '4px', color: '#00ffffaa', fontSize: '12px' }}>
-                                                    Hora de recolección
+                                                    Hora de recolección <span style={{ color: '#ff0000' }}>*</span>
                                                 </label>
                                                 <input
                                                     type="time"
@@ -565,7 +675,7 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
                                                         width: '100%',
                                                         padding: '8px',
                                                         backgroundColor: '#0a0a0a',
-                                                        border: '1px solid #00ffff33',
+                                                        border: ev.horaRecoleccion ? '1px solid #00ffff33' : '1px solid #ff000066',
                                                         color: '#00ffff',
                                                         borderRadius: '4px',
                                                         fontSize: '14px'
@@ -577,13 +687,42 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
                                 )
                             })}
 
+                            {(() => {
+                                const todasValidas = state.evidencias.every(ev =>
+                                    ev.embalaje && ev.embalaje.trim() !== '' &&
+                                    ev.horaRecoleccion && ev.horaRecoleccion.trim() !== ''
+                                )
+
+                                return (
+                                    <div style={{
+                                        padding: '12px',
+                                        borderRadius: '4px',
+                                        marginBottom: '16px',
+                                        backgroundColor: todasValidas ? '#00ff0033' : '#ff000033',
+                                        color: todasValidas ? '#00ff00' : '#ff0000'
+                                    }}>
+                                        {todasValidas
+                                            ? '✅ Todos los campos obligatorios están completos'
+                                            : '❌ Debes seleccionar embalaje y hora para cada evidencia'}
+                                    </div>
+                                )
+                            })()}
+
                             {state.tipoEscena === 'solo_evidencia' && state.paso2_completado && (
                                 <NeonButton
-                                    onClick={() => {
+                                    onClick={async () => {
                                         console.log('🔄 Completando paso 3...')
-                                        completarPaso3()
+                                        try {
+                                            await completarPaso3()
+                                        } catch (error) {
+                                            console.error('❌ Error al completar paso 3:', error)
+                                        }
                                     }}
-                                    disabled={!canCompletarPaso3 || state.paso3_completado}
+                                    disabled={
+                                        !canCompletarPaso3 ||
+                                        state.paso3_completado ||
+                                        !state.evidencias.every(ev => ev.embalaje && ev.embalaje.trim() !== '' && ev.horaRecoleccion && ev.horaRecoleccion.trim() !== '')
+                                    }
                                 >
                                     {state.paso3_completado ? '✓ Completado' : 'Finalizar recolección'}
                                 </NeonButton>
@@ -591,11 +730,19 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
 
                             {state.tipoEscena === 'escena_completa' && (
                                 <NeonButton
-                                    onClick={() => {
+                                    onClick={async () => {
                                         console.log('🔄 Completando paso 3...')
-                                        completarPaso3()
+                                        try {
+                                            await completarPaso3()
+                                        } catch (error) {
+                                            console.error('❌ Error al completar paso 3:', error)
+                                        }
                                     }}
-                                    disabled={!canCompletarPaso3 || state.paso3_completado}
+                                    disabled={
+                                        !canCompletarPaso3 ||
+                                        state.paso3_completado ||
+                                        !state.evidencias.every(ev => ev.embalaje && ev.embalaje.trim() !== '' && ev.horaRecoleccion && ev.horaRecoleccion.trim() !== '')
+                                    }
                                 >
                                     {state.paso3_completado ? '✓ Completado' : 'Completar Paso 3'}
                                 </NeonButton>
