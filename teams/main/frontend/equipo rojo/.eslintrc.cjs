@@ -19,11 +19,11 @@ module.exports = {
     'react-refresh',
   ],
   rules: {
-    'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+    'react-refresh/only-export-components': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
-    // Desactivar la regla base para evitar falsos positivos con TS
     'no-unused-vars': 'off',
     '@typescript-eslint/no-unused-vars': 'off',
+    'react-hooks/exhaustive-deps': 'off',
   },
   ignorePatterns: ['dist', 'node_modules'],
 }

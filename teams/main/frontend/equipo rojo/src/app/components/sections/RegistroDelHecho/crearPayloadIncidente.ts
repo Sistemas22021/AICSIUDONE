@@ -7,7 +7,7 @@ import type { IncidentePayload } from '../../../types/api.types'
 import type { DelitoEntry }      from './useDelitoList.ts'
 import { TIPOS_REQUIEREN_DENUNCIANTE } from '../../../context/FormContext'
 
-type FormData = any // eslint-disable-line @typescript-eslint/no-explicit-any
+type FormData = any
 
 export interface CrearPayloadOptions {
     formData: FormData
