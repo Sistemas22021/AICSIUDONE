@@ -6,11 +6,32 @@ import { NeonConfirmModal } from '../../ui/NeonConfirmModal'
 interface EscenaGuardada {
     id: string
     completadoEn: string
-    evidencias: Array<{ tipo: string; descripcion: string }>
-    escenaNegativa: Array<{ elemento: string; lugar: string; resultado: string }>
-    perimetro: { sellado: boolean; agentes: number; horaCierre: string }
-    recoleccion: { hora: string; embalaje: string }
-    liberacion: { hora: string; pin: string }
+    evidencias: Array<{
+        numeroSecuencial?: string
+        tipo?: string
+        descripcion?: string
+        embalaje?: string
+        responsable?: string
+    }>
+    escenaNegativa: Array<{
+        elemento?: string
+        lugar?: string
+        resultado?: string
+    }>
+    perimetro?: {
+        sellado?: boolean
+        agentes?: number
+        horaCierre?: string
+    }
+    recoleccion?: {
+        hora?: string
+        embalaje?: string
+    }
+    liberacion?: {
+        hora?: string
+    }
+    folioExpediente?: string
+    noHayEscenaNegativa?: boolean
 }
 
 export const HistorialEscenas = () => {
@@ -19,8 +40,13 @@ export const HistorialEscenas = () => {
     const [mostrarModalBorrar, setMostrarModalBorrar] = useState(false)
 
     const cargarHistorial = () => {
-        const historial = JSON.parse(localStorage.getItem('escenas_completadas') || '[]')
-        setEscenas(historial.reverse())
+        try {
+            const historial = JSON.parse(localStorage.getItem('escenas_completadas') || '[]')
+            setEscenas(historial.reverse())
+        } catch (error) {
+            console.error('Error al cargar historial:', error)
+            setEscenas([])
+        }
     }
 
     useEffect(() => {
@@ -63,7 +89,6 @@ export const HistorialEscenas = () => {
                         </div>
                     ) : (
                         <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-                            {/* Lista de escenas */}
                             <div style={{ flex: 1, minWidth: '250px' }}>
                                 <h3>Escenas guardadas ({escenas.length})</h3>
                                 <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
@@ -84,7 +109,7 @@ export const HistorialEscenas = () => {
                                                 <div>
                                                     <strong>Escena #{escenas.length - idx}</strong>
                                                     <div style={{ fontSize: '12px', color: '#00ffffaa' }}>
-                                                        {escena.completadoEn}
+                                                        {escena.completadoEn || 'Sin fecha'}
                                                     </div>
                                                 </div>
                                                 <NeonButton
@@ -102,14 +127,13 @@ export const HistorialEscenas = () => {
                                                 </NeonButton>
                                             </div>
                                             <div style={{ fontSize: '12px', marginTop: '8px' }}>
-                                                🔬 {escena.evidencias.length} evidencias | ⚠️ {escena.escenaNegativa.length} negativas
+                                                🔬 {escena.evidencias?.length || 0} evidencias | ⚠️ {escena.escenaNegativa?.length || 0} negativas
                                             </div>
                                         </div>
                                     ))}
                                 </div>
                             </div>
 
-                            {/* Detalle de la escena seleccionada */}
                             <div style={{ flex: 2, minWidth: '300px' }}>
                                 {escenaSeleccionada ? (
                                     <div>
@@ -121,42 +145,46 @@ export const HistorialEscenas = () => {
                                             maxHeight: '500px',
                                             overflowY: 'auto'
                                         }}>
-                                            <p><strong>📅 Completado:</strong> {escenaSeleccionada.completadoEn}</p>
+                                            <p><strong>📅 Completado:</strong> {escenaSeleccionada.completadoEn || 'Sin fecha'}</p>
 
                                             <hr style={{ borderColor: '#00ffff33', margin: '12px 0' }} />
 
                                             <h4>🔒 Perímetro</h4>
-                                            <p>Sellado: {escenaSeleccionada.perimetro.sellado ? 'Sí' : 'No'}</p>
-                                            <p>Agentes: {escenaSeleccionada.perimetro.agentes}</p>
-                                            <p>Hora cierre: {escenaSeleccionada.perimetro.horaCierre}</p>
+                                            <p>Sellado: {escenaSeleccionada.perimetro?.sellado ? 'Sí' : 'No'}</p>
+                                            <p>Agentes: {escenaSeleccionada.perimetro?.agentes || 0}</p>
+                                            <p>Hora cierre: {escenaSeleccionada.perimetro?.horaCierre || 'N/A'}</p>
 
                                             <hr style={{ borderColor: '#00ffff33', margin: '12px 0' }} />
 
-                                            <h4>🔬 Evidencias ({escenaSeleccionada.evidencias.length})</h4>
-                                            {escenaSeleccionada.evidencias.map((ev, i) => (
+                                            <h4>🔬 Evidencias ({escenaSeleccionada.evidencias?.length || 0})</h4>
+                                            {escenaSeleccionada.evidencias?.map((ev, i) => (
                                                 <div key={i} style={{ marginLeft: '16px', marginBottom: '8px' }}>
-                                                    <strong>{ev.tipo}</strong>: {ev.descripcion}
+                                                    <strong>{ev.numeroSecuencial || 'N/A'}</strong>: {ev.tipo || 'Sin tipo'}
+                                                    {ev.descripcion && <span> - {ev.descripcion}</span>}
+                                                    {ev.embalaje && <span style={{ fontSize: '11px' }}> 📦 {ev.embalaje}</span>}
+                                                    {ev.responsable && <span style={{ fontSize: '11px' }}> 👤 {ev.responsable}</span>}
                                                 </div>
                                             ))}
 
                                             <hr style={{ borderColor: '#00ffff33', margin: '12px 0' }} />
 
-                                            <h4>⚠️ Escenas Negativas ({escenaSeleccionada.escenaNegativa.length})</h4>
-                                            {escenaSeleccionada.escenaNegativa.map((en, i) => (
-                                                <div key={i} style={{ marginLeft: '16px', marginBottom: '8px' }}>
-                                                    <strong>{en.elemento}</strong> - {en.lugar}<br />
-                                                    <span style={{ fontSize: '12px' }}>Resultado: {en.resultado}</span>
-                                                </div>
-                                            ))}
+                                            <h4>⚠️ Escenas Negativas</h4>
+                                            {escenaSeleccionada.noHayEscenaNegativa ? (
+                                                <p>Sin elementos negativos a reportar</p>
+                                            ) : (
+                                                escenaSeleccionada.escenaNegativa?.map((en, i) => (
+                                                    <div key={i} style={{ marginLeft: '16px', marginBottom: '8px' }}>
+                                                        <strong>{en.elemento || 'N/A'}</strong> - {en.lugar || 'N/A'}
+                                                        <br />
+                                                        <span style={{ fontSize: '12px' }}>Resultado: {en.resultado || 'N/A'}</span>
+                                                    </div>
+                                                ))
+                                            )}
 
                                             <hr style={{ borderColor: '#00ffff33', margin: '12px 0' }} />
-
-                                            <h4>📦 Recolección</h4>
-                                            <p>Hora: {escenaSeleccionada.recoleccion.hora}</p>
-                                            <p>Embalaje: {escenaSeleccionada.recoleccion.embalaje}</p>
 
                                             <h4>🔓 Liberación</h4>
-                                            <p>Hora: {escenaSeleccionada.liberacion.hora}</p>
+                                            <p>Hora: {escenaSeleccionada.liberacion?.hora || 'N/A'}</p>
                                         </div>
                                     </div>
                                 ) : (
@@ -170,7 +198,6 @@ export const HistorialEscenas = () => {
                 </div>
             </NeonPanel>
 
-            {/* Modal de confirmación */}
             <NeonConfirmModal
                 isOpen={mostrarModalBorrar}
                 title="⚠️ Borrar todo el historial"
