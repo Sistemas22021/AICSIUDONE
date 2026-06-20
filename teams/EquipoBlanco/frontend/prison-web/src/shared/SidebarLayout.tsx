@@ -11,25 +11,59 @@ type MenuItem = {
 }
 
 const ALL_MENU_ITEMS: (MenuItem & { roles?: UserRole[] })[] = [
-  { label: 'Dashboard', to: '/dashboard', roles: ['Oficial Penitenciario', 'Supervisor Penitenciario', 'Administrador del Sistema'] },
-  { label: 'Registro de recluso', to: '/internos/registrar', roles: ['Oficial Penitenciario', 'Administrador del Sistema'] },
+  // Dashboard
+  { 
+    label: 'Dashboard', 
+    to: '/dashboard'
+  },
+  // Gestión de Internos
+  { 
+    label: 'Registro de recluso', 
+    to: '/internos/registrar', 
+    roles: [
+      'Supervisor Policial', 
+      'Oficial Penitenciario', 
+      'Administrador del Sistema'
+    ] 
+  },
+  // Mapa de Celdas
   {
     label: 'Mapa de Celdas',
-    roles: ['Oficial Penitenciario', 'Supervisor Penitenciario', 'Administrador del Sistema'],
+    roles: [
+      'Oficial Penitenciario', 
+      'Supervisor Penitenciario', 
+      'Supervisor Policial', 
+      'Administrador del Sistema'
+    ],
     children: [
+      // Mapa
       { label: 'Mapa de Celdas', to: '/mapa' },
-      { label: 'Configuración de Celdas', to: '/celdas/configurar', roles: ['Administrador del Sistema'] },
+      // Configuración 
+      { label: 'Configuración de Celdas', to: '/celdas/configurar', roles: ['Supervisor Policial', 'Administrador del Sistema'] },
     ],
   },
+  // seguimiento post-penitenciario
   {
     label: 'Post-Penitenciario',
-    roles: ['Oficial de Seguimiento', 'Supervisor Policial', 'Administrador del Sistema'],
+    roles: [
+      'Oficial de Seguimiento', 
+      'Supervisor Policial', 
+      'Administrador del Sistema'
+    ],
     children: [
       { label: 'Post-Penitenciario', to: '/post' },
       { label: 'Registro de egreso', to: '/internos/egreso', roles: ['Oficial Penitenciario', 'Administrador del Sistema'] },
     ],
   },
-  { label: 'Control y Disciplina', to: '/control', roles: ['Oficial de Seguimiento', 'Supervisor Policial', 'Administrador del Sistema'] },
+  { 
+    label: 'Control y Disciplina', 
+    to: '/control', 
+    roles: [
+      'Oficial de Seguimiento', 
+      'Supervisor Policial', 
+      'Administrador del Sistema'
+    ] 
+  },
 ]
 
 export default function SidebarLayout({ children }: { children: React.ReactNode }) {
