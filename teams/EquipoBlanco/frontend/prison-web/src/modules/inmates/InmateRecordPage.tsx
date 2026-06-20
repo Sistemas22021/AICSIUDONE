@@ -3,6 +3,7 @@ import { useParams, useLocation, useNavigate, } from 'react-router-dom'
 import { ArrowLeft, User, Scale, Fingerprint, FileText, Check, X, Clock, AlertCircle, Move } from 'lucide-react'
 import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
+import { useAuth } from '../../shared/authContext'
 import TransferRequestModal from './TransferRequestModal'
 
 interface BelongingDto {
@@ -75,8 +76,10 @@ export default function InmateRecordPage() {
   const [rejectionError, setRejectionError] = useState('')
   const [actionLoading, setActionLoading] = useState(false)
 
+  const auth = useAuth()
   const currentUser = sessionStorage.getItem('username') || 'Oficial'
   const isFromMap = (location.state as { from?: string })?.from === '/mapa'
+  const canResolveTransfers = auth.hasRole('Supervisor Penitenciario', 'Administrador del Sistema')
 
   const loadData = async () => {
     if (!id) return
@@ -230,13 +233,15 @@ export default function InmateRecordPage() {
             </div>
           </div>
 
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-semibold shadow-sm cursor-pointer"
-          >
-            <Move className="w-4 h-4" />
-            Solicitar Traslado
-          </button>
+          {auth.hasRole('Oficial Penitenciario', 'Administrador del Sistema') && (
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-semibold shadow-sm cursor-pointer"
+            >
+              <Move className="w-4 h-4" />
+              Solicitar Traslado
+            </button>
+          )}
         </div>
 
         {/* Expediente Overview Card */}
@@ -402,7 +407,11 @@ export default function InmateRecordPage() {
             </div>
             
             <div className="flex items-center gap-2 w-full md:w-auto self-end md:self-auto shrink-0">
-              {pendingTransfer.requestedBy.toLowerCase() === currentUser.toLowerCase() ? (
+              {!canResolveTransfers ? (
+                <span className="inline-block px-3 py-2 bg-gray-50 border border-gray-200 text-gray-500 rounded-lg text-xs font-bold">
+                  Solo Supervisor puede resolver
+                </span>
+              ) : pendingTransfer.requestedBy.toLowerCase() === currentUser.toLowerCase() ? (
                 <div className="text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-250 p-2.5 rounded-xl max-w-xs leading-tight">
                   No puedes resolver tu propia solicitud (Segregación de funciones).
                 </div>

@@ -8,6 +8,7 @@ import DashboardPage from './modules/dashboard/DashboardPage'
 import PostPenalPage from './modules/postpenal/PostPenalPage'
 import PlaceholderPage from './shared/PlaceholderPage'
 import AuthGuard from './shared/AuthGuard'
+import ProtectedRoute from './shared/ProtectedRoute'
 import { ShieldAlert } from 'lucide-react'
 
 export default function App() {
@@ -16,19 +17,57 @@ export default function App() {
             <AuthGuard>
                 <Routes>
                     <Route path="/" element={<Navigate to="/dashboard" />} />
-                    <Route path="/celdas/configurar" element={<CellConfigPage />} />
-                    <Route path="/mapa" element={<CellMapPage />} />
-                    <Route path="/internos/registrar" element={<InmateRegisterPage />} />
-                    <Route path="/internos/expediente/:id" element={<InmateRecordPage />} />
-                    <Route path="/internos/egreso" element={<DischargePage />} />
-                    <Route path="/dashboard" element={<DashboardPage />} />
-                    <Route path="/post" element={<PostPenalPage />} />
+
+                    <Route path="/dashboard" element={
+                        <ProtectedRoute allowedRoles={['Oficial Penitenciario', 'Supervisor Penitenciario', 'Administrador del Sistema']}>
+                            <DashboardPage />
+                        </ProtectedRoute>
+                    } />
+
+                    <Route path="/celdas/configurar" element={
+                        <ProtectedRoute allowedRoles={['Administrador del Sistema']}>
+                            <CellConfigPage />
+                        </ProtectedRoute>
+                    } />
+
+                    <Route path="/mapa" element={
+                        <ProtectedRoute allowedRoles={['Oficial Penitenciario', 'Supervisor Penitenciario', 'Administrador del Sistema']}>
+                            <CellMapPage />
+                        </ProtectedRoute>
+                    } />
+
+                    <Route path="/internos/registrar" element={
+                        <ProtectedRoute allowedRoles={['Oficial Penitenciario', 'Administrador del Sistema']}>
+                            <InmateRegisterPage />
+                        </ProtectedRoute>
+                    } />
+
+                    <Route path="/internos/expediente/:id" element={
+                        <ProtectedRoute allowedRoles={['Oficial Penitenciario', 'Supervisor Penitenciario', 'Administrador del Sistema']}>
+                            <InmateRecordPage />
+                        </ProtectedRoute>
+                    } />
+
+                    <Route path="/internos/egreso" element={
+                        <ProtectedRoute allowedRoles={['Oficial Penitenciario', 'Administrador del Sistema']}>
+                            <DischargePage />
+                        </ProtectedRoute>
+                    } />
+
+                    <Route path="/post" element={
+                        <ProtectedRoute allowedRoles={['Oficial de Seguimiento', 'Supervisor Policial', 'Administrador del Sistema']}>
+                            <PostPenalPage />
+                        </ProtectedRoute>
+                    } />
+
                     <Route path="/control" element={
-                        <PlaceholderPage
-                            title="Control y Disciplina"
-                            description="Administracion de faltas disciplinarias, sanciones y registros de conducta."
-                            icon={ShieldAlert}
-                        />
+                        <ProtectedRoute allowedRoles={['Oficial de Seguimiento', 'Supervisor Policial', 'Administrador del Sistema']}>
+                            <PlaceholderPage
+                                title="Control y Disciplina"
+                                description="Administracion de faltas disciplinarias, sanciones y registros de conducta."
+                                icon={ShieldAlert}
+                            />
+                        </ProtectedRoute>
                     } />
                 </Routes>
             </AuthGuard>

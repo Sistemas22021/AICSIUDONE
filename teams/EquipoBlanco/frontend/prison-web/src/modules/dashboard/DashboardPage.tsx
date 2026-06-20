@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { MapPin, AlertTriangle, Info, DoorOpen, Gauge, X, Clock, UserPlus, Search, ArrowRight, Activity } from 'lucide-react'
 import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
+import { useAuth } from '../../shared/authContext'
 
 interface CellData {
   id: string
@@ -50,6 +51,8 @@ export default function DashboardPage() {
   const [actionLoading, setActionLoading] = useState(false)
 
   const currentUser = sessionStorage.getItem('username') || 'Oficial'
+  const auth = useAuth()
+  const canResolveTransfers = auth.hasRole('Supervisor Penitenciario', 'Administrador del Sistema')
 
   const loadDashboard = async (isPolling = false) => {
     try {
@@ -237,27 +240,33 @@ export default function DashboardPage() {
 
         {/* Accesos Rápidos */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Link
-            to="/internos/registrar"
-            className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all font-semibold shadow-md hover:shadow-lg hover:-translate-y-0.5"
-          >
-            <UserPlus className="w-5 h-5" />
-            Registrar Ingreso
-          </Link>
-          <Link
-            to="/mapa"
-            className="flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all font-semibold shadow-md hover:shadow-lg hover:-translate-y-0.5"
-          >
-            <MapPin className="w-5 h-5" />
-            Ver Mapa de Celdas
-          </Link>
-          <button
-            onClick={handleSearchExpediente}
-            className="flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all font-semibold shadow-md hover:shadow-lg hover:-translate-y-0.5 cursor-pointer"
-          >
-            <Search className="w-5 h-5" />
-            Consultar Expediente
-          </button>
+          {auth.hasRole('Oficial Penitenciario', 'Administrador del Sistema') && (
+            <Link
+              to="/internos/registrar"
+              className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all font-semibold shadow-md hover:shadow-lg hover:-translate-y-0.5"
+            >
+              <UserPlus className="w-5 h-5" />
+              Registrar Ingreso
+            </Link>
+          )}
+          {auth.hasRole('Oficial Penitenciario', 'Supervisor Penitenciario', 'Administrador del Sistema') && (
+            <Link
+              to="/mapa"
+              className="flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all font-semibold shadow-md hover:shadow-lg hover:-translate-y-0.5"
+            >
+              <MapPin className="w-5 h-5" />
+              Ver Mapa de Celdas
+            </Link>
+          )}
+          {auth.hasRole('Oficial Penitenciario', 'Supervisor Penitenciario', 'Administrador del Sistema') && (
+            <button
+              onClick={handleSearchExpediente}
+              className="flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all font-semibold shadow-md hover:shadow-lg hover:-translate-y-0.5 cursor-pointer"
+            >
+              <Search className="w-5 h-5" />
+              Consultar Expediente
+            </button>
+          )}
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -374,7 +383,11 @@ export default function DashboardPage() {
                             {new Date(t.createdAt).toLocaleString()}
                           </td>
                           <td className="px-6 py-4.5 text-right">
-                            {isOwnRequest ? (
+                            {!canResolveTransfers ? (
+                              <span className="inline-block px-2.5 py-1.5 bg-gray-50 border border-gray-200 text-gray-500 rounded-lg text-[10px] font-bold">
+                                Solo Supervisor
+                              </span>
+                            ) : isOwnRequest ? (
                               <span className="inline-block px-2.5 py-1.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-[10px] font-bold max-w-[190px] text-center leading-tight">
                                 No puedes resolver tu propia solicitud (Segregación)
                               </span>

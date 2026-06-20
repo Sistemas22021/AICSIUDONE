@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { FileText, Users, UserCheck, Clock, X, AlertTriangle, CheckCircle, RefreshCw, History } from 'lucide-react'
 import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
+import { useAuth } from '../../shared/authContext'
 
 interface ExpedienteData {
     id: string
@@ -31,6 +32,9 @@ export default function PostPenalPage() {
     const [error, setError] = useState('')
     const [showHistorial, setShowHistorial] = useState<ExpedienteData | null>(null)
     const [filter, setFilter] = useState<'all' | 'pendiente' | 'asignado'>('all')
+
+    const auth = useAuth()
+    const canAssignOfficers = auth.hasRole('Supervisor Policial', 'Administrador del Sistema')
 
     const loadData = async () => {
         try {
@@ -267,12 +271,14 @@ export default function PostPenalPage() {
                                                             <History className="w-3.5 h-3.5" />
                                                         </button>
                                                     )}
+                                                    {canAssignOfficers && (
                                                     <button
                                                         onClick={() => { setSelectedExpediente(exp); setMotivoCambio(''); setError('') }}
                                                         className="px-3 py-1.5 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg text-[11px] font-bold uppercase transition-all shadow-sm cursor-pointer"
                                                     >
                                                         {exp.estado === 'pendiente' ? 'Asignar' : 'Reasignar'}
                                                     </button>
+                                                )}
                                                 </div>
                                             </td>
                                         </tr>

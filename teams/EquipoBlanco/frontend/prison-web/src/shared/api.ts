@@ -5,21 +5,21 @@ const api = axios.create({
 })
 
 api.interceptors.request.use((config) => {
-    // Leer sesión mock desde localStorage
     let username = 'Oficial'
+    let role = 'Oficial Penitenciario'
     try {
         const mockUser = JSON.parse(localStorage.getItem('mock_user') || '{}')
         username = mockUser.username || 'Oficial'
+        role = mockUser.role || 'Oficial Penitenciario'
     } catch { /* usar default */ }
 
-    // Token de compatibilidad (el backend no lo valida, pero lo enviamos por estructura)
     const token = sessionStorage.getItem('token')
     if (token) {
         config.headers.Authorization = `Bearer ${token}`
     }
 
-    // Header de auditoría: el backend lee esto para registrar quién hace cada acción
     config.headers['X-User-Name'] = username
+    config.headers['X-User-Role'] = role
 
     return config
 })

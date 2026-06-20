@@ -1,37 +1,58 @@
 import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { getMockUser } from './mockUser'
+import { useAuth, type UserRole } from './authContext'
 
 type MenuItem = {
   label: string
   to?: string
   children?: MenuItem[]
+  roles?: UserRole[]
 }
 
-const MENU_ITEMS: MenuItem[] = [
-  { label: 'Dashboard', to: '/dashboard' },
-  { label: 'Registro de recluso', to: '/internos/registrar' },
+const ALL_MENU_ITEMS: (MenuItem & { roles?: UserRole[] })[] = [
+  { label: 'Dashboard', to: '/dashboard', roles: ['Oficial Penitenciario', 'Supervisor Penitenciario', 'Administrador del Sistema'] },
+  { label: 'Registro de recluso', to: '/internos/registrar', roles: ['Oficial Penitenciario', 'Administrador del Sistema'] },
   {
     label: 'Mapa de Celdas',
+    roles: ['Oficial Penitenciario', 'Supervisor Penitenciario', 'Administrador del Sistema'],
     children: [
       { label: 'Mapa de Celdas', to: '/mapa' },
-      { label: 'Configuración de Celdas', to: '/celdas/configurar' },
+      { label: 'Configuración de Celdas', to: '/celdas/configurar', roles: ['Administrador del Sistema'] },
     ],
   },
   {
     label: 'Post-Penitenciario',
+    roles: ['Oficial de Seguimiento', 'Supervisor Policial', 'Administrador del Sistema'],
     children: [
       { label: 'Post-Penitenciario', to: '/post' },
-      { label: 'Registro de egreso', to: '/internos/egreso' },
+      { label: 'Registro de egreso', to: '/internos/egreso', roles: ['Oficial Penitenciario', 'Administrador del Sistema'] },
     ],
   },
-  { label: 'Control y Disciplina', to: '/control' },
+  { label: 'Control y Disciplina', to: '/control', roles: ['Oficial de Seguimiento', 'Supervisor Policial', 'Administrador del Sistema'] },
 ]
 
 export default function SidebarLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false)
   const mockUser = getMockUser()
+  const auth = useAuth()
   const { pathname } = useLocation()
+
+  const MENU_ITEMS = ALL_MENU_ITEMS.filter(item => {
+    if (!item.roles) return true
+    return auth.hasRole(...item.roles)
+  }).map(item => {
+    if (item.children) {
+      return {
+        ...item,
+        children: item.children.filter(child => {
+          if (!child.roles) return true
+          return auth.hasRole(...child.roles)
+        })
+      }
+    }
+    return item
+  })
 
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {}

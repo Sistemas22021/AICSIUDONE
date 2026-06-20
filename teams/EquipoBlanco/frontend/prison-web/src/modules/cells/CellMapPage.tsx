@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Settings, X, User, Move, MapPin, Info, Users, CheckCircle, AlertTriangle, HelpCircle, Fingerprint } from 'lucide-react'
 import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
+import { useAuth } from '../../shared/authContext'
 import { PieChart } from '@cell-component/PieChart'
 import TransferRequestModal from '../inmates/TransferRequestModal'
 
@@ -121,6 +122,8 @@ export default function CellMapPage() {
   const [, setCeldaArrastrando] = useState<string | null>(null)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; inmate: InmateDto } | null>(null)
   const [transferModalInmate, setTransferModalInmate] = useState<InmateDto | null>(null)
+  const auth = useAuth()
+  const canAdminCells = auth.hasRole('Administrador del Sistema')
 
   useEffect(() => {
     const handleCloseMenu = () => setContextMenu(null)
@@ -563,24 +566,30 @@ export default function CellMapPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {imagenFondo && (
+            {canAdminCells && imagenFondo && (
               <button onClick={eliminarImagenFondo} className="px-3.5 py-2 text-xs font-semibold text-red-600 bg-red-50 border border-red-200 hover:bg-red-100 rounded-lg transition-colors cursor-pointer">
                 Eliminar plano Piso {pisoActivo}
               </button>
             )}
-            <button onClick={() => setMostrarSelectorImagen(true)} className="flex items-center gap-2 px-3.5 py-2 rounded-lg border bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 transition-colors text-xs font-semibold cursor-pointer">
-              <MapPin className="w-4 h-4" />
-              {imagenFondo ? `Cambiar plano Piso ${pisoActivo}` : `Cargar plano Piso ${pisoActivo}`}
-            </button>
-            <button onClick={() => modoEditor ? guardarPlano() : setModoEditor(true)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-xs font-semibold transition-all ${modoEditor ? 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700 shadow-md' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
-              <Move className="w-4 h-4" />
-              {modoEditor ? 'Guardar plano' : 'Editar plano'}
-            </button>
-            <Link to="/celdas/configurar" className="bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors flex items-center gap-2 text-xs font-semibold shadow-sm">
-              <Settings className="w-4 h-4" />
-              Configurar celdas
-            </Link>
+            {canAdminCells && (
+              <button onClick={() => setMostrarSelectorImagen(true)} className="flex items-center gap-2 px-3.5 py-2 rounded-lg border bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 transition-colors text-xs font-semibold cursor-pointer">
+                <MapPin className="w-4 h-4" />
+                {imagenFondo ? `Cambiar plano Piso ${pisoActivo}` : `Cargar plano Piso ${pisoActivo}`}
+              </button>
+            )}
+            {canAdminCells && (
+              <button onClick={() => modoEditor ? guardarPlano() : setModoEditor(true)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-xs font-semibold transition-all ${modoEditor ? 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700 shadow-md' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                <Move className="w-4 h-4" />
+                {modoEditor ? 'Guardar plano' : 'Editar plano'}
+              </button>
+            )}
+            {canAdminCells && (
+              <Link to="/celdas/configurar" className="bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors flex items-center gap-2 text-xs font-semibold shadow-sm">
+                <Settings className="w-4 h-4" />
+                Configurar celdas
+              </Link>
+            )}
           </div>
         </div>
 
@@ -1076,16 +1085,18 @@ export default function CellMapPage() {
             <div className="px-3 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
               Acciones de Interno
             </div>
-            <button
-              onClick={() => {
-                setTransferModalInmate(contextMenu.inmate)
-                setContextMenu(null)
-              }}
-              className="w-full text-left px-3.5 py-2.5 hover:bg-gray-50 hover:text-gray-900 transition-colors flex items-center gap-2 font-semibold cursor-pointer"
-            >
-              <Move className="w-3.5 h-3.5 text-gray-450" />
-              Solicitar Traslado
-            </button>
+            {auth.hasRole('Oficial Penitenciario', 'Administrador del Sistema') && (
+              <button
+                onClick={() => {
+                  setTransferModalInmate(contextMenu.inmate)
+                  setContextMenu(null)
+                }}
+                className="w-full text-left px-3.5 py-2.5 hover:bg-gray-50 hover:text-gray-900 transition-colors flex items-center gap-2 font-semibold cursor-pointer"
+              >
+                <Move className="w-3.5 h-3.5 text-gray-450" />
+                Solicitar Traslado
+              </button>
+            )}
             <Link
               to={`/internos/expediente/${contextMenu.inmate.id}`}
               state={{ from: '/mapa' }}
