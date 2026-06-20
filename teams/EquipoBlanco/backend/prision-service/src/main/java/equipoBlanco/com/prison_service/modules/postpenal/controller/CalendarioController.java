@@ -3,6 +3,8 @@ package equipoBlanco.com.prison_service.modules.postpenal.controller;
 import equipoBlanco.com.prison_service.modules.postpenal.dto.CalendarioCreateDto;
 import equipoBlanco.com.prison_service.modules.postpenal.dto.CalendarioDto;
 import equipoBlanco.com.prison_service.modules.postpenal.dto.CalendarioUpdateDto;
+import equipoBlanco.com.prison_service.modules.postpenal.dto.CumplimientoDto;
+import equipoBlanco.com.prison_service.modules.postpenal.dto.IncumplimientoDto;
 import equipoBlanco.com.prison_service.modules.postpenal.service.CalendarioService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -42,5 +44,19 @@ public class CalendarioController {
     public ResponseEntity<List<CalendarioDto>> obtenerPendientesHoy(
             @RequestParam(required = false) String oficialCedula) {
         return ResponseEntity.ok(calendarioService.obtenerPendientesHoy(oficialCedula));
+    }
+
+    @PutMapping("/{id}/registrar")
+    public ResponseEntity<CalendarioDto> registrarCumplimiento(
+            @PathVariable UUID id,
+            @RequestBody CumplimientoDto dto) {
+        return ResponseEntity.ok(calendarioService.registrarCumplimiento(id, dto));
+    }
+
+    @PostMapping("/{id}/incumplimiento")
+    public ResponseEntity<CalendarioDto> registrarIncumplimiento(
+            @PathVariable UUID id,
+            @RequestBody IncumplimientoDto dto) {
+        return ResponseEntity.ok(calendarioService.registrarIncumplimiento(id, dto));
     }
 }

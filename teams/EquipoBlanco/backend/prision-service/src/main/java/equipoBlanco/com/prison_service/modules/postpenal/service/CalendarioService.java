@@ -3,10 +3,14 @@ package equipoBlanco.com.prison_service.modules.postpenal.service;
 import equipoBlanco.com.prison_service.modules.postpenal.dto.CalendarioCreateDto;
 import equipoBlanco.com.prison_service.modules.postpenal.dto.CalendarioDto;
 import equipoBlanco.com.prison_service.modules.postpenal.dto.CalendarioUpdateDto;
+import equipoBlanco.com.prison_service.modules.postpenal.dto.CumplimientoDto;
+import equipoBlanco.com.prison_service.modules.postpenal.dto.IncumplimientoDto;
 import equipoBlanco.com.prison_service.modules.postpenal.model.CalendarioPresentacion;
 import equipoBlanco.com.prison_service.modules.postpenal.model.ExpedienteSeguimiento;
 import equipoBlanco.com.prison_service.modules.postpenal.repository.CalendarioPresentacionRepository;
 import equipoBlanco.com.prison_service.modules.postpenal.repository.ExpedienteSeguimientoRepository;
+import equipoBlanco.com.prison_service.modules.control.model.Alerta;
+import equipoBlanco.com.prison_service.modules.control.repository.AlertaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +27,7 @@ public class CalendarioService {
 
     private final CalendarioPresentacionRepository calendarioRepository;
     private final ExpedienteSeguimientoRepository expedienteSeguimientoRepository;
+    private final AlertaRepository alertaRepository;
 
     @Transactional
     public List<CalendarioDto> generarCalendario(UUID expedienteId, CalendarioCreateDto dto) {
@@ -95,13 +100,94 @@ public class CalendarioService {
             return pendientes.stream()
                 .filter(p -> {
                     ExpedienteSeguimiento exp = expedienteSeguimientoRepository.findById(p.getExpedienteId()).orElse(null);
-                    return exp != null && oficialCedula.equals(exp.getOficialAsignadoCedula());
+                    return exp != null && (oficialCedula.equals(exp.getOficialAsignadoCedula()) || oficialCedula.equals(exp.getOficialAsignadoNombre()));
                 })
                 .map(this::toDto)
                 .collect(Collectors.toList());
         }
 
         return pendientes.stream().map(this::toDto).collect(Collectors.toList());
+    }
+
+    @Transactional
+    public CalendarioDto registrarCumplimiento(UUID id, CumplimientoDto dto) {
+        CalendarioPresentacion cp = calendarioRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Presentación no encontrada: " + id));
+
+        cp.setEstado("CUMPLIDA");
+        String obsActual = cp.getObservaciones() == null ? "" : cp.getObservaciones() + "\n";
+        cp.setObservaciones(obsActual + "[" + java.time.LocalDateTime.now() + " - " + dto.getOficialQueRegistro() + "]: Cumplida - " + dto.getObservaciones());
+
+        return toDto(calendarioRepository.save(cp));
+    }
+
+    @Transactional
+    public CalendarioDto registrarIncumplimiento(UUID id, IncumplimientoDto dto) {
+        CalendarioPresentacion cp = calendarioRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Presentación no encontrada: " + id));
+
+        cp.setEstado("INCUMPLIDA");
+        String obsActual = cp.getObservaciones() == null ? "" : cp.getObservaciones() + "\n";
+        cp.setObservaciones(obsActual + "[" + java.time.LocalDateTime.now() + " - " + dto.getOficialQueRegistro() + "]: Incumplida - " + dto.getObservaciones());
+
+        calendarioRepository.save(cp);
+
+        // Incrementar contador y generar alerta escalonada
+        ExpedienteSeguimiento exp = expedienteSeguimientoRepository.findById(cp.getExpedienteId())
+            .orElseThrow(() -> new RuntimeException("Expediente no encontrado: " + cp.getExpedienteId()));
+
+        int contador = exp.getContadorIncumplimientos() == null ? 0 : exp.getContadorIncumplimientos();
+        contador++;
+        exp.setContadorIncumplimientos(contador);
+
+        if (contador >= 3) {
+            exp.setEstado("alerta_critica");
+        }
+        expedienteSeguimientoRepository.save(exp);
+
+        crearAlertaEscalonada(exp, contador);
+
+        return toDto(cp);
+    }
+
+    private void crearAlertaEscalonada(ExpedienteSeguimiento exp, int contador) {
+        String mensaje = "Incumplimiento #" + contador + " registrado para expediente ID: " + exp.getIdRecluso();
+        
+        if (contador == 1) {
+            Alerta alerta = Alerta.builder()
+                .nivel(1)
+                .fechaEmision(java.time.LocalDateTime.now())
+                .destinatario(exp.getOficialAsignadoNombre())
+                .estado("activa")
+                .accionRequerida(mensaje)
+                .build();
+            alertaRepository.save(alerta);
+        } else if (contador == 2) {
+            Alerta alerta1 = Alerta.builder()
+                .nivel(2)
+                .fechaEmision(java.time.LocalDateTime.now())
+                .destinatario(exp.getOficialAsignadoNombre())
+                .estado("activa")
+                .accionRequerida(mensaje)
+                .build();
+            Alerta alerta2 = Alerta.builder()
+                .nivel(2)
+                .fechaEmision(java.time.LocalDateTime.now())
+                .destinatario("Supervisor Policial")
+                .estado("activa")
+                .accionRequerida(mensaje)
+                .build();
+            alertaRepository.saveAll(List.of(alerta1, alerta2));
+        } else if (contador >= 3) {
+            Alerta alerta = Alerta.builder()
+                .nivel(3)
+                .fechaEmision(java.time.LocalDateTime.now())
+                .destinatario("Supervisor Policial")
+                .estado("activa")
+                .accionRequerida("CRÍTICO: " + mensaje)
+                .build();
+            alertaRepository.save(alerta);
+        }
     }
 
     private CalendarioDto toDto(CalendarioPresentacion c) {

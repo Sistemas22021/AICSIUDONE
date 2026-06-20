@@ -8,10 +8,10 @@ import DashboardPage from './modules/dashboard/DashboardPage'
 import PostPenalPage from './modules/postpenal/PostPenalPage'
 import PostPenalProfilePage from './modules/postpenal/PostPenalProfilePage'
 import CalendarioPage from './modules/postpenal/CalendarioPage'
-import PlaceholderPage from './shared/PlaceholderPage'
+import ControlDashboardPage from './modules/control/ControlDashboardPage'
+import PresentacionesPendientesPage from './modules/control/PresentacionesPendientesPage'
 import AuthGuard from './shared/AuthGuard'
 import ProtectedRoute from './shared/ProtectedRoute'
-import { ShieldAlert } from 'lucide-react'
 import { useAuth } from './shared/authContext'
 
 function HomeRedirect() {
@@ -85,11 +85,13 @@ export default function App() {
 
                     <Route path="/control" element={
                         <ProtectedRoute allowedRoles={['Oficial de Seguimiento', 'Supervisor Policial', 'Administrador del Sistema']}>
-                            <PlaceholderPage
-                                title="Control y Disciplina"
-                                description="Administracion de faltas disciplinarias, sanciones y registros de conducta."
-                                icon={ShieldAlert}
-                            />
+                            <ControlDashboardPage />
+                        </ProtectedRoute>
+                    } />
+
+                    <Route path="/control/pendientes" element={
+                        <ProtectedRoute allowedRoles={['Oficial de Seguimiento', 'Supervisor Policial', 'Administrador del Sistema']}>
+                            <PresentacionesPendientesPage />
                         </ProtectedRoute>
                     } />
                 </Routes>

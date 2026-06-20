@@ -24,6 +24,9 @@ public class ExpedienteSeguimiento {
     private String contactoEmergenciaTelefono;
     private String nivelRiesgo;
     private String estado;
+    
+    @Builder.Default
+    private Integer contadorIncumplimientos = 0;
 
     private String oficialAsignadoNombre;
     private String oficialAsignadoCedula;

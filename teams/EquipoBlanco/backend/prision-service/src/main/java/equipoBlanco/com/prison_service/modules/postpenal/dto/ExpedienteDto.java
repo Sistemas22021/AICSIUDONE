@@ -28,4 +28,5 @@ public class ExpedienteDto {
     private String contactoEmergenciaNombre;
     private String contactoEmergenciaTelefono;
     private String nivelRiesgo;
+    private Integer contadorIncumplimientos;
 }

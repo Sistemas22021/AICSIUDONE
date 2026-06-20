@@ -184,6 +184,12 @@ public class PostPenalService {
         return toDto(expediente);
     }
 
+    public ExpedienteDto getByInmateId(UUID inmateId) {
+        ExpedienteSeguimiento expediente = expedienteSeguimientoRepository.findByIdRecluso(inmateId)
+            .orElseThrow(() -> new RuntimeException("Expediente no encontrado para el recluso: " + inmateId));
+        return toDto(expediente);
+    }
+
     private ExpedienteDto toDto(ExpedienteSeguimiento e) {
         Inmate inmate = inmateRepository.findById(e.getIdRecluso()).orElse(null);
         return ExpedienteDto.builder()
@@ -201,6 +207,7 @@ public class PostPenalService {
             .contactoEmergenciaNombre(e.getContactoEmergenciaNombre())
             .contactoEmergenciaTelefono(e.getContactoEmergenciaTelefono())
             .nivelRiesgo(e.getNivelRiesgo())
+            .contadorIncumplimientos(e.getContadorIncumplimientos() != null ? e.getContadorIncumplimientos() : 0)
             .build();
     }
 }

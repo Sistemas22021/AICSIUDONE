@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { FileText, Save, ArrowLeft, User, MapPin, Phone, AlertTriangle } from 'lucide-react'
+import { FileText, Save, ArrowLeft, User, MapPin, Phone, AlertTriangle, CalendarDays, CheckCircle2, XCircle } from 'lucide-react'
 import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
 
@@ -24,6 +24,7 @@ export default function PostPenalProfilePage() {
     const { id } = useParams()
     const navigate = useNavigate()
     const [expediente, setExpediente] = useState<ExpedienteData | null>(null)
+    const [presentaciones, setPresentaciones] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [error, setError] = useState('')
@@ -55,6 +56,13 @@ export default function PostPenalProfilePage() {
                         contactoEmergenciaTelefono: exp.contactoEmergenciaTelefono || '',
                         nivelRiesgo: exp.nivelRiesgo || 'BAJO'
                     })
+                    
+                    try {
+                        const calRes = await api.get(`/calendario/${exp.id}`)
+                        setPresentaciones(calRes.data || [])
+                    } catch (e) {
+                        console.error('Error cargando calendario', e)
+                    }
                 } else {
                     setError('Expediente no encontrado')
                 }
@@ -160,6 +168,43 @@ export default function PostPenalProfilePage() {
                                     <p className="font-bold text-emerald-600 text-sm mt-0.5 uppercase">{expediente.estado}</p>
                                 </div>
                             </div>
+                        </div>
+
+                        {/* Historial de Presentaciones */}
+                        <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm mt-6">
+                            <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2 border-b border-gray-100 pb-3 mb-4">
+                                <CalendarDays className="w-4 h-4 text-indigo-500" />
+                                Historial de Presentaciones
+                            </h3>
+                            {presentaciones.length === 0 ? (
+                                <p className="text-xs text-gray-500 italic text-center">No hay presentaciones registradas.</p>
+                            ) : (
+                                <div className="space-y-3">
+                                    {presentaciones.map(p => (
+                                        <div key={p.id} className="p-3 border border-gray-100 rounded-xl bg-gray-50 flex items-start gap-3">
+                                            {p.estado === 'CUMPLIDA' ? (
+                                                <CheckCircle2 className="w-5 h-5 text-emerald-500 mt-0.5 shrink-0" />
+                                            ) : p.estado === 'INCUMPLIDA' ? (
+                                                <XCircle className="w-5 h-5 text-red-500 mt-0.5 shrink-0" />
+                                            ) : (
+                                                <div className="w-5 h-5 rounded-full border-2 border-yellow-400 mt-0.5 shrink-0"></div>
+                                            )}
+                                            <div>
+                                                <p className="text-xs font-bold text-gray-900">{p.fechaProgramada}</p>
+                                                <p className={`text-[10px] font-bold mt-1 ${p.estado === 'CUMPLIDA' ? 'text-emerald-600' : p.estado === 'INCUMPLIDA' ? 'text-red-600' : 'text-yellow-600'}`}>
+                                                    {p.estado}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    
+                                    <div className="pt-3 border-t border-gray-100">
+                                        <p className="text-[10px] font-semibold text-gray-500 text-center">
+                                            Total: {presentaciones.length} | Cumplidas: {presentaciones.filter(p => p.estado === 'CUMPLIDA').length} | Incumplidas: {presentaciones.filter(p => p.estado === 'INCUMPLIDA').length}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
 

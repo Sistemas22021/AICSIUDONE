@@ -44,4 +44,9 @@ public class PostPenalController {
     public ResponseEntity<ExpedienteDto> completeProfile(@PathVariable UUID id, @RequestBody ExpProfileDto dto) {
         return ResponseEntity.ok(postPenalService.completeProfile(id, dto));
     }
+
+    @GetMapping("/expedientes/inmate/{inmateId}")
+    public ResponseEntity<ExpedienteDto> getByInmateId(@PathVariable UUID inmateId) {
+        return ResponseEntity.ok(postPenalService.getByInmateId(inmateId));
+    }
 }
