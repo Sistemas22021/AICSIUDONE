@@ -279,6 +279,24 @@ export default function PostPenalPage() {
                                                         {exp.estado === 'pendiente' ? 'Asignar' : 'Reasignar'}
                                                     </button>
                                                 )}
+                                                {exp.estado !== 'pendiente' && (
+                                                    <>
+                                                        <button
+                                                            onClick={() => window.location.href = `/post/expediente/${exp.id}/perfil`}
+                                                            className="px-3 py-1.5 border border-indigo-200 text-indigo-600 hover:bg-indigo-50 rounded-lg text-[11px] font-bold uppercase transition-all shadow-sm cursor-pointer"
+                                                            title="Ver / Completar Perfil"
+                                                        >
+                                                            Perfil
+                                                        </button>
+                                                        <button
+                                                            onClick={() => window.location.href = `/post/expediente/${exp.id}/calendario`}
+                                                            className="px-3 py-1.5 border border-emerald-200 text-emerald-600 hover:bg-emerald-50 rounded-lg text-[11px] font-bold uppercase transition-all shadow-sm cursor-pointer"
+                                                            title="Ver Calendario"
+                                                        >
+                                                            Calendario
+                                                        </button>
+                                                    </>
+                                                )}
                                                 </div>
                                             </td>
                                         </tr>

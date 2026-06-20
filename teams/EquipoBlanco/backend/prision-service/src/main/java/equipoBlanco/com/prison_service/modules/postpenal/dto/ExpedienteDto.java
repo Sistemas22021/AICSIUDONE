@@ -21,4 +21,11 @@ public class ExpedienteDto {
     private String oficialAsignadoCedula;
     private String estado;
     private List<String> historialAsignaciones;
+    
+    // Profile fields
+    private String domicilio;
+    private String municipio;
+    private String contactoEmergenciaNombre;
+    private String contactoEmergenciaTelefono;
+    private String nivelRiesgo;
 }

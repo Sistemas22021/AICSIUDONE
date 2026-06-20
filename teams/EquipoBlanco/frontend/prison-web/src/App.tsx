@@ -6,20 +6,31 @@ import InmateRecordPage from './modules/inmates/InmateRecordPage'
 import DischargePage from './modules/inmates/DischargePage'
 import DashboardPage from './modules/dashboard/DashboardPage'
 import PostPenalPage from './modules/postpenal/PostPenalPage'
+import PostPenalProfilePage from './modules/postpenal/PostPenalProfilePage'
+import CalendarioPage from './modules/postpenal/CalendarioPage'
 import PlaceholderPage from './shared/PlaceholderPage'
 import AuthGuard from './shared/AuthGuard'
 import ProtectedRoute from './shared/ProtectedRoute'
 import { ShieldAlert } from 'lucide-react'
+import { useAuth } from './shared/authContext'
+
+function HomeRedirect() {
+    const auth = useAuth()
+    if (auth.hasRole('Oficial de Seguimiento', 'Supervisor Policial')) {
+        return <Navigate to="/post" replace />
+    }
+    return <Navigate to="/dashboard" replace />
+}
 
 export default function App() {
     return (
         <BrowserRouter>
             <AuthGuard>
                 <Routes>
-                    <Route path="/" element={<Navigate to="/dashboard" />} />
+                    <Route path="/" element={<HomeRedirect />} />
 
                     <Route path="/dashboard" element={
-                        <ProtectedRoute allowedRoles={['Oficial Penitenciario', 'Supervisor Penitenciario', 'Administrador del Sistema']}>
+                        <ProtectedRoute allowedRoles={['Oficial Penitenciario', 'Supervisor Penitenciario', 'Administrador del Sistema']} fallback="/post">
                             <DashboardPage />
                         </ProtectedRoute>
                     } />
@@ -57,6 +68,18 @@ export default function App() {
                     <Route path="/post" element={
                         <ProtectedRoute allowedRoles={['Oficial de Seguimiento', 'Supervisor Policial', 'Administrador del Sistema']}>
                             <PostPenalPage />
+                        </ProtectedRoute>
+                    } />
+
+                    <Route path="/post/expediente/:id/perfil" element={
+                        <ProtectedRoute allowedRoles={['Oficial de Seguimiento', 'Supervisor Policial', 'Administrador del Sistema']}>
+                            <PostPenalProfilePage />
+                        </ProtectedRoute>
+                    } />
+
+                    <Route path="/post/expediente/:id/calendario" element={
+                        <ProtectedRoute allowedRoles={['Oficial de Seguimiento', 'Supervisor Policial', 'Administrador del Sistema']}>
+                            <CalendarioPage />
                         </ProtectedRoute>
                     } />
 

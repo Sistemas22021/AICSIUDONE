@@ -1,6 +1,7 @@
 package equipoBlanco.com.prison_service.modules.postpenal.controller;
 
 import equipoBlanco.com.prison_service.modules.postpenal.dto.AssignOfficerDto;
+import equipoBlanco.com.prison_service.modules.postpenal.dto.ExpProfileDto;
 import equipoBlanco.com.prison_service.modules.postpenal.dto.ExpedienteDto;
 import equipoBlanco.com.prison_service.modules.postpenal.dto.OficialCargaDto;
 import equipoBlanco.com.prison_service.modules.postpenal.service.PostPenalService;
@@ -37,5 +38,10 @@ public class PostPenalController {
     @PostMapping("/expedientes/{id}/assign")
     public ResponseEntity<ExpedienteDto> assignOfficer(@PathVariable UUID id, @RequestBody AssignOfficerDto dto) {
         return ResponseEntity.ok(postPenalService.assignOfficer(id, dto));
+    }
+
+    @PutMapping("/expedientes/{id}/profile")
+    public ResponseEntity<ExpedienteDto> completeProfile(@PathVariable UUID id, @RequestBody ExpProfileDto dto) {
+        return ResponseEntity.ok(postPenalService.completeProfile(id, dto));
     }
 }

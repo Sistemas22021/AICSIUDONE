@@ -3,6 +3,7 @@ package equipoBlanco.com.prison_service.modules.postpenal.service;
 import equipoBlanco.com.prison_service.modules.postpenal.model.ExpedienteSeguimiento;
 import equipoBlanco.com.prison_service.modules.postpenal.repository.ExpedienteSeguimientoRepository;
 import equipoBlanco.com.prison_service.modules.postpenal.dto.AssignOfficerDto;
+import equipoBlanco.com.prison_service.modules.postpenal.dto.ExpProfileDto;
 import equipoBlanco.com.prison_service.modules.postpenal.dto.ExpedienteDto;
 import equipoBlanco.com.prison_service.modules.postpenal.dto.OficialCargaDto;
 import equipoBlanco.com.prison_service.modules.control.model.Alerta;
@@ -163,6 +164,26 @@ public class PostPenalService {
         return toDto(expediente);
     }
 
+    /**
+     * Completa el perfil de seguimiento de un egresado.
+     */
+    @Transactional
+    public ExpedienteDto completeProfile(UUID id, ExpProfileDto dto) {
+        ExpedienteSeguimiento expediente = expedienteSeguimientoRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Expediente no encontrado con ID: " + id));
+
+        expediente.setDomicilio(dto.getDomicilio());
+        expediente.setMunicipio(dto.getMunicipio());
+        expediente.setContactoEmergenciaNombre(dto.getContactoEmergenciaNombre());
+        expediente.setContactoEmergenciaTelefono(dto.getContactoEmergenciaTelefono());
+        expediente.setNivelRiesgo(dto.getNivelRiesgo());
+        expediente.completarPerfil(); // Cambia el estado a completado
+
+        expedienteSeguimientoRepository.save(expediente);
+
+        return toDto(expediente);
+    }
+
     private ExpedienteDto toDto(ExpedienteSeguimiento e) {
         Inmate inmate = inmateRepository.findById(e.getIdRecluso()).orElse(null);
         return ExpedienteDto.builder()
@@ -175,6 +196,11 @@ public class PostPenalService {
             .oficialAsignadoCedula(e.getOficialAsignadoCedula())
             .estado(e.getEstado())
             .historialAsignaciones(e.getHistorialAsignaciones() != null ? e.getHistorialAsignaciones() : List.of())
+            .domicilio(e.getDomicilio())
+            .municipio(e.getMunicipio())
+            .contactoEmergenciaNombre(e.getContactoEmergenciaNombre())
+            .contactoEmergenciaTelefono(e.getContactoEmergenciaTelefono())
+            .nivelRiesgo(e.getNivelRiesgo())
             .build();
     }
 }
