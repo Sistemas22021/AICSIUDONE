@@ -33,6 +33,7 @@ public class ModusOperandi {
     private String nivelConfianza;
 
     @ManyToMany(mappedBy = "modusOperandiList", fetch = FetchType.LAZY)
+    @Builder.Default
     private List<Expediente> expedientes = new ArrayList<>();
 
     // Methods

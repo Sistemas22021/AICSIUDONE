@@ -107,7 +107,7 @@ public class ExpedienteServiceImpl implements ExpedienteService {
             );
 
             denunciante.setNumeroTelefono(
-                    request.getDenunciante().getNumeroTelefono()
+                    request.getDenunciante().getTelefono()
             );
 
             denunciante.setNacionalidad(
@@ -119,7 +119,7 @@ public class ExpedienteServiceImpl implements ExpedienteService {
             );
 
             denunciante.setRelacionConHecho(
-                    request.getDenunciante().getRelacionConCrimen()
+                    request.getDenunciante().getRelacionConHecho()
             );
 
             denunciante.setRol(

@@ -33,6 +33,7 @@ public class EscenaNegativa {
     private String observacion;
 
     @Column(name = "sin_elementos_negativos", nullable = false)
+    @Builder.Default
     private Boolean sinElementosNegativos = false;
 
     @ManyToOne(fetch = FetchType.LAZY)

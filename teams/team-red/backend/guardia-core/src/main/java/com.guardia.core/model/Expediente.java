@@ -67,16 +67,20 @@ public class Expediente {
     private Localizacion localizacion;
 
     @OneToMany(mappedBy = "expediente", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
     private List<Escena> escenas = new ArrayList<>();
 
     @OneToMany(mappedBy = "expediente", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<Involucrado> involucrados = new ArrayList<>();
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "expediente_modus_operandi", joinColumns = @JoinColumn(name = "expediente_id"), inverseJoinColumns = @JoinColumn(name = "modus_operandi_id"))
+    @Builder.Default
     private List<ModusOperandi> modusOperandiList = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private EstadoExpediente estadoExpediente = EstadoExpediente.BORRADOR;
 
     private Boolean esDenunciaFormal;

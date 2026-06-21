@@ -54,6 +54,7 @@ public class Escena {
     private List<EscenaNegativa> escenasNegativas;
 
     @OneToMany(mappedBy = "escena", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<EscenaChecklist> checklist = new ArrayList<>();
 
     // Methods
