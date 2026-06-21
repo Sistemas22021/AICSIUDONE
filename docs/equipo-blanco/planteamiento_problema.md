@@ -46,4 +46,4 @@ El sistema contempla cinco módulos funcionales como Producto Mínimo Viable (MV
 4. **Módulo Post-Penitenciario**: gestión del egreso y activación del seguimiento de liberados.
 5. **Módulo de Control y Disciplina**: registro de presentaciones, detección de incumplimientos y sistema de alertas escalonadas.
 
-El stack tecnológico seleccionado (React + Spring Boot + PostgreSQL + DigitalOcean) garantiza que el sistema sea técnicamente alcanzable por el equipo y operativamente sostenible dentro de los costos definidos en el estudio de factibilidad.
+El stack tecnológico seleccionado (React + Spring Boot + PostgreSQL + Python + DigitalOcean) garantiza que el sistema sea técnicamente alcanzable por el equipo y operativamente sostenible dentro de los costos definidos en el estudio de factibilidad.

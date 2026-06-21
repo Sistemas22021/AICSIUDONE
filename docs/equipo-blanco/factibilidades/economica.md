@@ -91,3 +91,5 @@ Una vez lanzado el MVP, se mantiene la arquitectura de servidor único pero con 
 - Todos los costos de herramientas de desarrollo (IDEs, gestión de repositorio, certificados SSL, diseño de interfaces) son $0 por uso de planes gratuitos o herramientas de código abierto.
 - El costo de desarrollo del equipo humano es referencial; en un contexto académico donde el equipo no percibe remuneración, la inversión real se reduce a los costos de infraestructura ($105 durante el desarrollo + $26.85/mes en producción).
 - El costo operativo de $26.85/mes es sostenible para una institución pública o privada que adopte el sistema.
+
+**Nota sobre Supabase:** El proyecto utiliza Supabase (plan gratuito) como hosting de la base de datos PostgreSQL en la nube, eliminando la necesidad de mantener una instancia de PostgreSQL dentro del Droplet de desarrollo.

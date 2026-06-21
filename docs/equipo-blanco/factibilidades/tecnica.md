@@ -17,12 +17,18 @@ El sistema no requiere tecnologías experimentales ni de nicho. Todos los compon
 | Capa | Tecnología | Justificación |
 |------|-----------|---------------|
 | Frontend | React + Vite | Componentes reutilizables; ideal para construir los 5 módulos del MVP de forma independiente y con actualizaciones reactivas de la UI |
-| Backend principal | Java 17 + Spring Boot (Community) | Framework empresarial de código abierto, robusto para la gestión de expedientes y reglas de negocio complejas |
+| Estilos Frontend | Tailwind CSS 3 | Framework de utilidades para desarrollo rápido de UI |
+| Iconos | Lucide React | Librería de iconos para la interfaz |
+| Enrutamiento | React Router DOM 7 | Navegación SPA con protección de rutas por rol |
+| HTTP Client | Axios | Cliente HTTP con interceptores para autenticación |
+| Backend principal | Java 21 + Spring Boot 3.2.4 | Framework empresarial de código abierto, robusto para la gestión de expedientes y reglas de negocio complejas |
+| Gestión de dependencias | Lombok + spring-dotenv | Reduce boilerplate y gestiona variables de entorno |
+| Service Discovery | Eureka Client (Spring Cloud 2023.0.1) | Registro y descubrimiento entre microservicios |
 | Servicio de alertas | Python 3 + scripts programados (cron) | Procesamiento de fechas, evaluación de incumplimientos y envío de notificaciones de forma automatizada |
-| Base de datos | PostgreSQL | Motor relacional estable y gratuito; soporta correctamente las relaciones entre reclusos, celdas, presentaciones y alertas |
+| Base de datos | PostgreSQL (Supabase) | Motor relacional estable y gratuito; soporta correctamente las relaciones entre reclusos, celdas, presentaciones y alertas |
 | ORM | Hibernate / Spring Data JPA | Reduce errores en consultas SQL y mapea las entidades del sistema a clases Java |
 | Servidor web | Nginx | Sirve el frontend React como archivos estáticos y actúa como proxy inverso hacia el backend Spring Boot |
-| Autenticación | Spring Security + JWT | Control de acceso por roles sin dependencias externas de pago |
+| Autenticación | Spring Security + header-based auth (JwtAuthFilter) | Control de acceso por roles basado en headers X-User-Name y X-User-Role; el JWT real se valida en el API Gateway |
 | Control de versiones | Git + GitHub | Estándar de la industria; permite trabajo colaborativo entre los 5 integrantes del equipo |
 
 ---
@@ -37,7 +43,7 @@ Cada integrante del equipo trabaja en su máquina personal. Los requerimientos m
 - Almacenamiento: 20 GB disponibles para dependencias, builds e imágenes de base de datos
 
 ### Software de desarrollo (sin costo)
-- Java 17 JDK (OpenJDK)
+- Java 21 JDK (OpenJDK)
 - Node.js + npm (para el frontend React + Vite)
 - Python 3 (para el servicio de alertas)
 - PostgreSQL (instancia local para desarrollo)
@@ -59,7 +65,7 @@ Se adopta una arquitectura de servidor único (monolito desplegado), adecuada pa
 | Backend Java (Spring Boot) | API REST del sistema; gestiona toda la lógica de negocio |
 | Servicio de alertas (Python + cron) | Proceso nocturno que evalúa incumplimientos y emite alertas escalonadas |
 | Frontend React (Nginx) | Archivos estáticos servidos por Nginx |
-| Base de datos PostgreSQL | Instancia única en el mismo servidor; respaldada mediante snapshots mensuales |
+| Base de datos PostgreSQL | Alojada en Supabase (plan gratuito), conectada vía SSL |
 
 ### Especificaciones del servidor de producción
 
