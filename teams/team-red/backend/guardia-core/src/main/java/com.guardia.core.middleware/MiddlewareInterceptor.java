@@ -22,7 +22,8 @@ public class MiddlewareInterceptor implements HandlerInterceptor {
         // Endpoints where middleware should run
         boolean shouldApply = ("POST".equals(method) && uri.equals("/api/expedientes"))
                 || ("PUT".equals(method) && uri.matches("^/api/expedientes/\\d+/sellar$"))
-                || ("POST".equals(method) && uri.equals("/api/evidencias"));
+                || ("POST".equals(method) && uri.equals("/api/evidencias"))
+                || ("POST".equals(method) && uri.matches("^/api/v1/escenas/\\d+/liberar$"));
 
         if (!shouldApply) return true;
 

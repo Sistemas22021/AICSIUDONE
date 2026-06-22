@@ -4,6 +4,9 @@ import { NeonButton } from '../../ui/NeonButton'
 import { NeonInput } from '../../ui/NeonInput'
 import { NeonSelect } from '../../ui/NeonSelect'
 import { NeonPanel } from '../../ui/NeonPanel'
+import { NeonTextarea } from '../../ui/NeonTextarea'
+import { NeonConfirmModal } from '../../ui/NeonConfirmModal'
+import { useNeonToast } from '../../ui/NeonToast'
 import { StepperVisual } from '../../ui/StepperVisual'
 import { AlertaIntegridad } from '../../ui/AlertaIntegridad'
 import { HistorialEscenas } from './HistorialEscenas'
@@ -16,6 +19,9 @@ interface EscenaDelCrimenProps {
 
 export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDelCrimenProps) => {
     const [mostrarHistorial, setMostrarHistorial] = useState(false)
+    const [busquedaInvestigador, setBusquedaInvestigador] = useState('')
+    const [buscandoInvestigador, setBuscandoInvestigador] = useState(false)
+    const [errorBusqueda, setErrorBusqueda] = useState<string | null>(null)
 
     const {
         state,
@@ -44,13 +50,18 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
         verificarIntegridad,
         limpiarAlertas,
         resetEscena,
+        setInvestigador,
     } = useEscenaCrimen()
+
     useEffect(() => {
         if (expedienteIdInicial && folioInicial && !state.expedienteId) {
             vincularExpediente(expedienteIdInicial, folioInicial)
         }
     }, [expedienteIdInicial, folioInicial])
 
+    const { showToast, ToastContainer } = useNeonToast()
+    const [mostrarConfirmLiberacion, setMostrarConfirmLiberacion] = useState(false)
+    const [liberando, setLiberando] = useState(false)
 
     const pasosCompletadosArray = [
         state.paso1_completado ? 1 : null,
@@ -80,6 +91,63 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
             verificarIntegridad(state.folioExpediente)
         } else {
             alert('Primero vincula este formulario a un expediente usando el campo "Folio del Expediente"')
+        }
+    }
+
+    const handleBuscarInvestigador = async () => {
+        if (!busquedaInvestigador.trim()) return
+        setBuscandoInvestigador(true)
+        setErrorBusqueda(null)
+        try {
+            const { buscarInvestigadorPorCorreo, buscarInvestigadorPorNombre } = await import('../../../services/escenaService')
+            const esCorreo = busquedaInvestigador.includes('@')
+            const usuario = esCorreo
+                ? await buscarInvestigadorPorCorreo(busquedaInvestigador.trim())
+                : await buscarInvestigadorPorNombre(busquedaInvestigador.trim())
+            setInvestigador(usuario.id, usuario.nombre)
+            setBusquedaInvestigador('')
+        } catch {
+            setErrorBusqueda('No se encontró un investigador con ese correo o identificación.')
+        } finally {
+            setBuscandoInvestigador(false)
+        }
+    }
+
+    const handleBuscarInvestigadorPaso4 = async () => {
+        if (!busquedaInvestigador.trim()) return
+        setBuscandoInvestigador(true)
+        setErrorBusqueda(null)
+        try {
+            const { buscarInvestigadorPorCorreo, buscarInvestigadorPorNombre } = await import('../../../services/escenaService')
+            const esCorreo = busquedaInvestigador.includes('@')
+            const usuario = esCorreo
+                ? await buscarInvestigadorPorCorreo(busquedaInvestigador.trim())
+                : await buscarInvestigadorPorNombre(busquedaInvestigador.trim())
+            updateLiberacion({
+                investigadorResponsableId: usuario.id,
+                investigadorNombre: usuario.nombre,
+            })
+            setBusquedaInvestigador('')
+        } catch {
+            setErrorBusqueda('No se encontró un investigador con ese correo o identificación.')
+        } finally {
+            setBuscandoInvestigador(false)
+        }
+    }
+
+    const handleConfirmarLiberacion = async () => {
+        setMostrarConfirmLiberacion(false)
+        setLiberando(true)
+        try {
+            await completarPaso4()
+            showToast('Escena liberada formalmente. El Guardia de turno ha sido notificado.', 'success')
+        } catch (err: any) {
+            const msg = err?.message?.includes('HTTP')
+                ? err.message
+                : 'Error al liberar la escena. Verifica los datos e intenta de nuevo.'
+            showToast(`${msg}`, 'error')
+        } finally {
+            setLiberando(false)
         }
     }
 
@@ -177,6 +245,62 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
                                 <p style={{ color: '#00ffff', margin: 0 }}>📌 Modo "Solo evidencia" - No se requiere asegurar el perímetro.</p>
                             </div>
                         )}
+
+                        {/* Lookup del investigador responsable */}
+                        <div style={{ marginBottom: '8px' }}>
+                            {state.investigadorId ? (
+                                <div style={{
+                                    padding: '10px 14px',
+                                    backgroundColor: '#00ff0011',
+                                    border: '1px solid #00ff0044',
+                                    borderRadius: '8px',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                }}>
+                                    <span style={{ color: '#00ff88', fontSize: '13px' }}>
+                                        👤 Investigador: <strong>{state.investigadorNombre}</strong>
+                                    </span>
+                                    {!isPaso1Completado && (
+                                        <NeonButton
+                                            variant="ghost"
+                                            onClick={() => setInvestigador(0, '')}
+                                            style={{ fontSize: '11px', padding: '2px 8px' }}
+                                        >
+                                            Cambiar
+                                        </NeonButton>
+                                    )}
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+                                        <div style={{ flex: 1 }}>
+                                            <NeonInput
+                                                label="Investigador responsable (correo o identificación) *"
+                                                value={busquedaInvestigador}
+                                                onChange={(e: any) => {
+                                                    setBusquedaInvestigador(e.target.value)
+                                                    setErrorBusqueda(null)
+                                                }}
+                                                onKeyDown={(e: any) => e.key === 'Enter' && handleBuscarInvestigador()}
+                                                placeholder="correo@guardia.com  o  001-1234567-8"
+                                                disabled={isPaso1Completado || buscandoInvestigador}
+                                                error={!!errorBusqueda}
+                                                errorMessage={errorBusqueda ?? undefined}
+                                            />
+                                        </div>
+                                        <NeonButton
+                                            variant="outline"
+                                            onClick={handleBuscarInvestigador}
+                                            disabled={!busquedaInvestigador.trim() || buscandoInvestigador || isPaso1Completado}
+                                            style={{ whiteSpace: 'nowrap', marginBottom: errorBusqueda ? '22px' : '0' }}
+                                        >
+                                            {buscandoInvestigador ? '⏳' : '🔍 Verificar'}
+                                        </NeonButton>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
 
                         <NeonButton
                             onClick={completarPaso1}
@@ -478,22 +602,124 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
                     <NeonPanel>
                         {!state.paso4_completado ? (
                             <>
-                                <h3>Paso 4: Liberación del lugar</h3>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                    <NeonInput
-                                        label="Hora de liberación"
-                                        type="time"
-                                        value={state.liberacion.hora}
-                                        onChange={(e: any) => updateLiberacion({ hora: e.target.value })}
-                                        disabled={state.paso4_completado}
+                                <h3>Paso 4: Liberación de la escena</h3>
+
+                                {/* Aviso de acción irreversible */}
+                                <div style={{
+                                    padding: '12px 16px',
+                                    backgroundColor: '#ff990011',
+                                    border: '1px solid #ff990044',
+                                    borderRadius: '8px',
+                                    marginBottom: '24px',
+                                    fontSize: '13px',
+                                    color: '#ffaa44',
+                                }}>
+                                    ⚠️ Esta acción es <strong>irreversible</strong>. Una vez registrada, la escena quedará
+                                    sellada y el expediente actualizará su estado a <strong>LIBERADA</strong>.
+                                </div>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+                                    {/* Investigador responsable de la liberación */}
+                                    {state.liberacion.investigadorResponsableId ? (
+                                        <div style={{
+                                            padding: '10px 14px',
+                                            backgroundColor: '#00ff0011',
+                                            border: '1px solid #00ff0044',
+                                            borderRadius: '8px',
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                        }}>
+                                            <span style={{ color: '#00ff88', fontSize: '13px' }}>
+                                                👤 Investigador: <strong>{state.liberacion.investigadorNombre || `ID ${state.liberacion.investigadorResponsableId}`}</strong>
+                                            </span>
+                                            {!liberando && (
+                                                <NeonButton
+                                                    variant="ghost"
+                                                    onClick={() => updateLiberacion({ investigadorResponsableId: null, investigadorNombre: undefined })}
+                                                    style={{ fontSize: '11px', padding: '2px 8px' }}
+                                                >
+                                                    Cambiar
+                                                </NeonButton>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                            <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+                                                <div style={{ flex: 1 }}>
+                                                    <NeonInput
+                                                        label="Investigador responsable de la liberación (correo o identificación) *"
+                                                        value={busquedaInvestigador}
+                                                        onChange={(e: any) => {
+                                                            setBusquedaInvestigador(e.target.value)
+                                                            setErrorBusqueda(null)
+                                                        }}
+                                                        onKeyDown={(e: any) => e.key === 'Enter' && handleBuscarInvestigadorPaso4()}
+                                                        placeholder="correo@guardia.com  o  001-1234567-8"
+                                                        disabled={liberando}
+                                                        error={!!errorBusqueda}
+                                                        errorMessage={errorBusqueda ?? undefined}
+                                                    />
+                                                </div>
+                                                <NeonButton
+                                                    variant="outline"
+                                                    onClick={handleBuscarInvestigadorPaso4}
+                                                    disabled={!busquedaInvestigador.trim() || liberando}
+                                                    style={{ whiteSpace: 'nowrap', marginBottom: errorBusqueda ? '22px' : '0' }}
+                                                >
+                                                    {buscandoInvestigador ? '⏳' : '🔍 Verificar'}
+                                                </NeonButton>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Observaciones opcionales */}
+                                    <NeonTextarea
+                                        label="Observaciones (opcional)"
+                                        value={state.liberacion.observaciones}
+                                        onChange={(e: any) => updateLiberacion({ observaciones: e.target.value })}
+                                        disabled={liberando}
+                                        placeholder="Notas sobre el estado final de la escena, condiciones al momento de la liberación, etc."
+                                        rows={4}
+                                        showCount
+                                        maxCount={2000}
+                                        maxLength={2000}
                                     />
+
+                                    {/* Validación visible */}
+                                    <div style={{
+                                        padding: '10px 14px',
+                                        borderRadius: '6px',
+                                        backgroundColor: canCompletarPaso4 ? '#00ff0022' : '#ff000022',
+                                        color: canCompletarPaso4 ? '#00ff88' : '#ff6666',
+                                        fontSize: '13px',
+                                    }}>
+                                        {canCompletarPaso4
+                                            ? '✅ Listo para liberar la escena'
+                                            : '❌ El ID del investigador responsable es obligatorio'}
+                                    </div>
+
                                     <NeonButton
-                                        onClick={completarPaso4}
-                                        disabled={!canCompletarPaso4}
+                                        variant="danger"
+                                        onClick={() => setMostrarConfirmLiberacion(true)}
+                                        disabled={!canCompletarPaso4 || liberando}
                                     >
-                                        Completar Paso 4
+                                        {liberando ? '⏳ Registrando liberación...' : '🔓 Liberar Escena'}
                                     </NeonButton>
                                 </div>
+
+                                {/* Modal de confirmación */}
+                                <NeonConfirmModal
+                                    isOpen={mostrarConfirmLiberacion}
+                                    title="⚠️ Confirmar Liberación"
+                                    message={`¿Confirmas la liberación formal de esta escena? Esta acción no puede deshacerse y quedará registrada con timestamp oficial.`}
+                                    confirmLabel="Continuar"
+                                    cancelLabel="Cancelar"
+                                    confirmVariant="success"
+                                    onConfirm={handleConfirmarLiberacion}
+                                    onCancel={() => setMostrarConfirmLiberacion(false)}
+                                />
                             </>
                         ) : (
                             <div style={{ textAlign: 'center', padding: '20px' }}>
@@ -528,7 +754,32 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
                                                 ))}
                                             </ul>
                                             <p><strong>⚠️ Escenas negativas:</strong> {state.noHayEscenaNegativa ? 'Sin elementos negativos' : state.escenaNegativa.length}</p>
-                                            <p><strong>🔓 Liberación:</strong> {state.liberacion.hora}</p>
+
+                                            {/* Bloque de liberación */}
+                                            <div style={{
+                                                marginTop: '12px',
+                                                padding: '12px',
+                                                backgroundColor: '#00ff0011',
+                                                border: '1px solid #00ff0033',
+                                                borderRadius: '8px',
+                                            }}>
+                                                <p style={{ color: '#00ff88', marginBottom: '6px' }}><strong>🔓 Liberación oficial:</strong></p>
+                                                {state.liberacion.investigadorNombre && (
+                                                    <p><strong>👤 Investigador:</strong> {state.liberacion.investigadorNombre}</p>
+                                                )}
+                                                <p><strong>🕐 Hora de cierre:</strong> {state.liberacion.hora}</p>
+                                                {state.liberacion.hashLiberacion && (
+                                                    <p style={{ fontSize: '11px', wordBreak: 'break-all' }}>
+                                                        <strong>🔑 Hash:</strong>{' '}
+                                                        <span style={{ fontFamily: 'monospace', color: '#00ffffaa' }}>
+                                                            {state.liberacion.hashLiberacion}
+                                                        </span>
+                                                    </p>
+                                                )}
+                                                {state.liberacion.observaciones && (
+                                                    <p><strong>📝 Observaciones:</strong> {state.liberacion.observaciones}</p>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -579,17 +830,8 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
                 labels={labelsPasos}
             />
 
-            {/* Barra de progreso
-            <div style={{ marginBottom: '24px' }}>
-                <div style={{ backgroundColor: '#1a1a1a', borderRadius: '4px', height: '8px', overflow: 'hidden' }}>
-                    <div style={{ backgroundColor: '#00ffff', width: `${progreso}%`, height: '100%', transition: 'width 0.3s' }} />
-                </div>
-                <p style={{ marginTop: '8px', fontSize: '14px', color: '#00ffffaa' }}>
-                    Paso {state.paso_actual} de 4 • {pasosCompletadosArray.length} completados
-                </p>
-            </div>
-            */}
             {renderPasoActual()}
+            <ToastContainer />
         </div>
     )
 }

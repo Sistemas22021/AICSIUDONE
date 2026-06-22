@@ -64,4 +64,9 @@ public class UsuarioController {
         boolean resultado = usuarioService.autenticar(id, body.get("credenciales"));
         return ResponseEntity.ok(ApiResponse.ok("Autenticación procesada.", resultado));
     }
+
+    @GetMapping("/correo/{correo}")
+    public ResponseEntity<ApiResponse<UsuarioResponse>> obtenerPorCorreo(@PathVariable String correo) {
+        return ResponseEntity.ok(ApiResponse.ok(usuarioService.obtenerPorCorreo(correo)));
+    }
 }

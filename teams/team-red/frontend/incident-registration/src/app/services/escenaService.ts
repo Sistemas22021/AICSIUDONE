@@ -59,6 +59,32 @@ export interface EscenaCrearRequestDTO {
     levantadaPorId: number
 }
 
+export interface LiberarEscenaRequestDTO {
+    investigadorResponsableId: number
+    observaciones?: string
+}
+
+export interface LiberarEscenaResponseDTO {
+    id: number
+    estadoChecklist: string
+    estado: string
+    pasoActual: string | null
+    inicioProceso: string
+    cierreProceso: string
+    expedienteId: number
+    liberadaPor: { id: number; nombre: string; identificacion: string; correo: string } | null
+    horaLiberacion: string | null
+    observacionesLiberacion: string | null
+    hashLiberacion: string | null
+}
+
+export interface UsuarioResponseDTO {
+    id: number
+    nombre: string
+    identificacion: string
+    correo: string
+}
+
 // ─── Métodos ──────────────────────────────────────────────────────────────────
 
 /** Crea una nueva escena vinculada a un expediente */
@@ -105,5 +131,34 @@ export async function eliminarEscenaNegativa(id: number): Promise<void> {
 /** Lista las escenas negativas de una escena */
 export async function obtenerEscenasNegativas(escenaId: number): Promise<EscenaNegativaResponseDTO[]> {
     const res = await apiClient.get<{ data: EscenaNegativaResponseDTO[] }>(`/escenas-negativas/por-escena/${escenaId}`)
+    return res.data
+}
+
+/** Registra la liberación formal de la escena del crimen */
+export async function liberarEscena(
+    escenaId: number,
+    dto: LiberarEscenaRequestDTO
+): Promise<LiberarEscenaResponseDTO> {
+    const res = await apiClient.post<{ data: LiberarEscenaResponseDTO }>(
+        `/escenas/${escenaId}/liberar`,
+        dto
+    )
+    return res.data
+}
+
+export async function iniciarChecklistEscena(escenaId: number): Promise<EscenaResponseDTO> {
+    const res = await apiClient.patch<{ data: EscenaResponseDTO }>(`/escenas/${escenaId}/iniciar-checklist`)
+    return res.data
+}
+
+/** Busca un investigador por correo para verificar su existencia */
+export async function buscarInvestigadorPorCorreo(correo: string): Promise<UsuarioResponseDTO> {
+    const res = await apiClient.get<{ data: UsuarioResponseDTO }>(`/usuarios/correo/${encodeURIComponent(correo)}`)
+    return res.data
+}
+
+/** Busca un investigador por nombre (identificación) */
+export async function buscarInvestigadorPorNombre(identificacion: string): Promise<UsuarioResponseDTO> {
+    const res = await apiClient.get<{ data: UsuarioResponseDTO }>(`/usuarios/identificacion/${encodeURIComponent(identificacion)}`)
     return res.data
 }

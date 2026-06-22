@@ -88,4 +88,12 @@ public class UsuarioServiceImpl implements UsuarioService {
     public UsuarioResponse toResponse(Usuario u) {
         return new UsuarioResponse(u.getId(), u.getNombre(), u.getIdentificacion(), u.getCorreo());
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UsuarioResponse obtenerPorCorreo(String correo) {
+        Usuario u = usuarioRepository.findByCorreo(correo)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario con correo " + correo + " no encontrado."));
+        return new UsuarioResponse(u.getId(), u.getNombre(), u.getIdentificacion(), u.getCorreo());
+    }
 }

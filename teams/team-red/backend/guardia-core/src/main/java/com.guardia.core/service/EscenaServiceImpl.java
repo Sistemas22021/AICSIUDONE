@@ -1,6 +1,9 @@
 package com.guardia.core.service;
+import com.guardia.core.EscenaLiberadaEvent;
+import com.guardia.core.HashStrategy;
 
 import com.guardia.core.dto.request.EscenaRequest;
+import com.guardia.core.dto.request.LiberarEscenaRequest;
 import com.guardia.core.dto.response.EscenaResponse;
 import com.guardia.core.dto.response.EscenaNegativaResponse;
 import com.guardia.core.dto.response.EvidenciaResponse;
@@ -13,14 +16,15 @@ import com.guardia.core.model.EscenaChecklist;
 import com.guardia.core.model.Expediente;
 import com.guardia.core.model.Usuario;
 import com.guardia.core.model.enums.PasoChecklist;
-import com.guardia.core.repository.EscenaChecklistRepository;
 import com.guardia.core.repository.EscenaRepository;
 import com.guardia.core.repository.ExpedienteRepository;
 import com.guardia.core.repository.UsuarioRepository;
+import com.guardia.core.repository.EscenaChecklistRepository;
 import com.guardia.core.service.EscenaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -38,6 +42,8 @@ public class EscenaServiceImpl implements EscenaService {
     private final ExpedienteRepository expedienteRepository;
     private final UsuarioRepository usuarioRepository;
     private final EscenaChecklistRepository escenaChecklistRepository;
+    private final HashStrategy hashStrategy;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     public EscenaResponse crear(EscenaRequest request) {
@@ -230,6 +236,57 @@ public class EscenaServiceImpl implements EscenaService {
     }
 
     @Override
+    public EscenaResponse liberar(Long id, LiberarEscenaRequest request) {
+        Escena escena = findById(id);
+
+        if (escena.estaLiberada()) {
+            throw new BusinessException("La escena ya fue liberada formalmente y su registro está sellado.");
+        }
+
+        List<EscenaChecklist> pasosOrdenados =
+                escenaChecklistRepository.findByEscenaIdOrderByOrden(id);
+
+        EscenaChecklist pasoLiberacion = pasosOrdenados.stream()
+                .filter(p -> p.getPaso() == PasoChecklist.LIBERACION_ESCENA)
+                .findFirst()
+                .orElseThrow(() -> new BusinessException(
+                        "La escena no tiene configurado el paso de liberación en su checklist."));
+
+        boolean pasosPreviosCompletos = pasosOrdenados.stream()
+                .filter(p -> p.getOrden() < pasoLiberacion.getOrden())
+                .allMatch(p -> Boolean.TRUE.equals(p.getCompletado()) && p.getFechaCierre() != null);
+
+        if (!pasosPreviosCompletos) {
+            throw new BusinessException(
+                    "No se puede liberar la escena: los pasos previos del checklist " +
+                            "(aseguramiento de perímetro, documentación de evidencia y recolección/embalaje) " +
+                            "deben estar completados y firmados."
+            );
+        }
+
+        Usuario investigador = usuarioRepository.findById(request.investigadorResponsableId())
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario", request.investigadorResponsableId()));
+
+        LocalDateTime horaCierre = LocalDateTime.now();
+
+        String hash = hashStrategy.calcular(
+                id + "|" + investigador.getId() + "|" + investigador.getNombre() + "|" +
+                        horaCierre + "|" + (request.observaciones() == null ? "" : request.observaciones())
+        );
+
+        escena.liberar(investigador, horaCierre, request.observaciones(), hash);
+
+        pasoLiberacion.setCompletado(true);
+        escena.registrarTimestampPaso(pasoLiberacion, true);
+        escenaChecklistRepository.save(pasoLiberacion);
+
+        Escena guardada = escenaRepository.save(escena);
+        eventPublisher.publishEvent(new EscenaLiberadaEvent(this, guardada));
+
+        return toResponse(guardada);
+    }
+
+    @Override
     public boolean validarSecuencia(Long id) {
         return findById(id).validarSecuencia();
     }
@@ -267,18 +324,25 @@ public class EscenaServiceImpl implements EscenaService {
                                 en.getAreaInspeccionada(), en.getResultado(), en.getObservacion(), e.getId(), en.getSinElementosNegativos()))
                         .toList();
 
+        UsuarioResponse liberadaPor = e.getLiberadaPor() == null ? null :
+                new UsuarioResponse(e.getLiberadaPor().getId(), e.getLiberadaPor().getNombre(),
+                        e.getLiberadaPor().getIdentificacion(), e.getLiberadaPor().getCorreo());
+
         return new EscenaResponse(
                 e.getId(),
                 e.getEstadoChecklist(),
-                e.getPasoActual() != null
-                        ? e.getPasoActual().name()
-                        : null,
+                e.getEstado() != null ? e.getEstado().name() : null,
+                e.getPasoActual() != null ? e.getPasoActual().name() : null,
                 e.getInicioProceso(),
                 e.getCierreProceso(),
                 expedienteId,
                 investigador,
                 evidencias,
-                negativas
+                negativas,
+                liberadaPor,
+                e.getHoraLiberacion(),
+                e.getObservacionesLiberacion(),
+                e.getHashLiberacion()
         );
     }
     @Override

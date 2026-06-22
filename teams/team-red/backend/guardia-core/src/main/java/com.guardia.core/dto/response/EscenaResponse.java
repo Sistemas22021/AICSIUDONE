@@ -10,12 +10,17 @@ import java.util.List;
 public record EscenaResponse(
         Long id,
         String estadoChecklist,
+        String estado,
         String pasoActual,
         LocalDateTime inicioProceso,
         LocalDateTime cierreProceso,
         Long expedienteId,
         UsuarioResponse levantadaPor,
         List<EvidenciaResponse> evidencias,
-        List<EscenaNegativaResponse> escenasNegativas
+        List<EscenaNegativaResponse> escenasNegativas,
+        UsuarioResponse liberadaPor,
+        LocalDateTime horaLiberacion,
+        String observacionesLiberacion,
+        String hashLiberacion
 
 ) {}

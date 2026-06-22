@@ -1,6 +1,7 @@
 package com.guardia.core.controller;
 
 import com.guardia.core.dto.request.EscenaRequest;
+import com.guardia.core.dto.request.LiberarEscenaRequest;
 import com.guardia.core.dto.response.EscenaResponse;
 import com.guardia.core.dto.response.EscenaChecklistResponse;
 import com.guardia.core.exception.ApiResponse;
@@ -94,6 +95,15 @@ public class EscenaController {
             @PathVariable Long id) {
         return ResponseEntity.ok(
                 ApiResponse.ok(escenaService.obtenerChecklist(id))
+        );
+    }
+
+    @PostMapping("/{id}/liberar")
+    public ResponseEntity<ApiResponse<EscenaResponse>> liberar(
+            @PathVariable Long id,
+            @Valid @RequestBody LiberarEscenaRequest request) {
+        return ResponseEntity.ok(
+                ApiResponse.ok("Escena liberada formalmente.", escenaService.liberar(id, request))
         );
     }
 }

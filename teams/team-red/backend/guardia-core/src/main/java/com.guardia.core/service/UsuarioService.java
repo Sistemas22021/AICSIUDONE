@@ -16,4 +16,5 @@ public interface UsuarioService {
     UsuarioResponse actualizar(Long id, UsuarioRequest request);
     void eliminar(Long id);
     boolean autenticar(Long id, String credenciales);
+    UsuarioResponse obtenerPorCorreo(String correo);
 }

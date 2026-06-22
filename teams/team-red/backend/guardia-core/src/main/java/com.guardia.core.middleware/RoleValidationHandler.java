@@ -15,6 +15,7 @@ public class RoleValidationHandler extends AbstractRequestHandler {
     private static final Set<String> ROLE_CREAR_EXPEDIENTE = Set.of("INVESTIGADOR", "ADMIN");
     private static final Set<String> ROLE_SELLAR = Set.of("SUPERVISOR", "ADMIN");
     private static final Set<String> ROLE_CREAR_EVIDENCIA = Set.of("INVESTIGADOR", "ADMIN");
+    private static final Set<String> ROLE_LIBERAR_ESCENA = Set.of("INVESTIGADOR", "ADMIN");
 
     @Override
     protected boolean doHandle(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -51,6 +52,14 @@ public class RoleValidationHandler extends AbstractRequestHandler {
         // Crear evidencia: POST /api/evidencias
         if ("POST".equals(method) && uri.equals("/api/evidencias")) {
             if (!ROLE_CREAR_EVIDENCIA.contains(role.toUpperCase())) {
+                deny(response);
+                return false;
+            }
+        }
+
+        // Liberar escena: POST /api/v1/escenas/{id}/liberar
+        if ("POST".equals(method) && uri.matches("^/api/v1/escenas/\\d+/liberar$")) {
+            if (!ROLE_LIBERAR_ESCENA.contains(role.toUpperCase())) {
                 deny(response);
                 return false;
             }

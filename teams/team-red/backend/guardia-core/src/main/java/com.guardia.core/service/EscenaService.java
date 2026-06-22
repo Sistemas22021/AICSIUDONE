@@ -1,6 +1,7 @@
 package com.guardia.core.service;
 
 import com.guardia.core.dto.request.EscenaRequest;
+import com.guardia.core.dto.request.LiberarEscenaRequest;
 import com.guardia.core.dto.response.EscenaResponse;
 import com.guardia.core.dto.response.EscenaChecklistResponse;
 
@@ -22,4 +23,5 @@ public interface EscenaService {
     EscenaResponse bloquearEdicion(Long id);
     boolean validarSecuencia(Long id);
     EscenaResponse avanzarPaso(Long id);
+    EscenaResponse liberar(Long id, LiberarEscenaRequest request);
 }

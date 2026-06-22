@@ -1,6 +1,7 @@
 package com.guardia.core.model;
 
 import com.guardia.core.model.enums.PasoChecklist;
+import com.guardia.core.model.enums.EstadoEscena;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -49,6 +50,24 @@ public class Escena {
     @Enumerated(EnumType.STRING)
     @Column(name = "paso_actual")
     private PasoChecklist pasoActual;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "liberada_por_id")
+    private Usuario liberadaPor;
+
+    @Column(name = "hora_liberacion")
+    private LocalDateTime horaLiberacion;
+
+    @Column(name = "observaciones_liberacion", columnDefinition = "TEXT")
+    private String observacionesLiberacion;
+
+    @Column(name = "hash_liberacion", length = 64)
+    private String hashLiberacion;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado_escena")
+    @Builder.Default
+    private EstadoEscena estado = EstadoEscena.ACTIVA;
 
     @OneToMany(mappedBy = "escena", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<EscenaNegativa> escenasNegativas;
@@ -100,5 +119,20 @@ public class Escena {
 
     public void bloquearEdicion() {
         this.estadoChecklist = "BLOQUEADO";
+    }
+
+    public void liberar(Usuario investigador, LocalDateTime horaCierre, String observaciones, String hash) {
+        this.liberadaPor = investigador;
+        this.horaLiberacion = horaCierre;
+        this.observacionesLiberacion = observaciones;
+        this.hashLiberacion = hash;
+        this.estado = EstadoEscena.LIBERADA;
+        this.estadoChecklist = "COMPLETADO";
+        this.pasoActual = null;
+        this.cierreProceso = horaCierre;
+    }
+
+    public boolean estaLiberada() {
+        return EstadoEscena.LIBERADA.equals(this.estado);
     }
 }
