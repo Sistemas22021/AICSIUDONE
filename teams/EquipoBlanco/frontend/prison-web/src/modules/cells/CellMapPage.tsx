@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { Settings, X, User, Move, MapPin, Info, Users, CheckCircle, AlertTriangle, HelpCircle, Fingerprint } from 'lucide-react'
 import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
@@ -124,6 +124,15 @@ export default function CellMapPage() {
   const [transferModalInmate, setTransferModalInmate] = useState<InmateDto | null>(null)
   const auth = useAuth()
   const canAdminCells = auth.hasRole('Administrador del Sistema')
+  const location = useLocation()
+  const [registeredInmate, setRegisteredInmate] = useState<{ id: string; firstName: string; firstLastname: string } | null>(null)
+
+  useEffect(() => {
+    if (location.state?.fromRegister && location.state?.registeredInmate) {
+      setRegisteredInmate(location.state.registeredInmate)
+      window.history.replaceState({}, '')
+    }
+  }, [location.state])
 
   useEffect(() => {
     const handleCloseMenu = () => setContextMenu(null)
@@ -136,7 +145,7 @@ export default function CellMapPage() {
   const loadData = async () => {
     try {
       const cellsRes = await api.get('/cells')
-      const cellsData: { id: string; identifier: string; maxCapacity: number; currentOccupancy: number; conductLevel: string; lengthMeters: number | null; widthMeters: number | null }[] = cellsRes.data
+      const cellsData: { id: string; identifier: string; currentOccupancy: number; conductLevel: string; lengthMeters: number | null; widthMeters: number | null; maxCapacity: number }[] = cellsRes.data
 
       let inmatesData: InmateDto[] = []
       try {
@@ -259,9 +268,14 @@ export default function CellMapPage() {
 
   const reclusosSinCelda = reclusos.filter(r => r.status === 'ACTIVO_SIN_CELDA')
 
-  const totalCeldas = celdas.length
-  const totalReclusos = celdas.reduce((s, c) => s + (c.currentOccupancy ?? c.reclusosAsignados.length), 0)
-  const capacidadTotal = celdas.reduce((s, c) => s + c.capacidad, 0)
+  const celdasPosicionadas = celdas.filter(c => {
+    const pos = posiciones[c.id]
+    return pos && pos.x >= 0 && pos.x <= CANVAS_W && pos.y >= 0 && pos.y <= CANVAS_H
+  })
+
+  const totalCeldas = celdasPosicionadas.length
+  const totalReclusos = celdasPosicionadas.reduce((s, c) => s + (c.currentOccupancy ?? c.reclusosAsignados.length), 0)
+  const capacidadTotal = celdasPosicionadas.reduce((s, c) => s + c.capacidad, 0)
   const capacidadDisponible = capacidadTotal - totalReclusos
   const porcentajeOcupacion = capacidadTotal > 0
     ? ((totalReclusos / capacidadTotal) * 100).toFixed(1)
@@ -403,6 +417,7 @@ export default function CellMapPage() {
         alert(`Recluso asignado a celda ${modalAsignacion.identificador} correctamente.`)
         setModalAsignacion(null)
         setReclusoSeleccionado('')
+        setRegisteredInmate(null)
         loadData()
       } catch {
         alert('No se pudo asignar el recluso.')
@@ -600,9 +615,31 @@ export default function CellMapPage() {
           </div>
         )}
 
+        {registeredInmate && (
+          <div className="bg-emerald-50 border border-emerald-300 text-emerald-900 px-5 py-4 rounded-xl mb-4 flex items-center justify-between shadow-sm">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-semibold">
+                  Recluso {registeredInmate.firstName} {registeredInmate.firstLastname} registrado exitosamente.
+                </p>
+                <p className="text-xs text-emerald-700 mt-0.5">
+                  Seleccione una celda disponible en el mapa para asignarlo.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setRegisteredInmate(null)}
+              className="p-1 hover:bg-emerald-100 rounded-lg transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: 'Total de celdas', valor: totalCeldas, sub: `${celdas.filter(c => getEstado(c) === 'llena').length} al l\u00edmite/llenas`, icon: Users },
+            { label: 'Total de celdas', valor: totalCeldas, sub: `${celdasPosicionadas.filter(c => getEstado(c) === 'llena').length} al l\u00edmite/llenas`, icon: Users },
             { label: 'Reclusos activos', valor: totalReclusos, sub: `De ${capacidadTotal} plazas totales`, icon: User },
             { label: 'Capacidad disponible', valor: capacidadDisponible, sub: 'Plazas libres', icon: CheckCircle },
             { label: 'Ocupaci\u00f3n general', valor: `${porcentajeOcupacion}%`, sub: parseFloat(porcentajeOcupacion) >= 80 ? 'Nivel cr\u00edtico' : 'Nivel normal', icon: Info, color: parseFloat(porcentajeOcupacion) >= 80 ? 'text-amber-600' : 'text-gray-900' },
@@ -889,31 +926,39 @@ export default function CellMapPage() {
                           <div className="flex items-center gap-3">
                             <div className="w-9 h-9 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center font-bold">{recluso.firstName.charAt(0)}{recluso.firstLastname.charAt(0)}</div>
                             <div>
-                              <Link
-                                to={`/internos/expediente/${recluso.id}`}
-                                state={{ from: '/mapa' }}
-                                className="text-sm font-bold text-gray-800 hover:text-blue-600 hover:underline transition-colors"
-                              >
-                                {recluso.firstName} {recluso.firstLastname}
-                              </Link>
+                              {auth.hasRole('Oficial Penitenciario') ? (
+                                <Link
+                                  to={`/internos/expediente/${recluso.id}`}
+                                  state={{ from: '/mapa' }}
+                                  className="text-sm font-bold text-gray-800 hover:text-blue-600 hover:underline transition-colors"
+                                >
+                                  {recluso.firstName} {recluso.firstLastname}
+                                </Link>
+                              ) : (
+                                <span className="text-sm font-bold text-gray-800">
+                                  {recluso.firstName} {recluso.firstLastname}
+                                </span>
+                              )}
                               <p className="text-xs text-gray-400">C.I. {recluso.cedula}</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Link
-                              to={`/internos/expediente/${recluso.id}`}
-                              state={{ from: '/mapa' }}
-                              className="text-xs text-blue-600 hover:text-blue-800 hover:underline font-bold"
-                            >
-                              Ver Expediente
-                            </Link>
+                            {auth.hasRole('Oficial Penitenciario') && (
+                              <Link
+                                to={`/internos/expediente/${recluso.id}`}
+                                state={{ from: '/mapa' }}
+                                className="text-xs text-blue-600 hover:text-blue-800 hover:underline font-bold"
+                              >
+                                Ver Expediente
+                              </Link>
+                            )}
                           </div>
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
-                {modalAsignacion.reclusosAsignados.length < modalAsignacion.capacidad ? (
+                {auth.hasRole('Oficial Penitenciario') && modalAsignacion.reclusosAsignados.length < modalAsignacion.capacidad ? (
                   <div className="pt-3.5 border-t border-gray-150">
                     <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2.5">Asignar nuevo interno a la celda</h4>
                     {reclusosSinCelda.length === 0 ? (
@@ -934,15 +979,19 @@ export default function CellMapPage() {
                       </div>
                     )}
                   </div>
-                ) : (
+                ) : auth.hasRole('Oficial Penitenciario') && modalAsignacion.reclusosAsignados.length >= modalAsignacion.capacidad ? (
                   <div className="p-3.5 bg-red-50 border border-red-150 rounded-xl text-xs text-red-800 flex items-center gap-2">
                     <HelpCircle className="w-4.5 h-4.5 text-red-500 flex-shrink-0" /> Esta celda se encuentra al 100% de su capacidad.
+                  </div>
+                ) : (
+                  <div className="p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-500 flex items-center gap-2">
+                    <Info className="w-4.5 h-4.5 text-gray-400 flex-shrink-0" /> Solo el Oficial Penitenciario puede asignar reclusos a celdas.
                   </div>
                 )}
               </div>
               <div className="flex gap-3 px-6 py-4.5 bg-gray-50 border-t border-gray-150">
                 <button onClick={() => { setModalAsignacion(null); setReclusoSeleccionado('') }} className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-100 transition-colors text-xs font-bold uppercase tracking-wider">Cancelar</button>
-                {modalAsignacion.reclusosAsignados.length < modalAsignacion.capacidad && (
+                {auth.hasRole('Oficial Penitenciario') && (
                   <button onClick={confirmarAsignacion} disabled={!reclusoSeleccionado} className="flex-1 px-4 py-2.5 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-all disabled:bg-gray-300 disabled:cursor-not-allowed text-xs font-bold uppercase tracking-wider shadow-sm">Confirmar asignaci\u00f3n</button>
                 )}
               </div>
@@ -1097,15 +1146,17 @@ export default function CellMapPage() {
                 Solicitar Traslado
               </button>
             )}
-            <Link
-              to={`/internos/expediente/${contextMenu.inmate.id}`}
-              state={{ from: '/mapa' }}
-              className="block w-full text-left px-3.5 py-2.5 hover:bg-gray-50 hover:text-gray-900 transition-colors flex items-center gap-2 font-semibold"
-              onClick={() => setContextMenu(null)}
-            >
-              <User className="w-3.5 h-3.5 text-gray-450" />
-              Ver Expediente
-            </Link>
+            {auth.hasRole('Oficial Penitenciario') && (
+              <Link
+                to={`/internos/expediente/${contextMenu.inmate.id}`}
+                state={{ from: '/mapa' }}
+                className="block w-full text-left px-3.5 py-2.5 hover:bg-gray-50 hover:text-gray-900 transition-colors flex items-center gap-2 font-semibold"
+                onClick={() => setContextMenu(null)}
+              >
+                <User className="w-3.5 h-3.5 text-gray-450" />
+                Ver Expediente
+              </Link>
+            )}
           </div>
         )}
 

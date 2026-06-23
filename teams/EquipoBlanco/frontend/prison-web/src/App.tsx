@@ -45,7 +45,7 @@ export default function App() {
                     } />
 
                     <Route path="/mapa" element={
-                        <ProtectedRoute allowedRoles={['Oficial Penitenciario', 'Supervisor']}>
+                        <ProtectedRoute allowedRoles={['Oficial Penitenciario', 'Supervisor', 'Administrador del Sistema']}>
                             <CellMapPage />
                         </ProtectedRoute>
                     } />

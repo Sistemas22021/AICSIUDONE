@@ -27,13 +27,19 @@ public class CellService {
             .toList();
     }
 
+    public List<CellDto> getPlacedCells() {
+        return cellRepository.findPlacedCells().stream()
+            .map(this::toDto)
+            .toList();
+    }
+
     public CellDto createCell(CellDto dto) {
         if (cellRepository.existsByIdentifier(dto.getIdentifier())) {
             throw new RuntimeException("Ya existe una celda con el identificador: " + dto.getIdentifier());
         }
         Cell cell = Cell.builder()
             .identifier(dto.getIdentifier())
-            .maxCapacity(dto.getMaxCapacity())
+            .maxCapacity(Cell.MAX_CAPACITY)
             .conductLevel(dto.getConductLevel())
             .lengthMeters(dto.getLengthMeters())
             .widthMeters(dto.getWidthMeters())
@@ -45,7 +51,6 @@ public class CellService {
         Cell cell = cellRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Celda no encontrada"));
         cell.setIdentifier(dto.getIdentifier());
-        cell.setMaxCapacity(dto.getMaxCapacity());
         cell.setConductLevel(dto.getConductLevel());
         cell.setLengthMeters(dto.getLengthMeters());
         cell.setWidthMeters(dto.getWidthMeters());

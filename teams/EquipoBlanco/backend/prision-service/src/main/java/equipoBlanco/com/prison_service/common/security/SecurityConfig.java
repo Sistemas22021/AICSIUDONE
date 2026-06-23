@@ -40,19 +40,19 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.DELETE, "/api/v1/cells/*/position").hasRole("ADMINISTRADOR_DEL_SISTEMA")
                 // Asignar recluso a celda: Oficial Penitenciario
                 .requestMatchers(HttpMethod.POST, "/api/v1/cells/*/assign/**").hasRole("OFICIAL_PENITENCIARIO")
-                // Ver celdas: Oficial Penitenciario, Supervisor
-                .requestMatchers(HttpMethod.GET, "/api/v1/cells/**").hasAnyRole("OFICIAL_PENITENCIARIO", "SUPERVISOR")
+                // Ver celdas: Oficial Penitenciario, Supervisor, Administrador del Sistema
+                .requestMatchers(HttpMethod.GET, "/api/v1/cells/**").hasAnyRole("OFICIAL_PENITENCIARIO", "SUPERVISOR", "ADMINISTRADOR_DEL_SISTEMA")
 
                 // ─── Mapas ───
                 .requestMatchers(HttpMethod.PUT, "/api/v1/maps/**").hasRole("ADMINISTRADOR_DEL_SISTEMA")
                 .requestMatchers(HttpMethod.DELETE, "/api/v1/maps/**").hasRole("ADMINISTRADOR_DEL_SISTEMA")
-                .requestMatchers(HttpMethod.GET, "/api/v1/maps/**").hasAnyRole("OFICIAL_PENITENCIARIO", "SUPERVISOR")
+                .requestMatchers(HttpMethod.GET, "/api/v1/maps/**").hasAnyRole("OFICIAL_PENITENCIARIO", "SUPERVISOR", "ADMINISTRADOR_DEL_SISTEMA")
                 .requestMatchers(HttpMethod.POST, "/api/v1/maps/**").hasRole("ADMINISTRADOR_DEL_SISTEMA")
 
                 // ─── Reclusos (inmates) ───
                 .requestMatchers(HttpMethod.POST, "/api/v1/inmates").hasRole("OFICIAL_PENITENCIARIO")
                 .requestMatchers(HttpMethod.POST, "/api/v1/inmates/*/discharge").hasAnyRole("OFICIAL_PENITENCIARIO", "SUPERVISOR")
-                .requestMatchers(HttpMethod.GET, "/api/v1/inmates/**").hasAnyRole("OFICIAL_PENITENCIARIO", "SUPERVISOR")
+                .requestMatchers(HttpMethod.GET, "/api/v1/inmates/**").hasAnyRole("OFICIAL_PENITENCIARIO", "SUPERVISOR", "ADMINISTRADOR_DEL_SISTEMA")
 
                 // ─── Traslados ───
                 .requestMatchers(HttpMethod.POST, "/api/v1/transfers").hasRole("OFICIAL_PENITENCIARIO")

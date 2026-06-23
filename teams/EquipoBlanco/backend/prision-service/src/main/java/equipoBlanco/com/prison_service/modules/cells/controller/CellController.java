@@ -24,6 +24,11 @@ public class CellController {
         return ResponseEntity.ok(cellService.getAllCells());
     }
 
+    @GetMapping("/placed")
+    public ResponseEntity<List<CellDto>> getPlaced() {
+        return ResponseEntity.ok(cellService.getPlacedCells());
+    }
+
     @PostMapping
     public ResponseEntity<CellDto> create(@Valid @RequestBody CellDto dto) {
         return ResponseEntity.ok(cellService.createCell(dto));

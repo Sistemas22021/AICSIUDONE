@@ -11,6 +11,8 @@ import java.util.UUID;
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Cell {
 
+    public static final int MAX_CAPACITY = 8;
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -19,7 +21,7 @@ public class Cell {
     private String identifier;
 
     @Column(nullable = false)
-    private Integer maxCapacity;
+    private Integer maxCapacity = MAX_CAPACITY;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

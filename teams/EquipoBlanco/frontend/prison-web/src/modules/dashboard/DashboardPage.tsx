@@ -8,11 +8,11 @@ import { useAuth } from '../../shared/authContext'
 interface CellData {
   id: string
   identifier: string
-  maxCapacity: number
   currentOccupancy: number
   conductLevel: string
   lengthMeters: number | null
   widthMeters: number | null
+  maxCapacity: number
 }
 
 interface InmateData {
@@ -249,7 +249,7 @@ export default function DashboardPage() {
               Registrar Ingreso
             </Link>
           )}
-          {auth.hasRole('Oficial Penitenciario', 'Supervisor Penitenciario', 'Administrador del Sistema') && (
+          {auth.hasRole('Oficial Penitenciario', 'Supervisor', 'Administrador del Sistema') && (
             <Link
               to="/mapa"
               className="flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all font-semibold shadow-md hover:shadow-lg hover:-translate-y-0.5"
@@ -258,7 +258,7 @@ export default function DashboardPage() {
               Ver Mapa de Celdas
             </Link>
           )}
-          {auth.hasRole('Oficial Penitenciario', 'Supervisor Penitenciario', 'Administrador del Sistema') && (
+          {auth.hasRole('Oficial Penitenciario', 'Supervisor', 'Administrador del Sistema') && (
             <button
               onClick={handleSearchExpediente}
               className="flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all font-semibold shadow-md hover:shadow-lg hover:-translate-y-0.5 cursor-pointer"

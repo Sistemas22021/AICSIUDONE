@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Camera, Upload, Trash2, Fingerprint } from 'lucide-react'
 import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
@@ -44,6 +45,7 @@ const EMPTY_FORM: FormData = {
 }
 
 export default function InmateRegisterPage() {
+  const navigate = useNavigate()
   const [form, setForm] = useState<FormData>({ ...EMPTY_FORM })
   const [belongings, setBelongings] = useState<Belonging[]>([])
   const [cedulaChecked, setCedulaChecked] = useState(false)
@@ -116,14 +118,24 @@ export default function InmateRegisterPage() {
     setError('')
     setSuccess('')
     try {
-      await api.post('/inmates', { ...form, belongings })
+      const res = await api.post('/inmates', { ...form, belongings })
+      const inmate = res.data
       setForm({ ...EMPTY_FORM })
       setBelongings([])
       setCedulaChecked(false)
-      setSuccess('Recluso registrado exitosamente')
+      navigate('/mapa', {
+        state: {
+          fromRegister: true,
+          registeredInmate: {
+            id: inmate.id,
+            firstName: inmate.firstName,
+            firstLastname: inmate.firstLastname
+          }
+        }
+      })
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: { message?: string } } }
-      setError(axiosErr.response?.data?.message || 'Error al registrar el recluso')
+      const axiosErr = err as { response?: { data?: { error?: string; message?: string } } }
+      setError(axiosErr.response?.data?.error || axiosErr.response?.data?.message || 'Error al registrar el recluso')
     }
   }
 

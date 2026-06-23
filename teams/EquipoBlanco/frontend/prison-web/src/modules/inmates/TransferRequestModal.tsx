@@ -5,9 +5,9 @@ import api from '../../shared/api'
 interface CellData {
   id: string
   identifier: string
-  maxCapacity: number
   currentOccupancy: number
   conductLevel: string
+  maxCapacity: number
 }
 
 interface TransferRequestModalProps {
@@ -48,10 +48,11 @@ export default function TransferRequestModal({
       setErrorMsg('')
       const fetchCells = async () => {
         try {
-          const res = await api.get<CellData[]>('/cells')
+          const res = await api.get<CellData[]>('/cells/placed')
           setCells(res.data || [])
-        } catch {
-          setErrorMsg('Error al cargar la lista de celdas')
+        } catch (err) {
+          const axiosErr = err as { response?: { status?: number } }
+          setErrorMsg(axiosErr.response?.status === 404 ? 'El endpoint de celdas posicionadas no está disponible. Asegúrese de compilar y reiniciar el backend.' : 'Error al cargar la lista de celdas')
         }
       }
       fetchCells()

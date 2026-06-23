@@ -13,23 +13,22 @@ const CONDUCT_BADGE: Record<string, string> = {
 interface CellData {
   id: string
   identifier: string
-  maxCapacity: number
   conductLevel: string
   lengthMeters: number | null
   widthMeters: number | null
   currentOccupancy: number
+  maxCapacity: number
 }
 
 interface CellForm {
   identifier: string
-  maxCapacity: string
   conductLevel: string
   lengthMeters: string
   widthMeters: string
 }
 
 const EMPTY_FORM: CellForm = {
-  identifier: '', maxCapacity: '', conductLevel: 'BAJO', lengthMeters: '', widthMeters: '',
+  identifier: '', conductLevel: 'BAJO', lengthMeters: '', widthMeters: '',
 }
 
 export default function CellConfigPage() {
@@ -60,7 +59,6 @@ export default function CellConfigPage() {
   function openEdit(cell: CellData) {
     setForm({
       identifier: cell.identifier,
-      maxCapacity: String(cell.maxCapacity),
       conductLevel: cell.conductLevel,
       lengthMeters: String(cell.lengthMeters ?? ''),
       widthMeters: String(cell.widthMeters ?? ''),
@@ -85,7 +83,6 @@ export default function CellConfigPage() {
     try {
       const payload = {
         identifier: form.identifier,
-        maxCapacity: Number(form.maxCapacity),
         conductLevel: form.conductLevel,
         lengthMeters: Number(form.lengthMeters) || null,
         widthMeters: Number(form.widthMeters) || null,
@@ -100,8 +97,8 @@ export default function CellConfigPage() {
       closeModal()
       loadCells()
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: { message?: string } } }
-      setError(axiosErr.response?.data?.message || 'Error al guardar la celda')
+      const axiosErr = err as { response?: { data?: { error?: string; message?: string } } }
+      setError(axiosErr.response?.data?.error || axiosErr.response?.data?.message || 'Error al guardar la celda')
     }
   }
 
@@ -141,7 +138,6 @@ export default function CellConfigPage() {
             <thead>
               <tr className="border-b border-gray-100">
                 <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-3.5">Identificador</th>
-                <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-3.5">Capacidad</th>
                 <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-3.5">Nivel Conducta</th>
                 <th className="hidden sm:table-cell text-left text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-3.5">Dimensiones (m)</th>
                 <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-3.5">Ocupaci\u00f3n</th>
@@ -151,7 +147,7 @@ export default function CellConfigPage() {
             <tbody>
               {cells.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-gray-400">
+                  <td colSpan={5} className="px-4 py-12 text-center text-gray-400">
                     No hay celdas registradas. Haga clic en "+ Nueva Celda" para agregar una.
                   </td>
                 </tr>
@@ -159,7 +155,6 @@ export default function CellConfigPage() {
                 cells.map(cell => (
                   <tr key={cell.id} className="border-b border-gray-100 last:border-0">
                     <td className="px-4 py-4 font-medium text-gray-900">{cell.identifier}</td>
-                    <td className="px-4 py-4 text-gray-600">{cell.maxCapacity}</td>
                     <td className="px-4 py-4">
                       <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium ${CONDUCT_BADGE[cell.conductLevel]}`}>
                         {cell.conductLevel}
@@ -214,7 +209,7 @@ export default function CellConfigPage() {
             )}
 
             <form onSubmit={handleSubmit}>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Identificador <span className="text-red-500">*</span>
@@ -224,20 +219,6 @@ export default function CellConfigPage() {
                     value={form.identifier}
                     onChange={handleChange}
                     placeholder="Ej. A-01"
-                    required
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Capacidad m\u00e1xima <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    name="maxCapacity"
-                    type="number"
-                    min="1"
-                    value={form.maxCapacity}
-                    onChange={handleChange}
                     required
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                   />

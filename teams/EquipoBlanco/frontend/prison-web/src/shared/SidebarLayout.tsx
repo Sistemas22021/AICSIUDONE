@@ -38,10 +38,8 @@ const ALL_MENU_ITEMS: (MenuItem & { roles?: UserRole[] })[] = [
       'Administrador del Sistema'
     ],
     children: [
-      // Mapa
-      { label: 'Mapa de Celdas', to: '/mapa' },
-      // Configuración 
-      { label: 'Configuración de Celdas', to: '/celdas/configurar'},
+      { label: 'Ver Mapa', to: '/mapa' },
+      { label: 'Configuración de Celdas', to: '/celdas/configurar', roles: ['Administrador del Sistema'] },
     ],
   },
   // seguimiento post-penitenciario
