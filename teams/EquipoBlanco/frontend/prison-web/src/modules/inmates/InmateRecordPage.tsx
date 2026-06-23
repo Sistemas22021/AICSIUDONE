@@ -79,7 +79,7 @@ export default function InmateRecordPage() {
   const auth = useAuth()
   const currentUser = sessionStorage.getItem('username') || 'Oficial'
   const isFromMap = (location.state as { from?: string })?.from === '/mapa'
-  const canResolveTransfers = auth.hasRole('Supervisor Penitenciario', 'Administrador del Sistema')
+  const canResolveTransfers = auth.hasRole('Supervisor')
 
   const loadData = async () => {
     if (!id) return

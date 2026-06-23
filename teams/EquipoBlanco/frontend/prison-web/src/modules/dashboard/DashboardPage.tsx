@@ -52,7 +52,7 @@ export default function DashboardPage() {
 
   const currentUser = sessionStorage.getItem('username') || 'Oficial'
   const auth = useAuth()
-  const canResolveTransfers = auth.hasRole('Supervisor Penitenciario', 'Administrador del Sistema')
+  const canResolveTransfers = auth.hasRole('Supervisor')
 
   const loadDashboard = async (isPolling = false) => {
     try {

@@ -50,7 +50,7 @@ public class PostPenalService {
         Alerta alerta = Alerta.builder()
             .nivel(2)
             .fechaEmision(LocalDateTime.now())
-            .destinatario("Supervisor Policial")
+            .destinatario("Supervisor")
             .estado("activa")
             .accionRequerida("Asignar oficial de seguimiento al egresado (Cédula: " + inmate.getCedula() + ")")
             .build();

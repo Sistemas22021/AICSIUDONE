@@ -34,7 +34,7 @@ export default function PostPenalPage() {
     const [filter, setFilter] = useState<'all' | 'pendiente' | 'asignado'>('all')
 
     const auth = useAuth()
-    const canAssignOfficers = auth.hasRole('Supervisor Policial', 'Administrador del Sistema')
+    const canAssignOfficers = auth.hasRole('Supervisor')
 
     const loadData = async () => {
         try {

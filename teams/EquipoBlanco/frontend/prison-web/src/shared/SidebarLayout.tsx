@@ -14,16 +14,19 @@ const ALL_MENU_ITEMS: (MenuItem & { roles?: UserRole[] })[] = [
   // Dashboard
   { 
     label: 'Dashboard', 
-    to: '/dashboard'
+    to: '/dashboard',
+    roles: [
+      'Oficial Penitenciario',
+      'Oficial de Seguimiento',
+      'Supervisor'
+    ]
   },
   // Gestión de Internos
   { 
     label: 'Registro de recluso', 
     to: '/internos/registrar', 
     roles: [
-      'Supervisor Policial', 
-      'Oficial Penitenciario', 
-      'Administrador del Sistema'
+      'Oficial Penitenciario'
     ] 
   },
   // Mapa de Celdas
@@ -31,15 +34,14 @@ const ALL_MENU_ITEMS: (MenuItem & { roles?: UserRole[] })[] = [
     label: 'Mapa de Celdas',
     roles: [
       'Oficial Penitenciario', 
-      'Supervisor Penitenciario', 
-      'Supervisor Policial', 
+      'Supervisor',
       'Administrador del Sistema'
     ],
     children: [
       // Mapa
       { label: 'Mapa de Celdas', to: '/mapa' },
       // Configuración 
-      { label: 'Configuración de Celdas', to: '/celdas/configurar', roles: ['Supervisor Policial', 'Administrador del Sistema'] },
+      { label: 'Configuración de Celdas', to: '/celdas/configurar'},
     ],
   },
   // seguimiento post-penitenciario
@@ -47,12 +49,11 @@ const ALL_MENU_ITEMS: (MenuItem & { roles?: UserRole[] })[] = [
     label: 'Post-Penitenciario',
     roles: [
       'Oficial de Seguimiento', 
-      'Supervisor Policial', 
-      'Administrador del Sistema'
+      'Supervisor'
     ],
     children: [
       { label: 'Post-Penitenciario', to: '/post' },
-      { label: 'Registro de egreso', to: '/internos/egreso', roles: ['Oficial Penitenciario', 'Administrador del Sistema'] },
+      { label: 'Registro de egreso', to: '/internos/egreso', roles: ['Oficial Penitenciario', 'Supervisor'] },
     ],
   },
   { 
@@ -60,8 +61,8 @@ const ALL_MENU_ITEMS: (MenuItem & { roles?: UserRole[] })[] = [
     to: '/control', 
     roles: [
       'Oficial de Seguimiento', 
-      'Supervisor Policial', 
-      'Administrador del Sistema'
+      'Supervisor',
+      'Oficial Penitenciario'
     ] 
   },
 ]

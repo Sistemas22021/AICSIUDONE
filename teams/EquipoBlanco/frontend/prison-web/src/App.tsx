@@ -16,7 +16,10 @@ import { useAuth } from './shared/authContext'
 
 function HomeRedirect() {
     const auth = useAuth()
-    if (auth.hasRole('Oficial de Seguimiento', 'Supervisor Policial')) {
+    if (auth.hasRole('Administrador del Sistema')) {
+        return <Navigate to="/celdas/configurar" replace />
+    }
+    if (auth.hasRole('Oficial de Seguimiento', 'Supervisor')) {
         return <Navigate to="/post" replace />
     }
     return <Navigate to="/dashboard" replace />
@@ -30,7 +33,7 @@ export default function App() {
                     <Route path="/" element={<HomeRedirect />} />
 
                     <Route path="/dashboard" element={
-                        <ProtectedRoute allowedRoles={['Oficial Penitenciario', 'Supervisor Penitenciario', 'Administrador del Sistema']} fallback="/post">
+                        <ProtectedRoute allowedRoles={['Oficial Penitenciario', 'Supervisor']}>
                             <DashboardPage />
                         </ProtectedRoute>
                     } />
@@ -42,55 +45,55 @@ export default function App() {
                     } />
 
                     <Route path="/mapa" element={
-                        <ProtectedRoute allowedRoles={['Oficial Penitenciario', 'Supervisor Penitenciario', 'Administrador del Sistema']}>
+                        <ProtectedRoute allowedRoles={['Oficial Penitenciario', 'Supervisor']}>
                             <CellMapPage />
                         </ProtectedRoute>
                     } />
 
                     <Route path="/internos/registrar" element={
-                        <ProtectedRoute allowedRoles={['Oficial Penitenciario', 'Administrador del Sistema']}>
+                        <ProtectedRoute allowedRoles={['Oficial Penitenciario']}>
                             <InmateRegisterPage />
                         </ProtectedRoute>
                     } />
 
                     <Route path="/internos/expediente/:id" element={
-                        <ProtectedRoute allowedRoles={['Oficial Penitenciario', 'Supervisor Penitenciario', 'Administrador del Sistema']}>
+                        <ProtectedRoute allowedRoles={['Oficial Penitenciario', 'Supervisor']}>
                             <InmateRecordPage />
                         </ProtectedRoute>
                     } />
 
                     <Route path="/internos/egreso" element={
-                        <ProtectedRoute allowedRoles={['Oficial Penitenciario', 'Administrador del Sistema']}>
+                        <ProtectedRoute allowedRoles={['Oficial Penitenciario', 'Supervisor']}>
                             <DischargePage />
                         </ProtectedRoute>
                     } />
 
                     <Route path="/post" element={
-                        <ProtectedRoute allowedRoles={['Oficial de Seguimiento', 'Supervisor Policial', 'Administrador del Sistema']}>
+                        <ProtectedRoute allowedRoles={['Oficial de Seguimiento', 'Supervisor']}>
                             <PostPenalPage />
                         </ProtectedRoute>
                     } />
 
                     <Route path="/post/expediente/:id/perfil" element={
-                        <ProtectedRoute allowedRoles={['Oficial de Seguimiento', 'Supervisor Policial', 'Administrador del Sistema']}>
+                        <ProtectedRoute allowedRoles={['Oficial de Seguimiento', 'Supervisor']}>
                             <PostPenalProfilePage />
                         </ProtectedRoute>
                     } />
 
                     <Route path="/post/expediente/:id/calendario" element={
-                        <ProtectedRoute allowedRoles={['Oficial de Seguimiento', 'Supervisor Policial', 'Administrador del Sistema']}>
+                        <ProtectedRoute allowedRoles={['Oficial de Seguimiento', 'Supervisor']}>
                             <CalendarioPage />
                         </ProtectedRoute>
                     } />
 
                     <Route path="/control" element={
-                        <ProtectedRoute allowedRoles={['Oficial de Seguimiento', 'Supervisor Policial', 'Administrador del Sistema']}>
+                        <ProtectedRoute allowedRoles={['Oficial de Seguimiento', 'Supervisor', 'Oficial Penitenciario']}>
                             <ControlDashboardPage />
                         </ProtectedRoute>
                     } />
 
                     <Route path="/control/pendientes" element={
-                        <ProtectedRoute allowedRoles={['Oficial de Seguimiento', 'Supervisor Policial', 'Administrador del Sistema']}>
+                        <ProtectedRoute allowedRoles={['Oficial de Seguimiento', 'Supervisor']}>
                             <PresentacionesPendientesPage />
                         </ProtectedRoute>
                     } />

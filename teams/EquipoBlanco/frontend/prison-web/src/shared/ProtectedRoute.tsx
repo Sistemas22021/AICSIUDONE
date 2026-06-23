@@ -8,7 +8,7 @@ interface Props {
   fallback?: string
 }
 
-export default function ProtectedRoute({ allowedRoles, children, fallback = '/dashboard' }: Props) {
+export default function ProtectedRoute({ allowedRoles, children, fallback = '/' }: Props) {
   const auth = useAuth()
 
   if (!auth.username) {

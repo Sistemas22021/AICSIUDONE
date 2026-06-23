@@ -173,7 +173,7 @@ public class CalendarioService {
             Alerta alerta2 = Alerta.builder()
                 .nivel(2)
                 .fechaEmision(java.time.LocalDateTime.now())
-                .destinatario("Supervisor Policial")
+                .destinatario("Supervisor")
                 .estado("activa")
                 .accionRequerida(mensaje)
                 .build();
@@ -182,7 +182,7 @@ public class CalendarioService {
             Alerta alerta = Alerta.builder()
                 .nivel(3)
                 .fechaEmision(java.time.LocalDateTime.now())
-                .destinatario("Supervisor Policial")
+                .destinatario("Supervisor")
                 .estado("activa")
                 .accionRequerida("CRÍTICO: " + mensaje)
                 .build();
