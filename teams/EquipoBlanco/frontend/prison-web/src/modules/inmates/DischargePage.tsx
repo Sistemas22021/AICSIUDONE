@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, UserMinus, ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react'
+import { Search, UserMinus, ArrowLeft, ArrowRight, CheckCircle, AlertCircle } from 'lucide-react'
 import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
+import { useAuth } from '../../shared/authContext'
 
 interface InmateData {
     id: string
@@ -15,21 +16,20 @@ interface InmateData {
 
 export default function DischargePage() {
     const navigate = useNavigate()
+    const auth = useAuth()
     const [query, setQuery] = useState('')
     const [searchResults, setSearchResults] = useState<InmateData[]>([])
     const [selectedInmate, setSelectedInmate] = useState<InmateData | null>(null)
+    const [estimatedReleaseDate, setEstimatedReleaseDate] = useState<string | null>(null)
     const [motivoEgreso, setMotivoEgreso] = useState('Cumplimiento de condena')
     const [fechaEgreso, setFechaEgreso] = useState(new Date().toISOString().slice(0, 16))
     const [observacionesEgreso, setObservacionesEgreso] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
 
-    const motivos = [
-        'Cumplimiento de condena',
-        'Libertad condicional',
-        'Traslado',
-        'Fallecimiento'
-    ]
+    const motivos = auth.hasRole('Supervisor')
+        ? ['Cumplimiento de condena', 'Libertad condicional', 'Fallecimiento']
+        : ['Cumplimiento de condena', 'Libertad condicional']
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -57,9 +57,26 @@ export default function DischargePage() {
         }
     }
 
+    const handleSelectInmate = async (inmate: InmateData) => {
+        setSelectedInmate(inmate)
+        try {
+            const res = await api.get<{ estimatedReleaseDate?: string }>(`/inmates/${inmate.id}`)
+            setEstimatedReleaseDate(res.data.estimatedReleaseDate || null)
+        } catch {
+            setEstimatedReleaseDate(null)
+        }
+    }
+
     const handleDischarge = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!selectedInmate) return
+
+        if (motivoEgreso === 'Cumplimiento de condena' && estimatedReleaseDate && estimatedReleaseDate !== fechaEgreso.split('T')[0]) {
+            if (!confirm(`ADVERTENCIA: La fecha de egreso (${fechaEgreso.split('T')[0]}) no coincide con la fecha estimada de liberación (${estimatedReleaseDate}). ¿Desea continuar de todas formas?`)) {
+                return
+            }
+        }
+
         if (!confirm(`¿Está seguro de registrar el egreso de ${selectedInmate.firstName} ${selectedInmate.firstLastname}? Esta acción no se puede deshacer.`)) {
             return
         }
@@ -69,10 +86,13 @@ export default function DischargePage() {
         try {
             await api.post(`/inmates/${selectedInmate.id}/discharge`, {
                 motivoEgreso,
-                fechaEgreso: fechaEgreso.split('T')[0], // Enviar solo fecha al backend
+                fechaEgreso: fechaEgreso.split('T')[0],
                 observacionesEgreso
             })
-            alert('Egreso registrado exitosamente.')
+            const mensaje = motivoEgreso === 'Cumplimiento de condena' || motivoEgreso === 'Libertad condicional'
+                ? 'Egreso registrado exitosamente. Se ha creado un perfil base en el módulo Post-Penitenciario y se ha notificado al Supervisor para la asignación de un oficial de seguimiento.'
+                : 'Egreso registrado exitosamente.'
+            alert(mensaje)
             navigate('/dashboard')
         } catch (err) {
             console.log(err)
@@ -126,7 +146,7 @@ export default function DischargePage() {
                             <div className="space-y-3">
                                 {searchResults.map(inmate => (
                                     <div key={inmate.id} className="flex items-center justify-between p-4 border border-gray-100 rounded-lg hover:border-blue-300 hover:bg-blue-50/50 transition-colors cursor-pointer"
-                                         onClick={() => setSelectedInmate(inmate)}>
+                                         onClick={() => handleSelectInmate(inmate)}>
                                         <div>
                                             <p className="font-bold text-gray-900">{inmate.firstName} {inmate.firstLastname}</p>
                                             <p className="text-xs text-gray-500">C.I. {inmate.cedula} | Celda: {inmate.cellIdentifier || 'Sin asignar'}</p>
@@ -172,6 +192,12 @@ export default function DischargePage() {
                                     <p className="text-xs text-emerald-600 mt-1 flex items-center gap-1">
                                         <CheckCircle className="w-3 h-3" />
                                         Se creará un perfil en el módulo Post-Penitenciario automáticamente.
+                                    </p>
+                                )}
+                                {motivoEgreso === 'Fallecimiento' && (
+                                    <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                                        <AlertCircle className="w-3 h-3" />
+                                        Se desplegará el formulario de informe de deceso (HU-S4-03) al confirmar.
                                     </p>
                                 )}
                             </div>

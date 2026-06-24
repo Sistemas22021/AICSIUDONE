@@ -41,7 +41,7 @@ public class PostPenalService {
         ExpedienteSeguimiento expediente = ExpedienteSeguimiento.builder()
             .idRecluso(inmate.getId())
             .fechaEgreso(fechaEgreso)
-            .estado("pendiente")
+            .estado("Perfil Incompleto")
             .historialAsignaciones(new ArrayList<>())
             .build();
 
@@ -63,7 +63,7 @@ public class PostPenalService {
      */
     public List<ExpedienteDto> getUnassignedExpedientes() {
         List<ExpedienteSeguimiento> expedientes = expedienteSeguimientoRepository
-            .findByEstadoOrderByFechaEgresoAsc("pendiente");
+            .findByEstadoOrderByFechaEgresoAsc("Perfil Incompleto");
 
         return expedientes.stream().map(this::toDto).collect(Collectors.toList());
     }
@@ -74,7 +74,7 @@ public class PostPenalService {
     public List<ExpedienteDto> getAllExpedientes() {
         List<ExpedienteSeguimiento> expedientes = expedienteSeguimientoRepository.findAll();
         expedientes.sort(Comparator.comparing(
-            (ExpedienteSeguimiento e) -> "pendiente".equals(e.getEstado()) ? 0 : 1)
+            (ExpedienteSeguimiento e) -> "Perfil Incompleto".equals(e.getEstado()) ? 0 : 1)
             .thenComparing(e -> e.getFechaEgreso() != null ? e.getFechaEgreso() : LocalDate.MAX));
 
         return expedientes.stream().map(this::toDto).collect(Collectors.toList());

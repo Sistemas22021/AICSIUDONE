@@ -29,6 +29,14 @@ const ALL_MENU_ITEMS: (MenuItem & { roles?: UserRole[] })[] = [
       'Oficial Penitenciario'
     ] 
   },
+  { 
+    label: 'Registro de egreso', 
+    to: '/internos/egreso', 
+    roles: [
+      'Oficial Penitenciario',
+      'Supervisor'
+    ] 
+  },
   // Mapa de Celdas
   {
     label: 'Mapa de Celdas',
@@ -51,7 +59,6 @@ const ALL_MENU_ITEMS: (MenuItem & { roles?: UserRole[] })[] = [
     ],
     children: [
       { label: 'Post-Penitenciario', to: '/post' },
-      { label: 'Registro de egreso', to: '/internos/egreso', roles: ['Oficial Penitenciario', 'Supervisor'] },
     ],
   },
   { 
