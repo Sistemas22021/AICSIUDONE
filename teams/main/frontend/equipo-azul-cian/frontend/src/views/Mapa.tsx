@@ -1,29 +1,38 @@
 import React, { useEffect, useState } from 'react';
 import MapView from '../components/map/MapView';
 import type { Incident } from '../types/incident';
+import type { Patrol } from '../types/patrol';
 
 const Mapa: React.FC = () => {
   const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [patrols, setPatrols] = useState<Patrol[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchIncidents = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true);
 
-      const res = await fetch(
-        'http://localhost:8080/api/incidents'
-      );
+      const [incidentsRes, patrolsRes] = await Promise.all([
+        fetch('http://localhost:8080/api/incidents'),
+        fetch('http://localhost:8080/api/patrols')
+      ]);
 
-      const data: Incident[] = await res.json();
+      if (!incidentsRes.ok || !patrolsRes.ok) {
+        throw new Error('Error al obtener datos del servidor');
+      }
 
-      setIncidents(data);
+      const incidentsData: Incident[] = await incidentsRes.json();
+      const patrolsData: Patrol[] = await patrolsRes.json();
+
+      setIncidents(incidentsData);
+      setPatrols(patrolsData);
       setError(null);
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError('Error al cargar incidentes');
+        setError('Error al cargar datos del mapa');
       }
     } finally {
       setLoading(false);
@@ -31,7 +40,7 @@ const Mapa: React.FC = () => {
   };
 
   useEffect(() => {
-    void fetchIncidents();
+    void fetchData();
   }, []);
 
   return (
@@ -46,7 +55,7 @@ const Mapa: React.FC = () => {
 
       {loading && (
         <div style={{ marginBottom: 20, color: '#94a3b8' }}>
-          Cargando incidentes...
+          Cargando datos...
         </div>
       )}
 
@@ -57,7 +66,7 @@ const Mapa: React.FC = () => {
       )}
 
       {!loading && (
-        <MapView incidents={incidents} />
+        <MapView incidents={incidents} patrols={patrols} />
       )}
     </div>
   );

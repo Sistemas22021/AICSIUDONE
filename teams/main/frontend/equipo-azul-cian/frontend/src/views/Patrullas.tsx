@@ -1,16 +1,6 @@
 import React, { useState, useEffect } from 'react';
-
-export type PatrolStatus = 'AVAILABLE' | 'EN_ROUTE' | 'BUSY' | 'OUT_OF_SERVICE';
-
-export interface Patrol {
-  id: number;
-  code: string;
-  officerName: string;
-  latitude: number;
-  longitude: number;
-  status: PatrolStatus;
-  lastUpdated?: string;
-}
+import type { Patrol, PatrolStatus } from '../types/patrol';
+import MapView from '../components/map/MapView';
 
 interface NewPatrol {
   code: string;
@@ -88,6 +78,15 @@ const Patrullas: React.FC = () => {
     }
   };
 
+  // Seleccionar posición en el mapa
+  const handleMapSelect = (lat: number, lng: number): void => {
+    setNewPatrol((prev) => ({
+      ...prev,
+      latitude: lat.toString(),
+      longitude: lng.toString()
+    }));
+  };
+
   // Crear una nueva patrulla
   const handleCreatePatrol = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
@@ -146,9 +145,9 @@ const Patrullas: React.FC = () => {
     const matchesSearch =
       p.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.officerName.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesStatus = statusFilter === 'ALL' || p.status === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -304,8 +303,8 @@ const Patrullas: React.FC = () => {
                         ...styles.tableSelect,
                         borderColor:
                           patrol.status === 'AVAILABLE' ? 'var(--color-green)' :
-                          patrol.status === 'EN_ROUTE' ? 'var(--color-blue)' :
-                          patrol.status === 'BUSY' ? 'var(--color-orange)' : 'var(--color-red)'
+                            patrol.status === 'EN_ROUTE' ? 'var(--color-blue)' :
+                              patrol.status === 'BUSY' ? 'var(--color-orange)' : 'var(--color-red)'
                       }}
                     >
                       <option value="AVAILABLE">Disponible</option>
@@ -354,31 +353,38 @@ const Patrullas: React.FC = () => {
                 />
               </div>
 
-              <div style={styles.row}>
-                <div style={{ ...styles.formGroup, flex: 1 }}>
-                  <label style={styles.formLabel}>Latitud (Coordenada) *</label>
-                  <input
-                    type="number"
-                    step="0.000001"
-                    placeholder="Ej. 4.623400"
-                    value={newPatrol.latitude}
-                    onChange={(e) => setNewPatrol({ ...newPatrol, latitude: e.target.value })}
-                    style={styles.formInput}
-                    required
+              {/* MINIMAPA PARA SELECCIÓN DE POSICIÓN */}
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>Ubicación de la Patrulla *</label>
+                <div
+                  style={{
+                    height: '250px',
+                    marginTop: '4px',
+                    borderRadius: '8px',
+                    overflow: 'hidden',
+                    border: '1px solid var(--border)'
+                  }}
+                >
+                  <MapView
+                    incidents={[]}
+                    onSelectPosition={handleMapSelect}
+                    selectedPosition={
+                      newPatrol.latitude !== '' && newPatrol.longitude !== ''
+                        ? [parseFloat(newPatrol.latitude), parseFloat(newPatrol.longitude)]
+                        : null
+                    }
+                    height="100%"
                   />
                 </div>
-                <div style={{ ...styles.formGroup, flex: 1 }}>
-                  <label style={styles.formLabel}>Longitud (Coordenada) *</label>
-                  <input
-                    type="number"
-                    step="0.000001"
-                    placeholder="Ej. -74.089100"
-                    value={newPatrol.longitude}
-                    onChange={(e) => setNewPatrol({ ...newPatrol, longitude: e.target.value })}
-                    style={styles.formInput}
-                    required
-                  />
-                </div>
+                {newPatrol.latitude && newPatrol.longitude ? (
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '8px', marginBottom: '0px' }}>
+                    📍 Coordenadas seleccionadas: {parseFloat(newPatrol.latitude).toFixed(6)}, {parseFloat(newPatrol.longitude).toFixed(6)}
+                  </p>
+                ) : (
+                  <p style={{ fontSize: '0.85rem', color: 'var(--color-orange)', marginTop: '8px', marginBottom: '0px' }}>
+                    ⚠️ Haz clic en el mapa para marcar la ubicación de la patrulla.
+                  </p>
+                )}
               </div>
 
               <div style={styles.formGroup}>
