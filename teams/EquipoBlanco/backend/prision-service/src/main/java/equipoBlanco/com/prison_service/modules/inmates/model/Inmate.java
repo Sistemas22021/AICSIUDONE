@@ -49,6 +49,16 @@ public class Inmate {
     @Column(columnDefinition = "TEXT")
     private String observacionesEgreso;
 
+    private String motivoSalidaTemporal;
+    private LocalDateTime fechaSalidaTemporal;
+    private LocalDateTime fechaRetornoEstimada;
+
+    @ElementCollection
+    @CollectionTable(name = "inmate_status_history", joinColumns = @JoinColumn(name = "inmate_id"))
+    @Column(name = "registro")
+    @Builder.Default
+    private List<String> statusHistory = new java.util.ArrayList<>();
+
     @OneToMany(mappedBy = "inmate", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<InmatePhoto> photos;
 
@@ -75,6 +85,6 @@ public class Inmate {
     }
 
     public enum InmateStatus {
-        ACTIVO_SIN_CELDA, ACTIVO_CON_CELDA, EGRESADO
+        ACTIVO_SIN_CELDA, ACTIVO_CON_CELDA, ACTIVO_SALIDA_TEMPORAL, EGRESADO
     }
 }

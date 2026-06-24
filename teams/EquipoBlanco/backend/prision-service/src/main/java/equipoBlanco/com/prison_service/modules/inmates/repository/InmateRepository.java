@@ -13,7 +13,7 @@ public interface InmateRepository extends JpaRepository<Inmate, UUID> {
     boolean existsByCedulaAndStatusNot(String cedula, InmateStatus status);
     Optional<Inmate> findByCedula(String cedula);
 
-    @Query("SELECT COUNT(i) FROM Inmate i WHERE i.cell.id = :cellId AND i.status = 'ACTIVO_CON_CELDA'")
+    @Query("SELECT COUNT(i) FROM Inmate i WHERE i.cell.id = :cellId AND (i.status = 'ACTIVO_CON_CELDA' OR i.status = 'ACTIVO_SALIDA_TEMPORAL')")
     int countByCellId(UUID cellId);
 
     List<Inmate> findByStatus(InmateStatus status);

@@ -4,6 +4,7 @@ import equipoBlanco.com.prison_service.modules.inmates.model.Inmate.InmateStatus
 import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,6 +24,10 @@ public class InmateDto {
     private LocalDate dischargeDate;
     private String motivoEgreso;
     private String observacionesEgreso;
+    private String motivoSalidaTemporal;
+    private LocalDateTime fechaSalidaTemporal;
+    private LocalDateTime fechaRetornoEstimada;
+    private List<String> statusHistory;
     private Integer sentenceYears;
     private Integer sentenceMonths;
     private LocalDate estimatedReleaseDate;

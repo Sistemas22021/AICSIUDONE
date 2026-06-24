@@ -41,6 +41,7 @@ interface InmateDto {
   belongings?: BelongingDto[]
   cellId: string | null
   cellIdentifier?: string | null
+  statusHistory?: string[]
 }
 
 interface TransferRequestDto {
@@ -262,9 +263,13 @@ export default function InmateRecordPage() {
             </h2>
             <div className="mt-3.5 flex flex-col gap-2 w-full">
               <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider block ${
-                inmate.status === 'ACTIVO_CON_CELDA' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-amber-100 text-amber-800 border border-amber-250'
+                inmate.status === 'ACTIVO_CON_CELDA' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' :
+                inmate.status === 'ACTIVO_SALIDA_TEMPORAL' ? 'bg-amber-100 text-amber-800 border border-amber-200' :
+                'bg-gray-100 text-gray-800 border border-gray-250'
               }`}>
-                {inmate.status === 'ACTIVO_CON_CELDA' ? 'Asignado' : 'Pendiente Asignación'}
+                {inmate.status === 'ACTIVO_CON_CELDA' ? 'Asignado' :
+                 inmate.status === 'ACTIVO_SALIDA_TEMPORAL' ? 'Salida Temporal' :
+                 'Pendiente Asignación'}
               </span>
               {inmate.cellIdentifier && (
                 <span className="text-xs font-bold text-gray-500 bg-gray-100 py-1 px-3.5 rounded-full block border border-gray-200">
@@ -500,6 +505,30 @@ export default function InmateRecordPage() {
                   </div>
                 )
               })}
+            </div>
+          )}
+        </div>
+
+        {/* Historial de Expediente */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
+          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 pb-2 flex items-center gap-1.5">
+            <Clock className="w-4 h-4 text-gray-400" /> Historial de Expediente
+          </h4>
+          
+          {(!inmate.statusHistory || inmate.statusHistory.length === 0) ? (
+            <p className="text-xs text-gray-400 italic text-center py-6">No hay registros en el historial de este expediente.</p>
+          ) : (
+            <div className="relative pl-6 border-l border-gray-200 space-y-4">
+              {inmate.statusHistory.slice().reverse().map((reg, index) => (
+                <div key={index} className="relative group">
+                  {/* Timeline dot */}
+                  <div className="absolute -left-[31px] top-1 w-3.5 h-3.5 rounded-full border-2 bg-white border-blue-500 group-hover:bg-blue-500 transition-colors duration-300" />
+                  
+                  <div className="bg-gray-50 border border-gray-150 rounded-xl p-3.5 text-xs text-gray-750 leading-relaxed shadow-sm">
+                    {reg}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>

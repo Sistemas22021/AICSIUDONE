@@ -29,6 +29,22 @@ const ALL_MENU_ITEMS: (MenuItem & { roles?: UserRole[] })[] = [
     ] 
   },
   { 
+    label: 'Egreso temporal', 
+    to: '/internos/egreso-temporal', 
+    roles: [
+      'Oficial Penitenciario',
+      'Supervisor'
+    ] 
+  },
+  { 
+    label: 'Retorno temporal', 
+    to: '/internos/retorno-temporal', 
+    roles: [
+      'Oficial Penitenciario',
+      'Supervisor'
+    ] 
+  },
+  { 
     label: 'Registro de egreso', 
     to: '/internos/egreso', 
     roles: [

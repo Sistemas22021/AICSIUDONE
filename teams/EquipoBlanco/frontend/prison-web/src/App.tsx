@@ -4,6 +4,8 @@ import CellMapPage from './modules/cells/CellMapPage'
 import InmateRegisterPage from './modules/inmates/InmateRegisterPage'
 import InmateRecordPage from './modules/inmates/InmateRecordPage'
 import DischargePage from './modules/inmates/DischargePage'
+import TemporaryEgressPage from './modules/inmates/TemporaryEgressPage'
+import TemporaryReturnPage from './modules/inmates/TemporaryReturnPage'
 import DashboardPage from './modules/dashboard/DashboardPage'
 import PostPenalPage from './modules/postpenal/PostPenalPage'
 import PostPenalProfilePage from './modules/postpenal/PostPenalProfilePage'
@@ -64,6 +66,18 @@ export default function App() {
                     <Route path="/internos/egreso" element={
                         <ProtectedRoute allowedRoles={['Oficial Penitenciario', 'Supervisor']}>
                             <DischargePage />
+                        </ProtectedRoute>
+                    } />
+
+                    <Route path="/internos/egreso-temporal" element={
+                        <ProtectedRoute allowedRoles={['Oficial Penitenciario', 'Supervisor']}>
+                            <TemporaryEgressPage />
+                        </ProtectedRoute>
+                    } />
+
+                    <Route path="/internos/retorno-temporal" element={
+                        <ProtectedRoute allowedRoles={['Oficial Penitenciario', 'Supervisor']}>
+                            <TemporaryReturnPage />
                         </ProtectedRoute>
                     } />
 

@@ -2,6 +2,8 @@ package equipoBlanco.com.prison_service.modules.inmates.service;
 
 import equipoBlanco.com.prison_service.modules.inmates.dto.InmateDto;
 import equipoBlanco.com.prison_service.modules.inmates.dto.BelongingDto;
+import equipoBlanco.com.prison_service.modules.inmates.dto.TemporaryEgressDto;
+import equipoBlanco.com.prison_service.modules.inmates.dto.TemporaryReturnDto;
 import equipoBlanco.com.prison_service.modules.inmates.model.Belonging;
 import equipoBlanco.com.prison_service.modules.inmates.model.Inmate;
 import equipoBlanco.com.prison_service.modules.inmates.model.InmatePhoto;
@@ -12,7 +14,11 @@ import equipoBlanco.com.prison_service.modules.inmates.dto.DischargeDto;
 import equipoBlanco.com.prison_service.modules.postpenal.service.PostPenalService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -162,6 +168,10 @@ public class InmateService {
             .dischargeDate(i.getDischargeDate())
             .motivoEgreso(i.getMotivoEgreso())
             .observacionesEgreso(i.getObservacionesEgreso())
+            .motivoSalidaTemporal(i.getMotivoSalidaTemporal())
+            .fechaSalidaTemporal(i.getFechaSalidaTemporal())
+            .fechaRetornoEstimada(i.getFechaRetornoEstimada())
+            .statusHistory(i.getStatusHistory() != null ? i.getStatusHistory() : new ArrayList<>())
             .estimatedReleaseDate(i.getEstimatedReleaseDate())
             .cellId(i.getCell() != null ? i.getCell().getId() : null)
             .cellIdentifier(i.getCell() != null ? i.getCell().getIdentifier() : null)
@@ -223,6 +233,10 @@ public class InmateService {
             .dischargeDate(i.getDischargeDate())
             .motivoEgreso(i.getMotivoEgreso())
             .observacionesEgreso(i.getObservacionesEgreso())
+            .motivoSalidaTemporal(i.getMotivoSalidaTemporal())
+            .fechaSalidaTemporal(i.getFechaSalidaTemporal())
+            .fechaRetornoEstimada(i.getFechaRetornoEstimada())
+            .statusHistory(i.getStatusHistory() != null ? i.getStatusHistory() : new ArrayList<>())
             .sentenceYears(i.getSentenceYears())
             .sentenceMonths(i.getSentenceMonths())
             .estimatedReleaseDate(i.getEstimatedReleaseDate())
@@ -242,5 +256,84 @@ public class InmateService {
             .cellId(i.getCell() != null ? i.getCell().getId() : null)
             .cellIdentifier(i.getCell() != null ? i.getCell().getIdentifier() : null)
             .build();
+    }
+
+    @Transactional
+    public InmateDto registerTemporaryEgress(UUID inmateId, TemporaryEgressDto dto, String username) {
+        Inmate inmate = inmateRepository.findById(inmateId)
+            .orElseThrow(() -> new RuntimeException("Recluso no encontrado con ID: " + inmateId));
+
+        if (inmate.getStatus() == InmateStatus.EGRESADO) {
+            throw new RuntimeException("No se puede registrar salida temporal de un recluso egresado");
+        }
+        if (inmate.getStatus() == InmateStatus.ACTIVO_SALIDA_TEMPORAL) {
+            throw new RuntimeException("El recluso ya se encuentra en salida temporal");
+        }
+
+        LocalDateTime egressTime = dto.getFechaSalidaTemporal() != null ? dto.getFechaSalidaTemporal() : LocalDateTime.now();
+        LocalDateTime estimatedReturn = dto.getFechaRetornoEstimada();
+
+        if (estimatedReturn == null) {
+            throw new RuntimeException("La fecha estimada de retorno es obligatoria");
+        }
+        if (estimatedReturn.isBefore(egressTime)) {
+            throw new RuntimeException("La fecha estimada de retorno debe ser posterior a la fecha de salida");
+        }
+
+        inmate.setStatus(InmateStatus.ACTIVO_SALIDA_TEMPORAL);
+        inmate.setMotivoSalidaTemporal(dto.getMotivoSalidaTemporal());
+        inmate.setFechaSalidaTemporal(egressTime);
+        inmate.setFechaRetornoEstimada(estimatedReturn);
+
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+        String registro = String.format("[%s] Salida Temporal registrada por %s. Motivo: %s. Salida: %s. Retorno estimado: %s. Observaciones: %s",
+            timestamp,
+            username,
+            dto.getMotivoSalidaTemporal(),
+            egressTime.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")),
+            estimatedReturn.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")),
+            dto.getObservaciones() != null && !dto.getObservaciones().trim().isEmpty() ? dto.getObservaciones() : "Ninguna"
+        );
+
+        if (inmate.getStatusHistory() == null) {
+            inmate.setStatusHistory(new ArrayList<>());
+        }
+        inmate.getStatusHistory().add(registro);
+
+        return toDto(inmateRepository.save(inmate));
+    }
+
+    @Transactional
+    public InmateDto registerTemporaryReturn(UUID inmateId, TemporaryReturnDto dto, String username) {
+        Inmate inmate = inmateRepository.findById(inmateId)
+            .orElseThrow(() -> new RuntimeException("Recluso no encontrado con ID: " + inmateId));
+
+        if (inmate.getStatus() != InmateStatus.ACTIVO_SALIDA_TEMPORAL) {
+            throw new RuntimeException("El recluso no se encuentra en estado de salida temporal");
+        }
+
+        LocalDateTime returnTime = dto.getFechaRetorno() != null ? dto.getFechaRetorno() : LocalDateTime.now();
+
+        // Si tiene celda, vuelve a ACTIVO_CON_CELDA, de lo contrario ACTIVO_SIN_CELDA
+        inmate.setStatus(inmate.getCell() != null ? InmateStatus.ACTIVO_CON_CELDA : InmateStatus.ACTIVO_SIN_CELDA);
+
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+        String registro = String.format("[%s] Retorno Temporal registrado por %s. Retorno: %s. Observaciones: %s",
+            timestamp,
+            username,
+            returnTime.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")),
+            dto.getObservaciones() != null && !dto.getObservaciones().trim().isEmpty() ? dto.getObservaciones() : "Ninguna"
+        );
+
+        inmate.setMotivoSalidaTemporal(null);
+        inmate.setFechaSalidaTemporal(null);
+        inmate.setFechaRetornoEstimada(null);
+
+        if (inmate.getStatusHistory() == null) {
+            inmate.setStatusHistory(new ArrayList<>());
+        }
+        inmate.getStatusHistory().add(registro);
+
+        return toDto(inmateRepository.save(inmate));
     }
 }
