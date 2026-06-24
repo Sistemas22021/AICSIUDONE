@@ -9,7 +9,6 @@ import PostPenalPage from './modules/postpenal/PostPenalPage'
 import PostPenalProfilePage from './modules/postpenal/PostPenalProfilePage'
 import CalendarioPage from './modules/postpenal/CalendarioPage'
 import ControlDashboardPage from './modules/control/ControlDashboardPage'
-import PresentacionesPendientesPage from './modules/control/PresentacionesPendientesPage'
 import AuthGuard from './shared/AuthGuard'
 import ProtectedRoute from './shared/ProtectedRoute'
 import { useAuth } from './shared/authContext'
@@ -89,12 +88,6 @@ export default function App() {
                     <Route path="/control" element={
                         <ProtectedRoute allowedRoles={['Oficial de Seguimiento', 'Supervisor', 'Oficial Penitenciario']}>
                             <ControlDashboardPage />
-                        </ProtectedRoute>
-                    } />
-
-                    <Route path="/control/pendientes" element={
-                        <ProtectedRoute allowedRoles={['Oficial de Seguimiento', 'Supervisor']}>
-                            <PresentacionesPendientesPage />
                         </ProtectedRoute>
                     } />
                 </Routes>

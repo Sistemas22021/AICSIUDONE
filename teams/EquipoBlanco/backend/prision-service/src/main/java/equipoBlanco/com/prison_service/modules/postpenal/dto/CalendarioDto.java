@@ -16,4 +16,6 @@ public class CalendarioDto {
     private LocalDate fechaInicio;
     private String oficialQueRegistro;
     private String observaciones;
+    private String reclusoNombre;
+    private String reclusoCedula;
 }

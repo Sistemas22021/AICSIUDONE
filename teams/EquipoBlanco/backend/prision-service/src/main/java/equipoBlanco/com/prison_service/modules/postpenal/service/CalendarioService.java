@@ -28,6 +28,7 @@ public class CalendarioService {
     private final CalendarioPresentacionRepository calendarioRepository;
     private final ExpedienteSeguimientoRepository expedienteSeguimientoRepository;
     private final AlertaRepository alertaRepository;
+    private final equipoBlanco.com.prison_service.modules.inmates.repository.InmateRepository inmateRepository;
 
     @Transactional
     public List<CalendarioDto> generarCalendario(UUID expedienteId, CalendarioCreateDto dto) {
@@ -191,6 +192,21 @@ public class CalendarioService {
     }
 
     private CalendarioDto toDto(CalendarioPresentacion c) {
+        String reclusoNombre = null;
+        String reclusoCedula = null;
+        try {
+            ExpedienteSeguimiento exp = expedienteSeguimientoRepository.findById(c.getExpedienteId()).orElse(null);
+            if (exp != null) {
+                var inmate = inmateRepository.findById(exp.getIdRecluso()).orElse(null);
+                if (inmate != null) {
+                    reclusoNombre = inmate.getFirstName() + " " + inmate.getFirstLastname();
+                    reclusoCedula = inmate.getCedula();
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error enriqueciendo CalendarioDto: " + e.getMessage());
+        }
+
         return CalendarioDto.builder()
             .id(c.getId())
             .expedienteId(c.getExpedienteId())
@@ -200,6 +216,8 @@ public class CalendarioService {
             .fechaInicio(c.getFechaInicio())
             .oficialQueRegistro(c.getOficialQueRegistro())
             .observaciones(c.getObservaciones())
+            .reclusoNombre(reclusoNombre)
+            .reclusoCedula(reclusoCedula)
             .build();
     }
 }
