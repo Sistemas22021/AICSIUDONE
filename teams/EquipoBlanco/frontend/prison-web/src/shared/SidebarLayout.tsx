@@ -17,7 +17,6 @@ const ALL_MENU_ITEMS: (MenuItem & { roles?: UserRole[] })[] = [
     to: '/dashboard',
     roles: [
       'Oficial Penitenciario',
-      'Oficial de Seguimiento',
       'Supervisor'
     ]
   },
@@ -228,7 +227,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
           <div className="text-sm text-gray-500">
             <span className="font-semibold text-gray-700">SIGP</span>
             <span className="mx-1.5">|</span>
-            <span>Sistema de Gesti\u00f3n</span>
+            <span>Gestión Penitenciaria</span>
           </div>
           <div className="flex items-center gap-3">
             <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
