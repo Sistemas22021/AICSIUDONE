@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Box, TextField, MenuItem, Button, Typography, Snackbar, CircularProgress, LinearProgress, IconButton } from '@mui/material';
 import { SectionTitle } from '../components/SectionTitle';
 import { DataCard } from '../components/DataCard';
@@ -11,6 +11,7 @@ import {
   EvidenceFormErrors,
   EvidenceRecord
 } from '../types/evidence';
+import { getBullets, createBullet, updateBullet, deleteBullet, getBulletImageUrl } from '../services/bulletService';
 
 const INITIAL_FORM_STATE: EvidenceFormState = {
   expediente: '',
@@ -20,6 +21,17 @@ const INITIAL_FORM_STATE: EvidenceFormState = {
   percussion: '',
   marca: ''
 };
+
+export const CALIBERS = [
+  { id: 1, name: '9mm Parabellum' },
+  { id: 2, name: '.22 Long Rifle' },
+  { id: 3, name: '.45 ACP' },
+  { id: 4, name: '.308 Winchester' },
+  { id: 5, name: '7.62x39mm' },
+  { id: 6, name: '5.56x45mm NATO' },
+  { id: 7, name: '.357 Magnum' },
+  { id: 8, name: '12 gauge' }
+];
 
 const premiumInputStyles = {
   '& .MuiOutlinedInput-root': {
@@ -48,35 +60,10 @@ const premiumInputStyles = {
   }
 };
 
-const MOCK_RECORDS: EvidenceRecord[] = [
-  {
-    id: '1',
-    createdAt: new Date().toISOString().split('T')[0],
-    expediente: 'EXP-2026-089',
-    calibre: '9mm Parabellum',
-    estrias: '6',
-    twist: TwistDirection.DEXTROGIRO,
-    percussion: PercussionType.FUEGO_CENTRAL,
-    marca: 'Glock',
-    previewUrl: null
-  },
-  {
-    id: '2',
-    createdAt: new Date().toISOString().split('T')[0],
-    expediente: 'EXP-2026-090',
-    calibre: '.45 ACP',
-    estrias: '4',
-    twist: TwistDirection.LEVOGIRO,
-    percussion: PercussionType.FUEGO_CENTRAL,
-    marca: 'Colt',
-    previewUrl: null
-  }
-];
-
 export const RegistroPage = () => {
   // Estado general
   const [viewMode, setViewMode] = useState<'list' | 'form'>('list');
-  const [records, setRecords] = useState<EvidenceRecord[]>(MOCK_RECORDS);
+  const [records, setRecords] = useState<EvidenceRecord[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   // Estados del formulario
@@ -90,6 +77,35 @@ export const RegistroPage = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
+  useEffect(() => {
+    if (viewMode === 'list') {
+      loadBullets();
+    }
+  }, [viewMode]);
+
+  const loadBullets = async () => {
+    try {
+      const data = await getBullets(0, 50);
+      const mappedRecords: EvidenceRecord[] = data.content.map(b => {
+        const cal = CALIBERS.find(c => c.id === b.caliber);
+        return {
+          id: String(b.idBullet),
+          createdAt: b.createdAt || '',
+          expediente: b.caseFile,
+          calibre: cal ? cal.name : String(b.caliber),
+          estrias: String(b.landsAndGrooves),
+          twist: b.twistDirection as TwistDirection,
+          percussion: b.percussionType as PercussionType,
+          marca: b.manufacturer,
+          previewUrl: b.images && b.images.length > 0 ? getBulletImageUrl(b.images[0]) : null
+        };
+      });
+      setRecords(mappedRecords);
+    } catch (error) {
+      console.error("Error loading bullets:", error);
+    }
+  };
+
   // --- CRUD LÓGICA ---
   const handleCreateNew = () => {
     handleClear();
@@ -98,9 +114,10 @@ export const RegistroPage = () => {
   };
 
   const handleEdit = (record: EvidenceRecord) => {
+    const cal = CALIBERS.find(c => c.name === record.calibre);
     setFormData({
       expediente: record.expediente,
-      calibre: record.calibre,
+      calibre: cal ? String(cal.id) : '',
       estrias: record.estrias,
       twist: record.twist,
       percussion: record.percussion,
@@ -117,9 +134,14 @@ export const RegistroPage = () => {
     setViewMode('form');
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm('¿Estás seguro de eliminar este registro balístico?')) {
-      setRecords(prev => prev.filter(r => r.id !== id));
+      try {
+        await deleteBullet(Number(id));
+        setRecords(prev => prev.filter(r => r.id !== id));
+      } catch (err) {
+        console.error("Error al eliminar", err);
+      }
     }
   };
 
@@ -131,12 +153,9 @@ export const RegistroPage = () => {
     if (!formData.expediente.trim()) {
       newErrors.expediente = 'Requerido';
       isValid = false;
-    } else if (!/^EXP-\d{4}-\d{3}$/.test(formData.expediente)) {
-      newErrors.expediente = 'Fomato: EXP-2026-089';
-      isValid = false;
     }
 
-    if (!formData.calibre.trim()) {
+    if (!formData.calibre || String(formData.calibre).trim() === '') {
       newErrors.calibre = 'Requerido';
       isValid = false;
     }
@@ -170,6 +189,10 @@ export const RegistroPage = () => {
     if (!selectedFile && !previewUrl) {
       newErrors.general = 'Debes subir una evidencia fotográfica.';
       isValid = false;
+    }
+
+    if (!isValid && !newErrors.general) {
+      newErrors.general = 'Corrige los errores en rojo antes de continuar.';
     }
 
     setErrors(newErrors);
@@ -240,44 +263,41 @@ export const RegistroPage = () => {
   const handleSave = async () => {
     if (!validateForm()) {
       setStatus(FormStatus.ERROR);
-      if (!errors.general) {
-        setErrors(prev => ({ ...prev, general: 'Corrige los errores en rojo antes de continuar.' }));
-      }
       return;
     }
 
     setStatus(FormStatus.SAVING);
 
-    setTimeout(() => {
+    try {
+      const bulletData = {
+        caseFile: formData.expediente,
+        landsAndGrooves: Number(formData.estrias),
+        percussionType: formData.percussion,
+        twistDirection: formData.twist,
+        caliber: Number(formData.calibre),
+        manufacturer: formData.marca
+      };
+
       if (editingId) {
-        // Update existing
-        setRecords(prev => prev.map(r => r.id === editingId ? {
-          ...formData,
-          id: r.id,
-          createdAt: r.createdAt,
-          previewUrl: previewUrl
-        } : r));
+        await updateBullet(Number(editingId), bulletData);
       } else {
-        // Create new
-        const newRecord: EvidenceRecord = {
-          ...formData,
-          id: Math.random().toString(36).substr(2, 9),
-          createdAt: new Date().toISOString().split('T')[0],
-          previewUrl: previewUrl
-        };
-        setRecords(prev => [newRecord, ...prev]);
+        if (!selectedFile) throw new Error("Archivo de imagen requerido para registro nuevo");
+        await createBullet(bulletData, selectedFile);
       }
       
       setStatus(FormStatus.SUCCESS);
       
-      // Auto return to list after success
       setTimeout(() => {
         handleClear();
         setViewMode('list');
         setStatus(FormStatus.IDLE);
       }, 1500);
       
-    }, 1500);
+    } catch (err) {
+      console.error(err);
+      setStatus(FormStatus.ERROR);
+      setErrors(prev => ({ ...prev, general: 'Error al procesar la evidencia en el servidor.' }));
+    }
   };
 
   const handleClear = () => {
@@ -416,8 +436,8 @@ export const RegistroPage = () => {
               />
               <TextField
                 fullWidth
+                select
                 label="Calibre"
-                placeholder="Ej: 9mm Parabellum"
                 value={formData.calibre}
                 onChange={(e) => handleInputChange('calibre', e.target.value)}
                 error={!!errors.calibre}
@@ -425,7 +445,13 @@ export const RegistroPage = () => {
                 variant="outlined"
                 size="medium"
                 sx={premiumInputStyles}
-              />
+              >
+                {CALIBERS.map((cal) => (
+                  <MenuItem key={cal.id} value={cal.id}>
+                    {cal.name}
+                  </MenuItem>
+                ))}
+              </TextField>
               <TextField
                 fullWidth
                 label="Número de Estrías"

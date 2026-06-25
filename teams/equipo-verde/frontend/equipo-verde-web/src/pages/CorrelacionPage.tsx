@@ -22,10 +22,11 @@ import { ComparisonViewerModal } from '../components/ranking/ComparisonViewerMod
 
 // Nuevos Servicios
 import { CorrelationService, CorrelationResult } from '../services/correlationService';
-import { MOCK_DATABASE } from '../data/mockDatabase';
 import { EvidenceRecord } from '../types/evidence';
 import { auditService } from '../services/auditService';
 import { AuditActionType } from '../types/audit';
+import { getBullets, getBulletImageUrl } from '../services/bulletService';
+import { CALIBERS } from './RegistroPage';
 
 // Extender el resultado con campos para la UI de esta tabla
 interface UIRankingResult extends CorrelationResult {
@@ -50,21 +51,48 @@ export const CorrelacionPage = () => {
 
   // Simular la llegada de una nueva evidencia y ejecutar el motor
   useEffect(() => {
-    // Tomamos la primera de la BD como "Origen" para la demo
-    const nuevaEvidencia = MOCK_DATABASE[0];
-    setSourceEvidence(nuevaEvidencia);
+    const fetchData = async () => {
+      try {
+        const data = await getBullets(0, 50);
+        if (data.content.length === 0) return;
+        
+        const mappedRecords: EvidenceRecord[] = data.content.map(b => {
+          const cal = CALIBERS.find(c => c.id === b.caliber);
+          return {
+            id: String(b.idBullet),
+            createdAt: b.createdAt || '',
+            expediente: b.caseFile,
+            calibre: cal ? cal.name : String(b.caliber),
+            estrias: String(b.landsAndGrooves),
+            twist: b.twistDirection as any,
+            percussion: b.percussionType as any,
+            marca: b.manufacturer,
+            previewUrl: b.images && b.images.length > 0 ? getBulletImageUrl(b.images[0]) : null
+          };
+        });
 
-    // Corremos el análisis contra el resto de la BD
-    const rawResults = CorrelationService.runAnalysis(nuevaEvidencia, MOCK_DATABASE);
+        // Tomamos la primera de la BD como "Origen" para la demo
+        const nuevaEvidencia = mappedRecords[0];
+        setSourceEvidence(nuevaEvidencia);
+
+        // Corremos el análisis contra el resto de la BD (omitimos la primera)
+        const restOfDb = mappedRecords.slice(1);
+        const rawResults = CorrelationService.runAnalysis(nuevaEvidencia, restOfDb);
+        
+        // Mapeamos al estado de UI
+        const uiResults: UIRankingResult[] = rawResults.map((res, idx) => ({
+          ...res,
+          id: `MATCH-${idx}`,
+          verificationStatus: 'Pendiente'
+        }));
+
+        setResults(uiResults);
+      } catch (err) {
+        console.error("Error al cargar datos para correlación:", err);
+      }
+    };
     
-    // Mapeamos al estado de UI
-    const uiResults: UIRankingResult[] = rawResults.map((res, idx) => ({
-      ...res,
-      id: `MATCH-${idx}`,
-      verificationStatus: 'Pendiente'
-    }));
-
-    setResults(uiResults);
+    fetchData();
   }, []);
 
   const handleVerify = (result: UIRankingResult, isConfirmed: boolean) => {

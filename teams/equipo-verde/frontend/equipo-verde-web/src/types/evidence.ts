@@ -1,11 +1,14 @@
 export enum TwistDirection {
-  DEXTROGIRO = 'Dextrógiro (Derecha)',
-  LEVOGIRO = 'Levógiro (Izquierda)',
+  DEXTRORSUM = 'DEXTRORSUM',
+  SINISTRORSUM = 'SINISTRORSUM',
+  NONE = 'NONE'
 }
 
 export enum PercussionType {
-  FUEGO_CENTRAL = 'Fuego Central',
-  FUEGO_ANULAR = 'Fuego Anular',
+  CENTRAL = 'CENTRAL',
+  ANULAR = 'ANULAR',
+  ELECTRICA = 'ELECTRICA',
+  LATERAL = 'LATERAL'
 }
 
 export enum FormStatus {
