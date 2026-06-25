@@ -4,16 +4,16 @@ on:
   push:
     branches: [main, develop]
     paths:
-      - "teams/main/equipo-verde/frontend/equipo-verde-web/**"
+      - "teams/equipo-verde/frontend/equipo-verde-web/**"
   pull_request:
     branches: [main, develop]
     paths:
-      - "teams/main/equipo-verde/frontend/equipo-verde-web/**"
+      - "teams/equipo-verde/frontend/equipo-verde-web/**"
   workflow_dispatch:
 
 defaults:
   run:
-    working-directory: teams/main/equipo-verde/frontend/equipo-verde-web
+    working-directory: teams/equipo-verde/frontend/equipo-verde-web
 
 jobs:
   test:
@@ -28,7 +28,7 @@ jobs:
         with:
           node-version: "20"
           cache: pnpm
-          cache-dependency-path: teams/main/equipo-verde/frontend/equipo-verde-web/pnpm-lock.yaml
+          cache-dependency-path: teams/equipo-verde/frontend/equipo-verde-web/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
       - run: pnpm test -- --passWithNoTests
 
@@ -46,7 +46,7 @@ jobs:
         with:
           node-version: "20"
           cache: pnpm
-          cache-dependency-path: teams/main/equipo-verde/frontend/equipo-verde-web/pnpm-lock.yaml
+          cache-dependency-path: teams/equipo-verde/frontend/equipo-verde-web/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
       - name: Build de producción
         run: pnpm run build
