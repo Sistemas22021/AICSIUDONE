@@ -22,6 +22,9 @@ public class Usuario {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @OneToMany(mappedBy = "analista")
+    private List<FirmaConductual> firmasRegistradas;
+
     @Column(nullable = false)
     private String nombre;
 

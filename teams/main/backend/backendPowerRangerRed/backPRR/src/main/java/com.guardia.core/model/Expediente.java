@@ -24,6 +24,11 @@ public class Expediente {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @OneToMany(mappedBy = "expediente",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
+    private List<FirmaConductual> firmasConductuales;
+
     // Folio visible al usuario
     @Column(unique = true)
     private String folio;
