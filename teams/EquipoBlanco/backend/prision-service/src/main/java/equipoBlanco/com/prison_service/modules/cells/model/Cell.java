@@ -30,6 +30,10 @@ public class Cell {
     private BigDecimal lengthMeters;
     private BigDecimal widthMeters;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean blockedForInvestigation = false;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

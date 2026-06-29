@@ -81,4 +81,17 @@ public class InmateController {
             @RequestHeader(value = "X-User-Name", defaultValue = "Oficial") String username) {
         return ResponseEntity.ok(inmateService.registerTemporaryReturn(id, dto, username));
     }
+
+    @PostMapping("/{id}/relocate-emergency")
+    public ResponseEntity<InmateDto> relocateEmergency(
+            @PathVariable UUID id,
+            @RequestBody Map<String, String> body,
+            @RequestHeader(value = "X-User-Name", defaultValue = "Supervisor") String username,
+            @RequestHeader(value = "X-User-Role", defaultValue = "") String role) {
+        if (!"Supervisor".equalsIgnoreCase(role)) {
+            throw new RuntimeException("Acceso denegado: Solo el rol de Supervisor está autorizado para esta operación.");
+        }
+        UUID targetCellId = UUID.fromString(body.get("targetCellId"));
+        return ResponseEntity.ok(inmateService.relocateEmergencyInmate(id, targetCellId, username));
+    }
 }

@@ -12,6 +12,10 @@ import equipoBlanco.com.prison_service.modules.inmates.model.Inmate.InmateStatus
 import equipoBlanco.com.prison_service.modules.inmates.repository.InmateRepository;
 import equipoBlanco.com.prison_service.modules.inmates.dto.DischargeDto;
 import equipoBlanco.com.prison_service.modules.postpenal.service.PostPenalService;
+import equipoBlanco.com.prison_service.modules.cells.model.Cell;
+import equipoBlanco.com.prison_service.modules.cells.model.CellAssignment;
+import equipoBlanco.com.prison_service.modules.cells.repository.CellRepository;
+import equipoBlanco.com.prison_service.modules.cells.repository.CellAssignmentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +32,8 @@ public class InmateService {
 
     private final InmateRepository inmateRepository;
     private final PostPenalService postPenalService;
+    private final CellRepository cellRepository;
+    private final CellAssignmentRepository cellAssignmentRepository;
 
     public boolean cedulaHasActiveRecord(String cedula) {
         return inmateRepository.existsByCedulaAndStatusNot(cedula, InmateStatus.EGRESADO);
@@ -187,6 +193,7 @@ public class InmateService {
                     .description(b.getDescription())
                     .quantity(b.getQuantity())
                     .observations(b.getObservations())
+                    .status(b.getStatus() != null ? b.getStatus().name() : "ALMACENADO")
                     .build()
             ).toList();
         }
@@ -335,5 +342,53 @@ public class InmateService {
         inmate.getStatusHistory().add(registro);
 
         return toDto(inmateRepository.save(inmate));
+    }
+
+    @Transactional
+    public InmateDto relocateEmergencyInmate(UUID inmateId, UUID targetCellId, String username) {
+        Inmate inmate = inmateRepository.findById(inmateId)
+            .orElseThrow(() -> new RuntimeException("Recluso no encontrado"));
+
+        if (inmate.getStatus() != InmateStatus.PENDIENTE_REUBICACION_EMERGENCIA) {
+            throw new RuntimeException("El recluso no se encuentra pendiente de reubicación de emergencia");
+        }
+
+        Cell targetCell = cellRepository.findById(targetCellId)
+            .orElseThrow(() -> new RuntimeException("Celda de destino no encontrada"));
+
+        if (targetCell.isBlockedForInvestigation()) {
+            throw new RuntimeException("La celda de destino está bloqueada por investigación");
+        }
+
+        int occupancy = inmateRepository.countByCellId(targetCellId);
+        if (occupancy >= targetCell.getMaxCapacity()) {
+            throw new RuntimeException("La celda de destino se encuentra llena");
+        }
+
+        Cell sourceCell = inmate.getCell();
+        String sourceCellIdentifier = sourceCell != null ? sourceCell.getIdentifier() : "Sin Celda";
+
+        inmate.setCell(targetCell);
+        inmate.setStatus(InmateStatus.ACTIVO_CON_CELDA);
+
+        if (inmate.getStatusHistory() == null) {
+            inmate.setStatusHistory(new ArrayList<>());
+        }
+        inmate.getStatusHistory().add(String.format("[%s] Reubicado de emergencia desde Celda %s a Celda %s por motivo de siniestro internamente registrado por %s.",
+            LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")),
+            sourceCellIdentifier, targetCell.getIdentifier(), username));
+
+        inmateRepository.save(inmate);
+
+        // Also add CellAssignment record
+        CellAssignment assignment = CellAssignment.builder()
+            .inmate(inmate)
+            .cell(targetCell)
+            .assignedBy(username)
+            .assignedAt(LocalDateTime.now())
+            .build();
+        cellAssignmentRepository.save(assignment);
+
+        return toDto(inmate);
     }
 }

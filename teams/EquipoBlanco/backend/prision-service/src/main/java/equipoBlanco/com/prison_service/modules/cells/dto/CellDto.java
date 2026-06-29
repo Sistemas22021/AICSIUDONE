@@ -22,4 +22,5 @@ public class CellDto {
     private Integer currentOccupancy;
     private String occupancyStatus;
     private Integer maxCapacity;
+    private boolean blockedForInvestigation;
 }

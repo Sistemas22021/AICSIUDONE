@@ -21,4 +21,17 @@ public class Belonging {
     private Integer quantity;
     @Column(columnDefinition = "TEXT")
     private String observations;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private BelongingStatus status = BelongingStatus.ALMACENADO;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "handover_id")
+    private BelongingHandover handover;
+
+    public enum BelongingStatus {
+        ALMACENADO, ENTREGADO, RETENIDO_INVESTIGACION
+    }
 }

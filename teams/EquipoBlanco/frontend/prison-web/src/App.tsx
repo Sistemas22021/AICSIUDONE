@@ -4,6 +4,10 @@ import CellMapPage from './modules/cells/CellMapPage'
 import InmateRegisterPage from './modules/inmates/InmateRegisterPage'
 import InmateRecordPage from './modules/inmates/InmateRecordPage'
 import DischargePage from './modules/inmates/DischargePage'
+import IncidentRegisterPage from './modules/inmates/IncidentRegisterPage'
+import IncidentListPage from './modules/control/IncidentListPage'
+import IncidentDetailPage from './modules/control/IncidentDetailPage'
+import DeathReportViewPage from './modules/inmates/DeathReportViewPage'
 import TemporaryEgressPage from './modules/inmates/TemporaryEgressPage'
 import TemporaryReturnPage from './modules/inmates/TemporaryReturnPage'
 import DashboardPage from './modules/dashboard/DashboardPage'
@@ -102,6 +106,30 @@ export default function App() {
                     <Route path="/control" element={
                         <ProtectedRoute allowedRoles={['Oficial de Seguimiento', 'Supervisor', 'Oficial Penitenciario']}>
                             <ControlDashboardPage />
+                        </ProtectedRoute>
+                    } />
+
+                    <Route path="/incidentes/registrar/:inmateId" element={
+                        <ProtectedRoute allowedRoles={['Supervisor']}>
+                            <IncidentRegisterPage />
+                        </ProtectedRoute>
+                    } />
+
+                    <Route path="/incidentes" element={
+                        <ProtectedRoute allowedRoles={['Supervisor']}>
+                            <IncidentListPage />
+                        </ProtectedRoute>
+                    } />
+
+                    <Route path="/incidentes/detalle/:id" element={
+                        <ProtectedRoute allowedRoles={['Supervisor']}>
+                            <IncidentDetailPage />
+                        </ProtectedRoute>
+                    } />
+
+                    <Route path="/internos/informe-deceso/:inmateId" element={
+                        <ProtectedRoute allowedRoles={['Supervisor']}>
+                            <DeathReportViewPage />
                         </ProtectedRoute>
                     } />
                 </Routes>

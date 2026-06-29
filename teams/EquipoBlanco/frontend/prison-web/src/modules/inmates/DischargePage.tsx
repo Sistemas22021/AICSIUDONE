@@ -24,6 +24,9 @@ export default function DischargePage() {
     const [motivoEgreso, setMotivoEgreso] = useState('Cumplimiento de condena')
     const [fechaEgreso, setFechaEgreso] = useState(new Date().toISOString().slice(0, 16))
     const [observacionesEgreso, setObservacionesEgreso] = useState('')
+    const [deceaseType, setDeceaseType] = useState('NATURAL')
+    const [deathDateTimeFound, setDeathDateTimeFound] = useState(new Date().toISOString().slice(0, 16))
+    const [deathDescription, setDeathDescription] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
 
@@ -71,6 +74,42 @@ export default function DischargePage() {
         e.preventDefault()
         if (!selectedInmate) return
 
+        if (motivoEgreso === 'Fallecimiento') {
+            if (!deathDescription.trim()) {
+                setError('La descripción de los hechos es obligatoria.')
+                return
+            }
+            if (!confirm(`¿Está seguro de registrar el deceso de ${selectedInmate.firstName} ${selectedInmate.firstLastname}? Esta acción no se puede deshacer.`)) {
+                return
+            }
+
+            setLoading(true)
+            setError('')
+            try {
+                if (deceaseType === 'NATURAL') {
+                    await api.post(`/inmates/${selectedInmate.id}/death-report/natural`, {
+                        dateTimeFound: deathDateTimeFound,
+                        description: deathDescription
+                    })
+                    alert('Egreso por fallecimiento natural registrado exitosamente.')
+                    navigate('/dashboard')
+                } else {
+                    await api.post(`/inmates/${selectedInmate.id}/death-report/non-natural`, {
+                        dateTimeFound: deathDateTimeFound,
+                        description: deathDescription
+                    })
+                    alert('Borrador de deceso no natural registrado exitosamente. Redirigiendo al expediente de incidente interno.')
+                    navigate(`/incidentes/registrar/${selectedInmate.id}`)
+                }
+            } catch (err: any) {
+                console.error(err)
+                setError(err.response?.data?.message || 'Error al registrar el fallecimiento.')
+            } finally {
+                setLoading(false)
+            }
+            return
+        }
+
         if (motivoEgreso === 'Cumplimiento de condena' && estimatedReleaseDate && estimatedReleaseDate !== fechaEgreso.split('T')[0]) {
             if (!confirm(`ADVERTENCIA: La fecha de egreso (${fechaEgreso.split('T')[0]}) no coincide con la fecha estimada de liberación (${estimatedReleaseDate}). ¿Desea continuar de todas formas?`)) {
                 return
@@ -94,8 +133,10 @@ export default function DischargePage() {
                 : 'Egreso registrado exitosamente.'
             alert(mensaje)
             navigate('/dashboard')
-        } catch (err) {
+        } catch (err: any) {
             console.log(err)
+            setError(err.response?.data?.message || 'Error al registrar el egreso.')
+        } finally {
             setLoading(false)
         }
     }
@@ -202,27 +243,69 @@ export default function DischargePage() {
                                 )}
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Fecha y Hora de Egreso *</label>
-                                <input 
-                                    type="datetime-local" 
-                                    value={fechaEgreso}
-                                    onChange={e => setFechaEgreso(e.target.value)}
-                                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-                                    required
-                                />
-                            </div>
+                            {motivoEgreso === 'Fallecimiento' ? (
+                                <>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-700 mb-1">Tipo de Deceso *</label>
+                                        <select 
+                                            value={deceaseType}
+                                            onChange={e => setDeceaseType(e.target.value)}
+                                            className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white"
+                                            required
+                                        >
+                                            <option value="NATURAL">Natural (Liberación de celda automática)</option>
+                                            <option value="NO_NATURAL">No Natural (Requiere registrar expediente de incidente)</option>
+                                        </select>
+                                    </div>
 
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Observaciones</label>
-                                <textarea 
-                                    rows={3}
-                                    value={observacionesEgreso}
-                                    onChange={e => setObservacionesEgreso(e.target.value)}
-                                    placeholder="Detalles adicionales sobre la liberación o traslado..."
-                                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-                                />
-                            </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-700 mb-1">Fecha y Hora del Hallazgo *</label>
+                                        <input 
+                                            type="datetime-local" 
+                                            value={deathDateTimeFound}
+                                            onChange={e => setDeathDateTimeFound(e.target.value)}
+                                            className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-700 mb-1">Descripción / Relato de los Hechos *</label>
+                                        <textarea 
+                                            rows={4}
+                                            value={deathDescription}
+                                            onChange={e => setDeathDescription(e.target.value)}
+                                            placeholder="Detalle exhaustivo del hallazgo y estado del cuerpo..."
+                                            className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                                            required
+                                        />
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-700 mb-1">Fecha y Hora de Egreso *</label>
+                                        <input 
+                                            type="datetime-local" 
+                                            value={fechaEgreso}
+                                            onChange={e => setFechaEgreso(e.target.value)}
+                                            className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-700 mb-1">Observaciones</label>
+                                        <textarea 
+                                            rows={3}
+                                            value={observacionesEgreso}
+                                            onChange={e => setObservacionesEgreso(e.target.value)}
+                                            placeholder="Detalles adicionales sobre la liberación o traslado..."
+                                            className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                                        />
+                                    </div>
+                                </>
+                            )}
 
                             <div className="pt-4 border-t border-gray-100 flex gap-3">
                                 <button

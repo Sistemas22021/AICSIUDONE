@@ -71,6 +71,10 @@ public class CellService {
         Cell cell = cellRepository.findById(cellId)
             .orElseThrow(() -> new RuntimeException("Celda no encontrada"));
 
+        if (cell.isBlockedForInvestigation()) {
+            throw new RuntimeException("La celda está bloqueada por investigación");
+        }
+
         int occupancy = inmateRepository.countByCellId(cellId);
         if (occupancy >= cell.getMaxCapacity()) {
             throw new RuntimeException("La celda está llena");
@@ -100,7 +104,8 @@ public class CellService {
 
     private CellDto toDto(Cell cell) {
         int occupancy = inmateRepository.countByCellId(cell.getId());
-        String status = occupancy >= cell.getMaxCapacity() ? "LLENO"
+        String status = cell.isBlockedForInvestigation() ? "BLOQUEADA"
+            : occupancy >= cell.getMaxCapacity() ? "LLENO"
             : occupancy >= cell.getMaxCapacity() * 0.8 ? "LIMITE"
             : "DISPONIBLE";
 
@@ -113,6 +118,7 @@ public class CellService {
             .widthMeters(cell.getWidthMeters())
             .currentOccupancy(occupancy)
             .occupancyStatus(status)
+            .blockedForInvestigation(cell.isBlockedForInvestigation())
             .build();
     }
 }

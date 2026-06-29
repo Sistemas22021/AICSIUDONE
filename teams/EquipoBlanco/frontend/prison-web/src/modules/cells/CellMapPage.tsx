@@ -1,11 +1,12 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Settings, X, User, Move, MapPin, Info, Users, CheckCircle, AlertTriangle, HelpCircle, Fingerprint } from 'lucide-react'
+import { Settings, X, User, Move, MapPin, Info, Users, CheckCircle, AlertTriangle, HelpCircle, Fingerprint, ShieldAlert } from 'lucide-react'
 import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
 import { useAuth } from '../../shared/authContext'
 import { PieChart } from '@cell-component/PieChart'
 import TransferRequestModal from '../inmates/TransferRequestModal'
+import EmergencyRelocationAlert from '../inmates/EmergencyRelocationAlert'
 
 const CANVAS_W = 900
 const CANVAS_H = 600
@@ -19,6 +20,7 @@ interface CeldaData {
   nivelConducta: string
   largo: number | null
   ancho: number | null
+  bloqueada?: boolean
   reclusosAsignados: InmateDto[]
 }
 
@@ -164,6 +166,7 @@ export default function CellMapPage() {
         nivelConducta: c.conductLevel,
         largo: c.lengthMeters,
         ancho: c.widthMeters,
+        bloqueada: c.blockedForInvestigation || c.occupancyStatus === 'BLOQUEADA',
         reclusosAsignados: inmatesData.filter(i => i.cellId === c.id && (i.status === 'ACTIVO_CON_CELDA' || i.status === 'ACTIVO_SALIDA_TEMPORAL'))
       }))
 
@@ -477,12 +480,28 @@ export default function CellMapPage() {
           height={radioBase * 2}
         >
           <div className="flex items-center justify-center w-full h-full">
-            <PieChart
-              value={ocupacion}
-              sliceColor={col.fill === '#d4edda' ? '#22c55e' : col.fill === '#fff3cd' ? '#eab308' : '#ef4444'}
-              borderColor={col.stroke}
-              className={sizeClass}
-            />
+            {celda.bloqueada ? (
+              <div 
+                className="flex items-center justify-center rounded-full border bg-gray-600 text-white font-bold"
+                style={{ 
+                  width: `${radioBase * 2}px`, 
+                  height: `${radioBase * 2}px`, 
+                  borderColor: '#1f2937',
+                  backgroundColor: '#4B5563',
+                  fontSize: `${Math.round(11 * escala)}px`
+                }}
+                title="Bloqueada por investigación"
+              >
+                🔒
+              </div>
+            ) : (
+              <PieChart
+                value={ocupacion}
+                sliceColor={col.fill === '#d4edda' ? '#22c55e' : col.fill === '#fff3cd' ? '#eab308' : '#ef4444'}
+                borderColor={col.stroke}
+                className={sizeClass}
+              />
+            )}
           </div>
         </foreignObject>
         <text
@@ -490,13 +509,13 @@ export default function CellMapPage() {
           textAnchor="middle"
           fontSize={10}
           fontWeight="bold"
-          fill={col.text}
+          fill={celda.bloqueada ? '#475569' : col.text}
           fontFamily="sans-serif"
         >
           {celda.identificador}
         </text>
         {modoEditor && (
-          <circle cx={pos.x} cy={pos.y} r={radioBase + 2} fill="none" stroke={col.stroke} strokeWidth={1.5} strokeDasharray="3 3" opacity={0.6} />
+          <circle cx={pos.x} cy={pos.y} r={radioBase + 2} fill="none" stroke={celda.bloqueada ? '#1f2937' : col.stroke} strokeWidth={1.5} strokeDasharray="3 3" opacity={0.6} />
         )}
       </g>
     )
@@ -555,6 +574,9 @@ export default function CellMapPage() {
   return (
     <SidebarLayout>
       <div className="max-w-7xl mx-auto space-y-6">
+        {auth.hasRole('Supervisor') && (
+          <EmergencyRelocationAlert onRelocateSuccess={loadData} />
+        )}
         {loadingMapa && (
           <div className="fixed inset-0 bg-white/80 backdrop-blur-[2px] z-40 flex items-center justify-center transition-all duration-300">
             <div className="flex flex-col items-center gap-4 p-8 bg-white rounded-2xl shadow-lg border border-gray-100">
@@ -699,11 +721,12 @@ export default function CellMapPage() {
           <div className="flex-1 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden w-full">
             <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5 border-b border-gray-100 bg-gray-50">
               <div className="flex flex-wrap items-center gap-6">
-                <div className="flex gap-4">
+                <div className="flex gap-4 flex-wrap">
                   {[
                     { dot: 'bg-emerald-500', label: 'Disponible (<80%)' },
                     { dot: 'bg-yellow-500', label: 'Al L\u00edmite (\u226580%)' },
                     { dot: 'bg-red-500', label: 'Llena (100%)' },
+                    { dot: 'bg-gray-600', label: 'Bloqueada por Investigación' },
                   ].map((l, i) => (
                     <div key={i} className="flex items-center gap-2">
                       <span className={`w-2.5 h-2.5 rounded-full ${l.dot}`}></span>
@@ -768,8 +791,10 @@ export default function CellMapPage() {
                     onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-between mb-2 pb-2 border-b border-gray-100">
                       <div className="flex items-center gap-2">
-                        <span className={`w-2.5 h-2.5 rounded-full ${getEstado(celdaConTooltip) === 'llena' ? 'bg-red-500' : getEstado(celdaConTooltip) === 'limite' ? 'bg-yellow-500' : 'bg-emerald-500'}`}></span>
-                        <span className="font-bold text-gray-900 text-sm">Celda {celdaConTooltip.identificador}</span>
+                        <span className={`w-2.5 h-2.5 rounded-full ${celdaConTooltip.bloqueada ? 'bg-gray-500' : getEstado(celdaConTooltip) === 'llena' ? 'bg-red-500' : getEstado(celdaConTooltip) === 'limite' ? 'bg-yellow-500' : 'bg-emerald-500'}`}></span>
+                        <span className="font-bold text-gray-900 text-sm">
+                          Celda {celdaConTooltip.identificador} {celdaConTooltip.bloqueada && '(BLOQUEADA)'}
+                        </span>
                       </div>
                       {modoEditor && (
                         <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); quitarCeldaDelPlano(celdaConTooltip.id, celdaConTooltip.identificador) }}
@@ -807,6 +832,11 @@ export default function CellMapPage() {
                       </div>
                     ) : (
                       <div className="space-y-2 text-xs text-gray-700">
+                        {celdaConTooltip.bloqueada && (
+                          <div className="p-2 bg-red-50 border border-red-200 text-red-800 rounded font-bold mb-2">
+                            ⚠️ Bloqueada por investigación.
+                          </div>
+                        )}
                         <div className="flex justify-between border-b pb-1 border-gray-100"><span className="text-gray-500">Capacidad:</span><span className="font-bold">{celdaConTooltip.capacidad} internos</span></div>
                         <div className="flex justify-between border-b pb-1 border-gray-100"><span className="text-gray-500">Ocupaci\u00f3n:</span><span className="font-bold">{celdaConTooltip.reclusosAsignados.length} ({calculatePct(celdaConTooltip)}%)</span></div>
                         {celdaConTooltip.reclusosAsignados.length > 0 && (
@@ -958,7 +988,12 @@ export default function CellMapPage() {
                     </div>
                   )}
                 </div>
-                {auth.hasRole('Oficial Penitenciario') && modalAsignacion.reclusosAsignados.length < modalAsignacion.capacidad ? (
+                {modalAsignacion.bloqueada ? (
+                  <div className="p-3.5 bg-red-50 border border-red-200 text-red-800 rounded-xl font-bold flex items-center gap-2">
+                    <ShieldAlert className="w-5 h-5 text-red-600 shrink-0" />
+                    Esta celda se encuentra clausurada por investigación judicial. No se permiten nuevos ingresos.
+                  </div>
+                ) : auth.hasRole('Oficial Penitenciario') && modalAsignacion.reclusosAsignados.length < modalAsignacion.capacidad ? (
                   <div className="pt-3.5 border-t border-gray-150">
                     <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2.5">Asignar nuevo interno a la celda</h4>
                     {reclusosSinCelda.length === 0 ? (
@@ -991,8 +1026,8 @@ export default function CellMapPage() {
               </div>
               <div className="flex gap-3 px-6 py-4.5 bg-gray-50 border-t border-gray-150">
                 <button onClick={() => { setModalAsignacion(null); setReclusoSeleccionado('') }} className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-100 transition-colors text-xs font-bold uppercase tracking-wider">Cancelar</button>
-                {auth.hasRole('Oficial Penitenciario') && (
-                  <button onClick={confirmarAsignacion} disabled={!reclusoSeleccionado} className="flex-1 px-4 py-2.5 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-all disabled:bg-gray-300 disabled:cursor-not-allowed text-xs font-bold uppercase tracking-wider shadow-sm">Confirmar asignaci\u00f3n</button>
+                {auth.hasRole('Oficial Penitenciario') && !modalAsignacion.bloqueada && (
+                  <button onClick={confirmarAsignacion} disabled={!reclusoSeleccionado} className="flex-1 px-4 py-2.5 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-all disabled:bg-gray-300 disabled:cursor-not-allowed text-xs font-bold uppercase tracking-wider shadow-sm">Confirmar asignación</button>
                 )}
               </div>
             </div>

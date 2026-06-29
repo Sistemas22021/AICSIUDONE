@@ -84,6 +84,13 @@ const ALL_MENU_ITEMS: (MenuItem & { roles?: UserRole[] })[] = [
       'Supervisor'
     ] 
   },
+  { 
+    label: 'Bitácora de Incidentes', 
+    to: '/incidentes', 
+    roles: [
+      'Supervisor'
+    ] 
+  },
 ]
 
 export default function SidebarLayout({ children }: { children: React.ReactNode }) {

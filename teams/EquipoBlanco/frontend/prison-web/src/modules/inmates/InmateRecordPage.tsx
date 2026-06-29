@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams, useLocation, useNavigate, } from 'react-router-dom'
+import { useParams, useLocation, useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft, User, Scale, Fingerprint, FileText, Check, X, Clock, AlertCircle, Move } from 'lucide-react'
 import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
@@ -77,6 +77,13 @@ export default function InmateRecordPage() {
   const [rejectionError, setRejectionError] = useState('')
   const [actionLoading, setActionLoading] = useState(false)
 
+  const [handovers, setHandovers] = useState<any[]>([])
+  const [belongingHandoverModalOpen, setBelongingHandoverModalOpen] = useState(false)
+  const [handoverReceiverName, setHandoverReceiverName] = useState('')
+  const [handoverReceiverCedula, setHandoverReceiverCedula] = useState('')
+  const [handoverDate, setHandoverDate] = useState(new Date().toISOString().slice(0, 16))
+  const [selectedBelongingIds, setSelectedBelongingIds] = useState<Set<string>>(new Set())
+
   const auth = useAuth()
   const currentUser = sessionStorage.getItem('username') || 'Oficial'
   const isFromMap = (location.state as { from?: string })?.from === '/mapa'
@@ -93,11 +100,91 @@ export default function InmateRecordPage() {
       ])
       setInmate(inmateRes.data)
       setTransfers(transfersRes.data || [])
+
+      if (inmateRes.data.motivoEgreso === 'Fallecimiento' && auth.hasRole('Supervisor')) {
+        const handoversRes = await api.get(`/inmates/${id}/belongings/handovers`).catch(() => ({ data: [] }))
+        setHandovers(handoversRes.data || [])
+      }
     } catch {
       setErrorMsg('No se pudo cargar la información del recluso.')
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleToggleBelongingStatus = async (belongingId: string) => {
+    try {
+      await api.put(`/belongings/${belongingId}/status`)
+      await loadData()
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Error al modificar el estado de la pertenencia.')
+    }
+  }
+
+  const handleHandover = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!id || selectedBelongingIds.size === 0) return
+    if (!handoverReceiverName.trim() || !handoverReceiverCedula.trim()) {
+      alert('Todos los campos son obligatorios.')
+      return
+    }
+
+    try {
+      const dateISO = handoverDate.length === 16 ? handoverDate + ':00' : handoverDate
+      await api.post(`/inmates/${id}/belongings/handover`, {
+        recipientName: handoverReceiverName,
+        recipientCedula: handoverReceiverCedula,
+        handoverDate: dateISO,
+        belongingIds: Array.from(selectedBelongingIds)
+      })
+      alert('Pertenencias entregadas exitosamente.')
+      setBelongingHandoverModalOpen(false)
+      setHandoverReceiverName('')
+      setHandoverReceiverCedula('')
+      setSelectedBelongingIds(new Set())
+      await loadData()
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Error al registrar la entrega de pertenencias.')
+    }
+  }
+
+  const toggleBelongingSelection = (belongingId: string) => {
+    setSelectedBelongingIds(prev => {
+      const next = new Set(prev)
+      if (next.has(belongingId)) {
+        next.delete(belongingId)
+      } else {
+        next.add(belongingId)
+      }
+      return next
+    })
+  }
+
+  const renderStatusWithLinks = (text: string) => {
+    const regex = /\[([^\]]+)\]\(([^)]+)\)/g
+    const parts = []
+    let lastIndex = 0
+    let match
+
+    while ((match = regex.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(text.substring(lastIndex, match.index))
+      }
+      const linkText = match[1]
+      const linkUrl = match[2]
+      parts.push(
+        <Link key={match.index} to={linkUrl} className="text-blue-600 hover:text-blue-800 underline font-bold">
+          {linkText}
+        </Link>
+      )
+      lastIndex = regex.lastIndex
+    }
+
+    if (lastIndex < text.length) {
+      parts.push(text.substring(lastIndex))
+    }
+
+    return parts.length > 0 ? parts : text
   }
 
   const initialLoadDone = useRef(false)
@@ -243,6 +330,16 @@ export default function InmateRecordPage() {
               Solicitar Traslado
             </button>
           )}
+
+          {inmate.motivoEgreso === 'Fallecimiento' && auth.hasRole('Supervisor') && (
+            <button
+              onClick={() => navigate(`/internos/informe-deceso/${inmate.id}`)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-red-800 text-white rounded-lg hover:bg-red-950 transition-colors text-xs font-semibold shadow-sm cursor-pointer ml-2"
+            >
+              <FileText className="w-4 h-4" />
+              Ver Informe de Deceso
+            </button>
+          )}
         </div>
 
         {/* Expediente Overview Card */}
@@ -265,10 +362,14 @@ export default function InmateRecordPage() {
               <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider block ${
                 inmate.status === 'ACTIVO_CON_CELDA' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' :
                 inmate.status === 'ACTIVO_SALIDA_TEMPORAL' ? 'bg-amber-100 text-amber-800 border border-amber-200' :
+                inmate.status === 'PENDIENTE_REUBICACION_EMERGENCIA' ? 'bg-red-100 text-red-800 border border-red-200' :
+                inmate.status === 'EGRESADO' ? 'bg-gray-100 text-gray-800 border border-gray-300' :
                 'bg-gray-100 text-gray-800 border border-gray-250'
               }`}>
                 {inmate.status === 'ACTIVO_CON_CELDA' ? 'Asignado' :
                  inmate.status === 'ACTIVO_SALIDA_TEMPORAL' ? 'Salida Temporal' :
+                 inmate.status === 'PENDIENTE_REUBICACION_EMERGENCIA' ? 'Pendiente Reubicación' :
+                 inmate.status === 'EGRESADO' ? 'Egresado' :
                  'Pendiente Asignación'}
               </span>
               {inmate.cellIdentifier && (
@@ -324,8 +425,107 @@ export default function InmateRecordPage() {
               </div>
             )}
 
-            {/* Pertenencias */}
-            {inmate.belongings && inmate.belongings.length > 0 && (
+            {/* Pertenencias - Gestión Especial Deceso */}
+            {inmate.belongings && inmate.belongings.length > 0 && inmate.motivoEgreso === 'Fallecimiento' && auth.hasRole('Supervisor') && (
+              <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-150 pb-3">
+                  <div>
+                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <FileText className="w-4 h-4 text-gray-400" /> Gestión de Pertenencias (Fallecido)
+                    </h4>
+                    <p className="text-[10px] text-gray-500 mt-0.5">Retención para investigación y entrega a familiares.</p>
+                  </div>
+                  <button
+                    onClick={() => setBelongingHandoverModalOpen(true)}
+                    disabled={selectedBelongingIds.size === 0 || Array.from(selectedBelongingIds).some(bId => inmate.belongings?.find(b => b.id === bId)?.status === 'RETENIDO_INVESTIGACION')}
+                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1"
+                  >
+                    Entregar Seleccionados
+                  </button>
+                </div>
+
+                <div className="border border-gray-200 rounded-lg overflow-hidden text-xs">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-gray-50 text-gray-500 font-bold border-b border-gray-200">
+                        <th className="p-2.5 w-8"></th>
+                        <th className="p-2.5">Descripción</th>
+                        <th className="p-2.5 text-center">Cantidad</th>
+                        <th className="p-2.5">Estado</th>
+                        <th className="p-2.5 text-right">Acción Retención</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {inmate.belongings.map((b) => (
+                        <tr key={b.id} className="hover:bg-gray-50/50">
+                          <td className="p-2.5 text-center">
+                            {b.status !== 'ENTREGADO' && (
+                              <input
+                                type="checkbox"
+                                checked={selectedBelongingIds.has(b.id!)}
+                                onChange={() => toggleBelongingSelection(b.id!)}
+                                disabled={b.status === 'RETENIDO_INVESTIGACION'}
+                                className="w-3.5 h-3.5 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 cursor-pointer"
+                              />
+                            )}
+                          </td>
+                          <td className="p-2.5 font-semibold text-gray-800">{b.description}</td>
+                          <td className="p-2.5 text-center font-bold text-gray-700">{b.quantity}</td>
+                          <td className="p-2.5">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                              b.status === 'ENTREGADO' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' :
+                              b.status === 'RETENIDO_INVESTIGACION' ? 'bg-red-100 text-red-800 border border-red-200' :
+                              'bg-amber-100 text-amber-800 border border-amber-200'
+                            }`}>
+                              {b.status === 'ALMACENADO' ? 'Almacenado' : 
+                               b.status === 'RETENIDO_INVESTIGACION' ? 'Retenido Investig.' : 'Entregado'}
+                            </span>
+                          </td>
+                          <td className="p-2.5 text-right">
+                            {b.status !== 'ENTREGADO' && (
+                              <button
+                                onClick={() => handleToggleBelongingStatus(b.id!)}
+                                className={`px-2 py-1 rounded text-[10px] font-bold border transition-colors cursor-pointer ${
+                                  b.status === 'RETENIDO_INVESTIGACION' 
+                                    ? 'bg-amber-55/15 border-amber-300 text-amber-700 hover:bg-amber-100/50' 
+                                    : 'bg-red-55/15 border-red-300 text-red-700 hover:bg-red-100/50'
+                                }`}
+                              >
+                                {b.status === 'RETENIDO_INVESTIGACION' ? 'Liberar' : 'Retener'}
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Handovers History */}
+                {handovers.length > 0 && (
+                  <div className="pt-4 border-t border-gray-150 space-y-2.5">
+                    <h5 className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Registro de Entregas Realizadas</h5>
+                    <div className="space-y-2">
+                      {handovers.map((h: any) => (
+                        <div key={h.id} className="bg-gray-50 border border-gray-150 rounded-lg p-3 text-[11px] text-gray-700 space-y-1">
+                          <div className="flex justify-between font-bold text-gray-800">
+                            <span>Familiar: {h.recipientName} (C.I. {h.recipientCedula})</span>
+                            <span className="text-gray-450 font-medium">{new Date(h.handoverDate).toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between text-gray-500">
+                            <span>Entregado por: <strong>{h.authorizedBy}</strong></span>
+                            <span>Objetos entregados (IDs): {h.belongingIds?.length || 0}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Read-Only Belongings if not Supervisor or not deceased */}
+            {inmate.belongings && inmate.belongings.length > 0 && !(inmate.motivoEgreso === 'Fallecimiento' && auth.hasRole('Supervisor')) && (
               <div className="bg-gray-50 rounded-xl p-4.5 border border-gray-150">
                 <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 border-b border-gray-200/50 pb-1.5 flex items-center gap-1.5">
                   <FileText className="w-4 h-4 text-gray-400" /> Inventario de Pertenencias
@@ -524,8 +724,8 @@ export default function InmateRecordPage() {
                   {/* Timeline dot */}
                   <div className="absolute -left-[31px] top-1 w-3.5 h-3.5 rounded-full border-2 bg-white border-blue-500 group-hover:bg-blue-500 transition-colors duration-300" />
                   
-                  <div className="bg-gray-50 border border-gray-150 rounded-xl p-3.5 text-xs text-gray-750 leading-relaxed shadow-sm">
-                    {reg}
+                  <div className="bg-gray-50 border border-gray-150 rounded-xl p-3.5 text-xs text-gray-755 leading-relaxed shadow-sm">
+                    {renderStatusWithLinks(reg)}
                   </div>
                 </div>
               ))}
@@ -600,6 +800,77 @@ export default function InmateRecordPage() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Entrega de Pertenencias */}
+      {belongingHandoverModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[70] p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-250">
+            <div className="flex items-center justify-between px-5 py-3.5 bg-emerald-600 text-white">
+              <h3 className="text-sm font-bold uppercase tracking-wider">Registrar Entrega a Familiar</h3>
+              <button onClick={() => setBelongingHandoverModalOpen(false)} className="p-1 hover:bg-emerald-700 rounded-lg text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleHandover} className="p-5 space-y-4 text-xs">
+              <p className="text-gray-500 leading-relaxed font-semibold">
+                Complete los datos del familiar o receptor autorizado que retira los objetos del penal.
+              </p>
+
+              <div className="space-y-1">
+                <label className="block text-gray-700 font-bold uppercase tracking-wide">Nombre Completo del Receptor *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ej. María Elena Pérez"
+                  value={handoverReceiverName}
+                  onChange={e => setHandoverReceiverName(e.target.value)}
+                  className="w-full p-2.5 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-gray-700 font-bold uppercase tracking-wide">Cédula del Receptor *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ej. C.I. 1.234.567-8"
+                  value={handoverReceiverCedula}
+                  onChange={e => setHandoverReceiverCedula(e.target.value)}
+                  className="w-full p-2.5 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-gray-700 font-bold uppercase tracking-wide">Fecha y Hora de Retiro *</label>
+                <input
+                  type="datetime-local"
+                  required
+                  value={handoverDate}
+                  onChange={e => setHandoverDate(e.target.value)}
+                  className="w-full p-2.5 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setBelongingHandoverModalOpen(false)}
+                  className="flex-1 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-100 font-bold uppercase tracking-wider transition-colors disabled:opacity-50 cursor-pointer bg-white"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 font-bold uppercase tracking-wider transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  Confirmar Entrega
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
