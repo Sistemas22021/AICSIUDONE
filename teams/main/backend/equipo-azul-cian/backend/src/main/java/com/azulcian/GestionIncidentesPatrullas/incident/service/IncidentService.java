@@ -130,8 +130,12 @@ public class IncidentService {
         // 6. Cerrar incidente
         incident.setStatus(IncidentStatus.CLOSED);
 
-        // 7. Guardar cambios
+        // 7. Marcar asignación como finalizada
+        assignment.setFinishedAt(java.time.LocalDateTime.now());
+
+        // 8. Guardar cambios
         patrolRepository.save(patrol);
+        assignmentRepository.save(assignment);
 
         return incidentRepository.save(incident);
     }

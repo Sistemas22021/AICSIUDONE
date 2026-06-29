@@ -67,6 +67,6 @@ public class AssignmentService {
     }
 
     public List<Assignment> getAllAssignments() {
-        return assignmentRepository.findAll();
+        return assignmentRepository.findByFinishedAtIsNull();
     }
 }

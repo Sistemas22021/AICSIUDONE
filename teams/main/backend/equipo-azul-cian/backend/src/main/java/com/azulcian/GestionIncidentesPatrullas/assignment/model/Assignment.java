@@ -27,6 +27,9 @@ public class Assignment {
     @Column(name = "assigned_at")
     private LocalDateTime assignedAt;
 
+    @Column(name = "finished_at")
+    private LocalDateTime finishedAt;
+
     public Assignment() {}
 
     public Assignment(Incident incident, Patrol patrol) {
@@ -63,5 +66,13 @@ public class Assignment {
 
     public LocalDateTime getAssignedAt() {
         return assignedAt;
+    }
+
+    public LocalDateTime getFinishedAt() {
+        return finishedAt;
+    }
+
+    public void setFinishedAt(LocalDateTime finishedAt) {
+        this.finishedAt = finishedAt;
     }
 }

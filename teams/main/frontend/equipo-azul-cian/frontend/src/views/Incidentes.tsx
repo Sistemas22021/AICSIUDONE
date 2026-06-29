@@ -64,16 +64,27 @@ const Incidentes: React.FC = () => {
     id: number,
     status: IncidentStatus
   ): Promise<void> => {
-    const res = await fetch(
-      `http://localhost:8080/api/incidents/${id}/status`,
-      {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ status })
-      }
-    );
+    let res: Response;
+
+    // Si el nuevo estado es CLOSED, usar el endpoint especializado
+    // que también libera la patrulla y finaliza la asignación
+    if (status === 'CLOSED') {
+      res = await fetch(
+        `http://localhost:8080/api/incidents/${id}/close`,
+        { method: 'PATCH' }
+      );
+    } else {
+      res = await fetch(
+        `http://localhost:8080/api/incidents/${id}/status`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ status })
+        }
+      );
+    }
 
     const updated: Incident = await res.json();
 
