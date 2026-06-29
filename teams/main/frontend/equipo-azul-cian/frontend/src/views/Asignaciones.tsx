@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './Asignaciones.css';
+import { fetchWithRetry } from '../utils/fetchWithRetry';
 
 interface Incident {
   id: number;
@@ -35,9 +36,9 @@ const Asignaciones: React.FC = () => {
     try {
       setLoading(true);
       const [resIncidents, resPatrols, resAssignments] = await Promise.all([
-        fetch('http://localhost:8080/api/incidents'),
-        fetch('http://localhost:8080/api/patrols'),
-        fetch('http://localhost:8080/api/assignments')
+        fetchWithRetry('http://localhost:8080/api/incidents'),
+        fetchWithRetry('http://localhost:8080/api/patrols'),
+        fetchWithRetry('http://localhost:8080/api/assignments')
       ]);
 
       if (!resIncidents.ok || !resPatrols.ok || !resAssignments.ok) {

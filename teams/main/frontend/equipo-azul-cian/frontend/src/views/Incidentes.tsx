@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import IncidentsModal from '../components/incident/IncidentModal';
+import { fetchWithRetry } from '../utils/fetchWithRetry';
 
 type IncidentStatus = 'ACTIVE' | 'IN_PROGRESS' | 'CLOSED';
 
@@ -28,7 +29,7 @@ const Incidentes: React.FC = () => {
     try {
       setLoading(true);
 
-      const res = await fetch(
+      const res = await fetchWithRetry(
         'http://localhost:8080/api/incidents'
       );
 

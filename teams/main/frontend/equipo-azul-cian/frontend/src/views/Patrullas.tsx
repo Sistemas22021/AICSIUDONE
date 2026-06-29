@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { Patrol, PatrolStatus } from '../types/patrol';
 import MapView from '../components/map/MapView';
+import { fetchWithRetry } from '../utils/fetchWithRetry';
 
 interface NewPatrol {
   code: string;
@@ -35,7 +36,7 @@ const Patrullas: React.FC = () => {
   const fetchPatrols = async (): Promise<void> => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:8080/api/patrols');
+      const response = await fetchWithRetry('http://localhost:8080/api/patrols');
       if (!response.ok) {
         throw new Error('Error al obtener la lista de patrullas');
       }
