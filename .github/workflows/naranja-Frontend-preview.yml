@@ -2,12 +2,12 @@ name: Naranja - Frontend Deploy Dev
 
 on:
   push:
-    branches: [ dev_equipo-naranja ]
+    branches: [ naranja-dev/main ]
     paths:
       - 'teams/naranja/Frontend/**'
       
   pull_request:
-    branches: [ dev_equipo-naranja ]
+    branches: [ naranja-dev/main ]
     paths:
       - 'teams/naranja/Frontend/**'
 

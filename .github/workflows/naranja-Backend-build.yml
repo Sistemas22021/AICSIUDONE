@@ -2,11 +2,11 @@ name: Naranja - Backend Build Dev
 
 on:
   push:
-    branches: [ dev_equipo-naranja ]
+    branches: [ naranja-dev/main ]
     paths:
       - 'teams/naranja/Backend/**'
   pull_request:
-    branches: [ dev_equipo-naranja ]
+    branches: [ naranja-dev/main ]
     paths:
       - 'teams/naranja/Backend/**'
 

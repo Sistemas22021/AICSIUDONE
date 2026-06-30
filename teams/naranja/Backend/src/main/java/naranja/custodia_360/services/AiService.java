@@ -25,7 +25,11 @@ public class AiService {
                  <transcripcion_original>
                  %s
                  </transcripcion_original>
-           \s""".formatted(originalTranscription);
+           \s""".formatted(originalTranscription
+                .replaceAll("\\s+", " ") // Reemplaza múltiples espacios/saltos de línea por un solo espacio
+                .replace("\"", "\\\"")   // Escapa comillas por si acaso
+                .trim());
+
         return chatClient.prompt()
                 .user(systemPrompt)
                 .call()
