@@ -2,6 +2,7 @@ package naranja.custodia_360.exception;
 
 import com.google.genai.errors.ClientException;
 import naranja.custodia_360.exception.dto.ErrorResponse;
+import naranja.custodia_360.exception.strategy.ExceptionMappingStrategy;
 import naranja.custodia_360.exception.type.ExternalProviderException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,92 +10,71 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 import java.net.UnknownHostException;
+import java.util.List;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+    private final List<ExceptionMappingStrategy> strategies;
+
+    // Spring inyecta automaticamente todas las clases que implementen ExceptionMappingStrategy
+    public GlobalExceptionHandler(List<ExceptionMappingStrategy> strategies) {
+        this.strategies = strategies;
+    }
 
     /**
-     * Intercepta las excepciones en tiempo de ejecucion genéricas que lanza Spring AI
-     * para extraer la causa real si proviene de Gemini.
+     * Capturador unificado para RuntimeException. Desempaqueta y busca una estrategia que aplique.
      */
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException ex) {
+
+        // 1. Intentamos verificar si existe una estrategia para la excepción tal y como llegó
+        for (ExceptionMappingStrategy strategy : strategies) {
+            if (strategy.canHandle(ex)) {
+                return strategy.handle(ex);
+            }
+        }
+
+        // 2. Si no, buscamos la causa raíz profunda (para los envoltorios de Spring AI)
         Throwable rootCause = ex;
         while (rootCause.getCause() != null) {
             rootCause = rootCause.getCause();
         }
 
-        // Si la causa raíz real es el error de credenciales de Google
-        if (rootCause instanceof ClientException clientEx) {
-            return handleGoogleClientException(clientEx);
+        // 3. Evaluamos si hay una estrategia para esa causa raíz
+        for (ExceptionMappingStrategy strategy : strategies) {
+            if (strategy.canHandle(rootCause)) {
+                return strategy.handle(rootCause);
+            }
         }
 
-        // Si la causa raíz real es que se fue el internet
-        if (rootCause instanceof UnknownHostException unknownHostEx) {
-            return handleUnknownHostException(unknownHostEx);
-        }
-
-        // Si es cualquier otra RuntimeException que no nos interesa, la dejamos pasar a la red de seguridad
+        // Si ninguna estrategia de nuestro sistema la reconoce, va a la red de seguridad final (500)
         throw ex;
     }
 
     /**
-     * Caso 1: Captura la falta de internet o caida del servidor de Google.
-     * Intercepta UnknownHostException cuando no se puede resolver el dominio de Gemini.
+     * Mantenemos este aqui de forma directa por ser una excepcion nativa del ciclo de Spring Web MVC
      */
-    @ExceptionHandler(UnknownHostException.class)
-    public ResponseEntity<ErrorResponse> handleUnknownHostException(UnknownHostException ex) {
-        HttpStatus status = HttpStatus.BAD_GATEWAY; // Codigo 502: El servidor externo no es alcanzable
-        return buildResponse(status, "No se pudo establecer conexion con el proveedor de IA (Gemini). Verifique la conexion a internet del servidor.");
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<ErrorResponse> handleMissingServletRequestPartException(MissingServletRequestPartException ex) {
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+        String userMessage = String.format("Falta un componente requerido en la peticion: '%s'", ex.getRequestPartName());
+        return new ResponseEntity<>(new ErrorResponse(status.value(), status.getReasonPhrase(), userMessage), status);
     }
 
     /**
-     * Caso 2: Captura errores directos del SDK de Google GenAI (como la API Key invalida).
-     */
-    @ExceptionHandler(ClientException.class)
-    public ResponseEntity<ErrorResponse> handleGoogleClientException(ClientException ex) {
-        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR; // Codigo 500
-        String userMessage = "Error en la configuracion del servicio de IA.";
-
-        // Analizamos el mensaje de la consola para dar una respuesta semantica
-        if (ex.getMessage() != null && ex.getMessage().contains("API key not valid")) {
-            status = HttpStatus.UNAUTHORIZED; // Codigo 401
-            userMessage = "La credencial de acceso (API Key) para el servicio de Gemini es invalida o ha expirado.";
-        }
-
-        return buildResponse(status, userMessage);
-    }
-
-    /**
-     * Captura nuestra excepcion personalizada en caso de que manejemos el error manualmente en el service.
-     */
-    @ExceptionHandler(ExternalProviderException.class)
-    public ResponseEntity<ErrorResponse> handleExternalProviderException(ExternalProviderException ex) {
-        return buildResponse(ex.getStatus(), ex.getMessage());
-    }
-
-    /**
-     * Red de seguridad para cualquier otro error no mapeado.
+     * Red de seguridad final para cualquier desastre no controlado
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleAllUncaughtExceptions(Exception ex) {
-        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
         log.error("Ocurrio un error no controlado en el backend: ", ex);
-
-        return buildResponse(status, "Ocurrio un error inesperado en el servidor. Por favor, intente mas tarde.");
-    }
-
-    private ResponseEntity<ErrorResponse> buildResponse(HttpStatus status, String message) {
-        ErrorResponse errorResponse = new ErrorResponse(
-                status.value(),
-                status.getReasonPhrase(),
-                message
-        );
-        return new ResponseEntity<>(errorResponse, status);
+        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
+        return new ResponseEntity<>(new ErrorResponse(status.value(), status.getReasonPhrase(),
+                "Ocurrio un error inesperado en el servidor. Por favor, intente mas tarde."), status);
     }
 
 }
