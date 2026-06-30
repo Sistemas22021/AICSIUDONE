@@ -1,4 +1,4 @@
-package naranja.custodia_360;
+package naranja.custodia_360.configs;
 
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.annotation.Bean;

@@ -1,5 +1,6 @@
 package naranja.custodia_360.controllers;
 
+import naranja.custodia_360.exception.type.BadRequestException;
 import naranja.custodia_360.models.Testimony;
 import naranja.custodia_360.services.AiService;
 import naranja.custodia_360.services.TestimonyService;
@@ -26,16 +27,18 @@ public class TestimonyController {
     }
 
     @PostMapping(consumes = "multipart/form-data")
-    public ResponseEntity<?> registerTestimony(
+    public ResponseEntity<Testimony> registerTestimony(
             @RequestParam("audio") MultipartFile audio,
             @RequestParam("transcription") String originalTranscription
     ) throws IOException {
 
-        if (audio.isEmpty()) {
-            return ResponseEntity.badRequest().body("El archivo de audio no puede estar vacío.");
+        // Validaciones de cliente con su excepción semántica correcta (400 Bad Request)
+        if (audio == null || audio.isEmpty()) {
+            throw new BadRequestException("El archivo de audio no puede estar vacío y es requerido.");
         }
-        if (originalTranscription.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("La transcripción original no puede estar vacía.");
+
+        if (originalTranscription == null || originalTranscription.trim().isEmpty()) {
+            throw new BadRequestException("La transcripción original no puede estar vacía y es requerida.");
         }
 
         log.info(originalTranscription);
