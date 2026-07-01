@@ -30,6 +30,8 @@ export interface Vehiculo {
   color?: string;
   estado?: EstadoVehiculo;
   propietario?: Persona | null;
+  chasis?: string;
+  declaracion?: string;
 }
 
 export interface Ubicacion {

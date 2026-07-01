@@ -32,7 +32,21 @@ function Layout({ children }: { children: React.ReactNode }) {
 }
 
 function ProtectedRoutes() {
-  const { user } = useAuth();
+  const { user, cargando } = useAuth();
+
+  // Mientras se resuelve la sesion (importante en SSO: refresh asincrono),
+  // no decidir todavia para evitar parpadeo a /login.
+  if (cargando) {
+    return (
+      <div className="login-page">
+        <div className="login-box" style={{ textAlign: 'center' }}>
+          <div className="login-title">Nexo Criminal</div>
+          <p className="login-desc" style={{ marginTop: 12 }}>Verificando sesión...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!user) return <Navigate to="/login" replace />;
   return (
     <Layout>

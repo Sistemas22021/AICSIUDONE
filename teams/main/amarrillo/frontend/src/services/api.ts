@@ -4,6 +4,9 @@ import type {
   Relacion, UserSession, GrafoData, EstadoAlerta, PersonaDesaparecida,
   MensajeChat, RespuestaIA, FotoDesaparecida
 } from '../types';
+import { esSSO } from './authMode';
+import { getAccessToken } from './ssoAuth';
+
 
 const API_BASE = (import.meta.env.VITE_API_URL || '') + '/api/v1';
 
@@ -12,9 +15,11 @@ const api: AxiosInstance = axios.create({
   headers: { 'Content-Type': 'application/json' }
 });
 
-// Interceptor: adjunta el token JWT en cada peticion
+// Interceptor: adjunta el token JWT en cada peticion (segun el modo de auth)
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('nexo_token');
+  const token = esSSO()
+    ? getAccessToken()                       // SSO: token en memoria
+    : localStorage.getItem('nexo_token');    // Local: token en localStorage
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -65,6 +70,12 @@ export const sucesoService = {
     (await api.get('/sucesos', { params: tipo ? { tipo } : {} })).data,
   crear: async (s: Suceso): Promise<Suceso> => (await api.post('/sucesos', s)).data,
   eliminar: async (id: number): Promise<void> => { await api.delete(`/sucesos/${id}`); },
+};
+
+// ---- Robo completo (orquestador transaccional) ----
+export const roboCompletoService = {
+  registrar: async (datos: any): Promise<{ sucesoId: number; mensaje: string }> =>
+    (await api.post('/robo-completo', datos)).data,
 };
 
 // ---- Modus Operandi (catálogo) ----
