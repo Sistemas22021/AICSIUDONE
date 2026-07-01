@@ -10,6 +10,7 @@ import com.guardia.core.dto.response.InvolucradoResponse;
 import com.guardia.core.dto.response.LocalizacionResponse;
 import com.guardia.core.dto.response.EscenaResponse;
 import com.guardia.core.dto.response.VerificacionHashResponse;
+import com.guardia.core.dto.response.ExpedienteActivoResponse;
 import com.guardia.core.SelloExpedienteEvent;
 import com.guardia.core.exception.BusinessException;
 import com.guardia.core.exception.ResourceNotFoundException;
@@ -36,6 +37,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.Comparator;
 
 @Service
 @RequiredArgsConstructor
@@ -408,5 +411,77 @@ public class ExpedienteServiceImpl implements ExpedienteService {
                 integro ? "Integridad verificada: el expediente no fue alterado."
                         : "⚠ ALERTA: discrepancia detectada. El expediente fue modificado.",
                 expediente.getHashIntegridad(), recalculado);
+    }
+
+    private static final Set<EstadoExpediente> ESTADOS_INACTIVOS = Set.of(
+            EstadoExpediente.BORRADOR,
+            EstadoExpediente.CERRADO,
+            EstadoExpediente.SOLICITUD_DE_REAPERTURA,
+            EstadoExpediente.ARCHIVADO
+    );
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ExpedienteActivoResponse> obtenerParaPanel(String estatus, String sort) {
+        List<Expediente> expedientes;
+
+        if (estatus != null && !estatus.isBlank()) {
+            if ("ACTIVO".equalsIgnoreCase(estatus)) {
+                    expedientes = expedienteRepository.findAll().stream()
+                            .filter(e -> e.getEstadoExpediente() != null
+                                    && !ESTADOS_INACTIVOS.contains(e.getEstadoExpediente()))
+                            .toList();
+            } else {
+                EstadoExpediente estado = EstadoExpediente.valueOf(estatus.toUpperCase());
+                expedientes = expedienteRepository.findByEstadoExpediente(estado);
+            }
+        } else {
+            expedientes = expedienteRepository.findAll();
+        }
+
+        Comparator<Expediente> comparador = resolverComparador(sort);
+        if (comparador != null) {
+            expedientes = expedientes.stream().sorted(comparador).toList();
+        }
+
+        return expedientes.stream().map(this::toActivoResponse).toList();
+    }
+
+    private Comparator<Expediente> resolverComparador(String sort) {
+        if (sort == null || sort.isBlank()) return null;
+
+        String[] partes = sort.split(",");
+        String campo = partes[0].trim();
+        boolean desc = partes.length > 1 && "desc".equalsIgnoreCase(partes[1].trim());
+
+        Comparator<Expediente> comparador = switch (campo) {
+            case "fechaCreacion" -> Comparator.comparing(Expediente::getFechaCreacion,
+                    Comparator.nullsLast(Comparator.naturalOrder()));
+            case "fechaHecho" -> Comparator.comparing(Expediente::getFechaHecho,
+                    Comparator.nullsLast(Comparator.naturalOrder()));
+            case "folio" -> Comparator.comparing(Expediente::getFolio,
+                    Comparator.nullsLast(Comparator.naturalOrder()));
+            default -> null;
+        };
+
+        if (comparador == null) return null;
+        return desc ? comparador.reversed() : comparador;
+    }
+
+    private ExpedienteActivoResponse toActivoResponse(Expediente e) {
+        EstadoExpediente estado = e.getEstadoExpediente();
+        return new ExpedienteActivoResponse(
+                String.valueOf(e.getId()),
+                e.getFolio(),
+                e.getTipoDelito() != null ? e.getTipoDelito().getNombre() : null,
+                e.getSubtipoDelito() != null ? e.getSubtipoDelito().getNombre() : null,
+                e.getFechaHecho(),
+                e.getFechaCreacion(),
+                "",
+                estado != null ? estado.name() : "SIN_ESTADO",
+                false,
+                e.getLocalizacion() != null ? e.getLocalizacion().getMunicipio() : e.getMunicipio(),
+                e.getLocalizacion() != null ? e.getLocalizacion().getSector() : e.getSector()
+        );
     }
 }

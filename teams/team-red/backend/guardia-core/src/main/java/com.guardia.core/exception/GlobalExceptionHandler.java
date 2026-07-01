@@ -7,10 +7,15 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.List;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     private static final String ATTR_ERROR_DETAIL = "wife.logging.error-detail";
 
@@ -43,6 +48,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGeneral(Exception ex, HttpServletRequest request) {
+        log.error("Error inesperado en {} {}", request.getMethod(), request.getRequestURI(), ex); // ← nuevo
+
         String msg = "Error inesperado del sistema.";
         request.setAttribute(ATTR_ERROR_DETAIL, msg);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

@@ -42,6 +42,7 @@ public class Expediente {
     @Column(name = "agente_sellador_info", length = 500)
     private String agenteSelladorInfo;
 
+    @Column(columnDefinition = "TEXT")
     private String descripcionHecho;
 
     private LocalDateTime fechaHecho;

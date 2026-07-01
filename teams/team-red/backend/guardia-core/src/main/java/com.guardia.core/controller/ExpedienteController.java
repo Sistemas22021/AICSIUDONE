@@ -2,6 +2,7 @@ package com.guardia.core.controller;
 
 import com.guardia.core.dto.request.ExpedienteRequest;
 import com.guardia.core.dto.response.ExpedienteResponse;
+import com.guardia.core.dto.response.ExpedienteActivoResponse;
 import com.guardia.core.exception.ApiResponse;
 import com.guardia.core.service.ExpedienteService;
 import com.guardia.core.dto.response.VerificacionHashResponse;
@@ -11,11 +12,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
-@RequestMapping("/api/expedientes")
-@CrossOrigin(origins = "*")
+@RequestMapping("/api/v1/expedientes")
 @RequiredArgsConstructor
 /**
  * Controlador central para la gestión de expedientes.
@@ -45,5 +46,14 @@ public class ExpedienteController {
         @PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok("Verificación completada.",
             expedienteService.verificarIntegridad(id)));
+    }
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<ExpedienteActivoResponse>>> listar(
+            @RequestParam(required = false) String estatus,
+            @RequestParam(required = false) String sort) {
+
+        List<ExpedienteActivoResponse> expedientes = expedienteService.obtenerParaPanel(estatus, sort);
+        return ResponseEntity.ok(ApiResponse.ok("Expedientes obtenidos.", expedientes));
     }
 }

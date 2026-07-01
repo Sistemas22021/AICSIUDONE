@@ -34,23 +34,28 @@ export interface ExpedienteDetalleResponse {
 // ─── Expedientes activos ──────────────────────────────────────────────────────
 
 export type EstatusExpediente =
-    | 'ACTIVO'
-    | 'EN_PROCESO'
-    | 'SUSPENDIDO'
+    | 'BORRADOR'
+    | 'EN_VALIDACION'
+    | 'PROCESADO_Y_SELLADO'
+    | 'EN_REVISION'
+    | 'ASIGNADO_A_EQUIPO'
+    | 'INVESTIGACION_ACTIVA'
     | 'CERRADO'
+    | 'SOLICITUD_DE_REAPERTURA'
+    | 'ARCHIVADO'
 
 export interface ExpedienteActivo {
   id:                   string
   folioCOPP:            string
-  tipoDelito:           string
-  subtipoDelito:        string
-  fechaHecho:           string
+  tipoDelito:           string | null
+  subtipoDelito:        string | null
+  fechaHecho:           string | null
   fechaCreacion:        string
   investigadorAsignado: string
   estatus:              EstatusExpediente
   tieneAlertaPatron:    boolean
-  municipio:            string
-  sector:               string
+  municipio:            string | null
+  sector:               string | null
 }
 
 // ─── Payload de creación de incidente ────────────────────────────────────────

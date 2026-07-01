@@ -12,11 +12,18 @@ import type { SortCol } from '../hooks/useExpedientesFiltros'
 
 
 const ESTATUS_STYLES: Record<EstatusExpediente, { badge: string; dot: string; label: string }> = {
-  ACTIVO:     { badge: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40', dot: 'bg-emerald-400', label: 'Activo' },
-  EN_PROCESO: { badge: 'bg-amber-500/20   text-amber-400   border-amber-500/40',   dot: 'bg-amber-400',   label: 'En Proceso' },
-  SUSPENDIDO: { badge: 'bg-red-500/20     text-red-400     border-red-500/40',     dot: 'bg-red-400',     label: 'Suspendido' },
-  CERRADO:    { badge: 'bg-gray-500/20    text-gray-400    border-gray-500/40',    dot: 'bg-gray-400',    label: 'Cerrado' },
+  BORRADOR:                { badge: 'bg-gray-500/20    text-gray-400    border-gray-500/40',    dot: 'bg-gray-400',    label: 'Borrador' },
+  EN_VALIDACION:            { badge: 'bg-amber-500/20   text-amber-400   border-amber-500/40',   dot: 'bg-amber-400',   label: 'En Validación' },
+  ASIGNADO_A_EQUIPO:        { badge: 'bg-sky-500/20     text-sky-400     border-sky-500/40',     dot: 'bg-sky-400',     label: 'Asignado a Equipo' },
+  INVESTIGACION_ACTIVA:     { badge: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40', dot: 'bg-emerald-400', label: 'Investigación Activa' },
+  EN_REVISION:               { badge: 'bg-amber-500/20   text-amber-400   border-amber-500/40',   dot: 'bg-amber-400',   label: 'En Revisión' },
+  PROCESADO_Y_SELLADO:       { badge: 'bg-cyan-500/20    text-cyan-400    border-cyan-500/40',    dot: 'bg-cyan-400',    label: 'Sellado' },
+  SOLICITUD_DE_REAPERTURA:  { badge: 'bg-red-500/20     text-red-400     border-red-500/40',     dot: 'bg-red-400',     label: 'Solicitud de Reapertura' },
+  CERRADO:                  { badge: 'bg-gray-500/20    text-gray-400    border-gray-500/40',    dot: 'bg-gray-400',    label: 'Cerrado' },
+  ARCHIVADO:                { badge: 'bg-gray-500/20    text-gray-400    border-gray-500/40',    dot: 'bg-gray-400',    label: 'Archivado' },
 }
+
+const ESTADOS_INACTIVOS: EstatusExpediente[] = ['BORRADOR', 'CERRADO', 'SOLICITUD_DE_REAPERTURA', 'ARCHIVADO']
 
 function getEstiloEstatus(estatus: EstatusExpediente) {
   return ESTATUS_STYLES[estatus] ?? {
@@ -26,8 +33,9 @@ function getEstiloEstatus(estatus: EstatusExpediente) {
   }
 }
 
-function formatFecha(iso: string): string {
-  return new Date(iso + 'T00:00:00').toLocaleDateString('es-VE', {
+function formatFecha(iso: string | null): string {
+  if (!iso) return 'Sin fecha'
+  return new Date(iso).toLocaleDateString('es-VE', {
     day: '2-digit', month: '2-digit', year: 'numeric',
   })
 }
@@ -76,7 +84,7 @@ export const ExpedientesPanel = ({
 
   if (!isOpen) return null
 
-  const totalActivos = expedientes.filter(e => e.estatus === 'ACTIVO').length
+  const totalActivos = expedientes.filter(e => !ESTADOS_INACTIVOS.includes(e.estatus)).length
   const totalAlertas = expedientes.filter(e => e.tieneAlertaPatron).length
 
 
@@ -196,14 +204,19 @@ export const ExpedientesPanel = ({
             {/* Filtro estatus */}
             <div className="w-40">
               <NeonSelect
-                options={[
-                  { value: '',           label: 'Todos' },
-                  { value: 'ACTIVO',     label: 'Activo' },
-                  { value: 'EN_PROCESO', label: 'En Proceso' },
-                  { value: 'SUSPENDIDO', label: 'Suspendido' },
-                ]}
-                value={filtroEstatus}
-                onChange={e => setFiltroEstatus(e.target.value as EstatusExpediente | '')}
+                  options={[
+                    { value: '',                       label: 'Todos' },
+                    { value: 'EN_VALIDACION',          label: 'En Validación' },
+                    { value: 'ASIGNADO_A_EQUIPO',      label: 'Asignado a Equipo' },
+                    { value: 'INVESTIGACION_ACTIVA',   label: 'Investigación Activa' },
+                    { value: 'EN_REVISION',            label: 'En Revisión' },
+                    { value: 'PROCESADO_Y_SELLADO',    label: 'Sellado' },
+                    { value: 'SOLICITUD_DE_REAPERTURA',label: 'Solicitud de Reapertura' },
+                    { value: 'CERRADO',                label: 'Cerrado' },
+                    { value: 'ARCHIVADO',              label: 'Archivado' },
+                  ]}
+                  value={filtroEstatus}
+                  onChange={e => setFiltroEstatus(e.target.value as EstatusExpediente | '')}
               />
             </div>
 
@@ -289,8 +302,10 @@ export const ExpedientesPanel = ({
 
                       {/* Tipo + subtipo */}
                       <td className="py-3 px-3">
-                        <div className="text-cyan-300 leading-tight">{exp.subtipoDelito}</div>
-                        <div className="text-[10px] text-cyan-600 mt-0.5">{exp.tipoDelito.split('—')[1]?.trim()}</div>
+                        <div className="text-cyan-300 leading-tight">{exp.subtipoDelito ?? 'Sin especificar'}</div>
+                        <div className="text-[10px] text-cyan-600 mt-0.5">
+                          {exp.tipoDelito ? (exp.tipoDelito.split('—')[1]?.trim() ?? exp.tipoDelito) : 'Sin tipo de delito'}
+                        </div>
                       </td>
 
                       {/* Fecha */}
@@ -311,7 +326,7 @@ export const ExpedientesPanel = ({
                         >
                           <span
                             className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${estiloEstatus.dot}`}
-                            style={exp.estatus === 'ACTIVO' ? { boxShadow: '0 0 5px rgba(0,255,136,0.6)' } : undefined}
+                            style={!ESTADOS_INACTIVOS.includes(exp.estatus)? { boxShadow: '0 0 5px rgba(0,255,136,0.6)' } : undefined}
                           />
                           {estiloEstatus.label}
                         </span>
