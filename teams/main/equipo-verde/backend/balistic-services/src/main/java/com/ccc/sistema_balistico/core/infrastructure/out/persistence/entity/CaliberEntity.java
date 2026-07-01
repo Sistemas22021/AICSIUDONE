@@ -11,6 +11,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class CaliberEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
