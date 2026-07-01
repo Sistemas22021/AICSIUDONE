@@ -48,7 +48,7 @@ public class BulletImpl implements BulletService {
         return BulletMapper.toDTO(bulletEntity);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public BulletDTO createBullet(BulletDTO bulletDTO, List<MultipartFile> files) {
         CaliberEntity caliber = caliberRepository.findById(bulletDTO.getCaliber()).orElseThrow(()-> new CaliberNotFound("Caliber Not Found"));
