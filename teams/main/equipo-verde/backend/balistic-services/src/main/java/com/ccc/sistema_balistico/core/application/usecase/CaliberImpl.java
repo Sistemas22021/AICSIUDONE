@@ -20,7 +20,7 @@ public class CaliberImpl implements CaliberService {
     @Override
     @Transactional(readOnly = true)
     public Page<CaliberDTO> searchCalibers(String query) {
-        if (query == null) throw new IllegalArgumentException("Query cannot be null");
+        if (query == null) query = "";
         PageRequest pageRequest = PageRequest.of(0, 10);
         Page<CaliberEntity> caliberEntities = caliberRepository.findByNameContainingIgnoreCaseAndIsDeleteFalse(query.trim(), pageRequest);
         return caliberEntities.map(CaliberMapper::toDTO);
