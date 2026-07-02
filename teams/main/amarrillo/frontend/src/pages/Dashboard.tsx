@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   alertaService, personaService, vehiculoService,
   sucesoService, engineService, ubicacionService,
+  desaparecidaService,
 } from '../services/api';
 import type { Alerta } from '../types';
 import { ModalConfiguracion } from '../components/Modales';
@@ -13,7 +14,7 @@ export default function Dashboard() {
   const nav = useNavigate();
   const [stats, setStats] = useState({
     personas: 0, vehiculos: 0, robados: 0,
-    sucesos: 0, ubicaciones: 0, sospechosas: 0, alertas: 0,
+    sucesos: 0, ubicaciones: 0, sospechosas: 0, alertas: 0, desaparecidas: 0,
   });
   const [alertas, setAlertas] = useState<Alerta[]>([]);
   const [msg, setMsg] = useState('');
@@ -23,13 +24,14 @@ export default function Dashboard() {
 
   const cargar = async () => {
     try {
-      const [pers, veh, robs, suc, ubis, al] = await Promise.all([
+      const [pers, veh, robs, suc, ubis, al, desap] = await Promise.all([
         personaService.listar().catch(() => []),
         vehiculoService.listar().catch(() => []),
         vehiculoService.listar('ROBADO').catch(() => []),
         sucesoService.listar().catch(() => []),
         ubicacionService.listar().catch(() => []),
         alertaService.listar(true).catch(() => []),
+        desaparecidaService.listar().catch(() => []),
       ]);
       setStats({
         personas: pers.length,
@@ -39,6 +41,7 @@ export default function Dashboard() {
         ubicaciones: ubis.length,
         sospechosas: ubis.filter((u) => u.nodoSospechoso).length,
         alertas: al.length,
+        desaparecidas: desap.length,
       });
       setAlertas(al.slice(0, 5));
     } catch (e) {
@@ -98,6 +101,17 @@ export default function Dashboard() {
           </div>
           <div className="stat-value">{stats.personas.toLocaleString('es-ES')}</div>
           <div className="stat-change muted">{t('Click para ver detalle')}</div>
+        </div>
+
+        <div className="stat-card danger" onClick={() => nav('/desaparecidas')} style={{ cursor: 'pointer' }}>
+          <div className="stat-card-top">
+            <span className="stat-label">{t('Personas desaparecidas')}</span>
+            <span className="stat-icon">
+              <span className="material-symbols-outlined">person_search</span>
+            </span>
+          </div>
+          <div className="stat-value danger">{stats.desaparecidas.toLocaleString('es-ES')}</div>
+          <div className="stat-change muted">{t('Casos registrados')}</div>
         </div>
 
         <div className="stat-card" onClick={() => nav('/vehiculos')} style={{ cursor: 'pointer' }}>
