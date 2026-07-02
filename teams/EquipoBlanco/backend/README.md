@@ -15,6 +15,214 @@
 
 ---
 
+## CI/CD — Pipeline
+
+### ¿Qué es CI/CD?
+
+**CI (Continuous Integration)**: cada vez que subes código a GitHub, el servidor de GitHub Actions descarga tu repo, compila, ejecuta tests y verifica que todo funciona. Si algo falla, te avisa.
+
+**CD (Continuous Deployment)**: después de pasar los tests, el código se despliega automáticamente a un entorno de producción.
+
+En este proyecto:
+- **Backend**: solo tiene CI (test + build sin deploy)
+- **Frontend**: tiene CI/CD completo (test + build + deploy a Vercel)
+
+### ¿Cómo funciona?
+
+#### 1. Los archivos del pipeline
+
+Los pipelines son archivos YAML dentro de `.github/workflows/`:
+
+| Pipeline | Archivo | Servicio |
+|---|---|---|
+| Backend | `.github/workflows/equipoblanco-prision-service.yml` | `prision-service` |
+| Frontend | `.github/workflows/equipoblanco-prison-web.yml` | `prison-web` |
+
+Cada archivo define:
+- **Cuándo** se activa (eventos + ramas + rutas)
+- **Qué** hacer (jobs con pasos)
+- **Dónde** ejecutarse (ubuntu-latest)
+
+#### 2. ¿Cuándo se activa?
+
+| Evento | Ramas | ¿Cuándo? |
+|---|---|---|
+| `push` (subir código) | `main`, `develop` | Cambios en la carpeta del servicio |
+| `pull_request` | `main`, `develop` | Cambios en la carpeta del servicio |
+| `workflow_dispatch` | Cualquiera | Manual desde GitHub.com |
+
+> **Importante**: si haces push a `main` pero cambias archivos de `main/`, NO se activa el pipeline de EquipoBlanco. Solo reacciona a cambios en `teams/EquipoBlanco/...`.
+
+#### 3. ¿Qué hace exactamente?
+
+**Backend** (solo CI, sin deploy):
+
+```
+Push → GitHub Actions →
+  1. Test: mvn test -B (Java 21, Maven, caché)
+  2. Build: mvn package -DskipTests -B → genera JAR → sube como artifact
+  [Se detiene aquí — NO hay deploy]
+```
+
+**Frontend** (CI/CD completo con deploy):
+
+```
+Push → GitHub Actions →
+  1. Test: npm ci → npm test (Node 20, Vitest)
+  2. Build & Deploy:
+     a. npm ci → npm run build
+     b. Vercel deploy:
+        - Si es develop → deploy preview
+        - Si es main → deploy producción
+```
+
+### Cómo hacer funcionar los pipelines (paso a paso)
+
+#### Requisitos iniciales
+
+1. El repositorio debe estar en GitHub
+2. Los archivos `.yml` deben estar en `.github/workflows/` (ya están creados)
+3. Configurar los Secrets en GitHub
+
+#### Configurar Secrets del Frontend (para deploy a Vercel)
+
+El pipeline del frontend necesita autenticarse en Vercel. Ve a:
+
+```
+GitHub → Settings → Secrets and variables → Actions → New repository secret
+```
+
+Agrega estos 4 secrets:
+
+| Secret | Valor | Dónde obtenerlo |
+|---|---|---|
+| `VERCEL_TOKEN` | `vcp_...` | https://vercel.com/account/tokens → Create token |
+| `VERCEL_ORG_ID` | ID del team | https://vercel.com → Dashboard → Settings → General → Team ID |
+| `VERCEL_PROJECT_ID_PRISON_WEB` | ID del proyecto | https://vercel.com → proyecto → Settings → General → Project ID |
+| `VITE_API_URL` | URL del backend | Ej: `https://e31a2aa6b01992.lhr.life` (túnel) o URL de producción |
+
+#### Probar los pipelines
+
+**Opción A: Automático (al hacer push)**
+
+```bash
+# Desde tu terminal local:
+cd C:\Users\Jeisi Rosales\Documents\SI\AICSIUDONE
+
+# Hacer cambios en backend
+# (ej: modificar un archivo Java)
+git add .
+git commit -m "fix: corregir validación"
+git push origin develop
+
+# Automáticamente GitHub Actions ejecuta el pipeline del backend
+```
+
+**Opción B: Manual (desde GitHub)**
+
+```
+1. Ir a https://github.com/TU_USER/AICSIUDONE/actions
+2. Seleccionar el workflow (ej: "[Equipo Blanco][Backend] Prision Service")
+3. Click "Run workflow"
+4. Seleccionar rama (develop o main)
+5. Click "Run workflow"
+```
+
+#### Ver resultados
+
+1. Ir a GitHub → Actions
+2. Ver el workflow en ejecución
+3. Click en el workflow → ver logs de cada job
+
+- ✅ Verde = pasó
+- ❌ Rojo = falló (click para ver el error)
+
+### Códigos completos para terminal
+
+#### Para activar el pipeline (subir cambios a GitHub)
+
+```bash
+# 1. Ir al repo
+cd C:\Users\Jeisi Rosales\Documents\SI\AICSIUDONE
+
+# 2. Ver qué cambió
+git status
+
+# 3. Agregar cambios
+git add .
+
+# 4. Commit
+git commit -m "descripción del cambio"
+
+# 5. Subir a develop (activa el pipeline)
+git push origin develop
+
+# 6. Cuando todo esté probado, subir a main (activa pipeline + deploy)
+git push origin main
+```
+
+#### Para deploy manual del frontend a Vercel (sin pipeline)
+
+```bash
+# 1. Ir al frontend
+cd C:\Users\Jeisi Rosales\Documents\SI\AICSIUDONE\teams\EquipoBlanco\frontend\prison-web
+
+# 2. Configurar variable de entorno en Vercel (si cambió la URL del túnel)
+vercel env rm VITE_API_GATEWAY_URL production
+vercel env add VITE_API_GATEWAY_URL production
+# Pegar la URL (ej: https://XXXX.lhr.life)
+
+# 3. Construir y desplegar
+vercel build --prod && vercel --prod --prebuilt --yes
+```
+
+#### Para exponeer backend local con túnel (cuando trabajas con Vercel)
+
+```bash
+# Terminal 1 - Iniciar backend
+cd C:\Users\Jeisi Rosales\Documents\SI\AICSIUDONE\teams\EquipoBlanco\backend\prision-service
+.\mvnw.cmd spring-boot:run
+
+# Terminal 2 - Iniciar túnel (después de que el backend esté arriba)
+ssh -R 80:localhost:8081 nokey@localhost.run
+# Te da una URL: https://XXXX.lhr.life
+
+# Terminal 3 (o la misma) - Actualizar Vercel con la nueva URL
+cd C:\Users\Jeisi Rosales\Documents\SI\AICSIUDONE\teams\EquipoBlanco\frontend\prison-web
+vercel env rm VITE_API_GATEWAY_URL production
+vercel env add VITE_API_GATEWAY_URL production
+vercel build --prod && vercel --prod --prebuilt --yes
+```
+
+> **Nota**: Cada vez que reinicias el túnel, la URL cambia. Debes actualizar la variable en Vercel y redeployear.
+
+### Resumen del flujo completo
+
+```
+Desarrollo local:
+  [Backend] .\mvnw.cmd spring-boot:run  →  http://localhost:8081
+  [Frontend] npm run dev                →  http://localhost:5173
+
+Cuando subes cambios a GitHub:
+  git push origin develop
+    → GitHub Actions ejecuta:
+       Backend:  Test → Build (JAR)
+       Frontend: Test → Build → Deploy a Vercel (preview)
+
+Cuando haces merge a main:
+  git push origin main
+    → GitHub Actions ejecuta:
+       Backend:  Test → Build (JAR)
+       Frontend: Test → Build → Deploy a Vercel (producción)
+
+Para que Vercel hable con tu backend local:
+  Terminal 1: .\mvnw.cmd spring-boot:run
+  Terminal 2: ssh -R 80:localhost:8081 nokey@localhost.run
+  Terminal 3: vercel build --prod && vercel --prod --prebuilt --yes
+```
+
+---
+
 ## Estructura de Carpetas
 
 ```
@@ -124,6 +332,25 @@ Los permisos se definen en `common/security/SecurityConfig.java`.
 1. Agregar el string del rol en `SecurityConfig.java` en los `hasRole(...)` correspondientes
 2. Agregar el rol a la lista `MOCK_USERS` en el frontend (`authContext.tsx` y `AuthGuard.tsx`)
 3. Sincronizar el rol en `ProtectedRoute` y en los filtros de `SidebarLayout`
+
+---
+
+## Desarrollo local
+
+```bash
+# Requisitos: Java 21, Maven
+
+# Compilar
+./mvnw clean compile
+
+# Ejecutar tests
+./mvnw test
+
+# Ejecutar servidor local (puerto 8081 por defecto)
+./mvnw spring-boot:run
+```
+
+El archivo `.env` en la raíz contiene las credenciales de base de datos para desarrollo local (no se sube al repo).
 
 ---
 

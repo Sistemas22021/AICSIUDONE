@@ -37,7 +37,7 @@ const ALL_MENU_ITEMS: (MenuItem & { roles?: UserRole[] })[] = [
     ] 
   },
   { 
-    label: 'Retorno temporal', 
+    label: 'Retorno', 
     to: '/internos/retorno-temporal', 
     roles: [
       'Oficial Penitenciario',

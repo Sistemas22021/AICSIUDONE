@@ -1,0 +1,47 @@
+name: "[Equipo Blanco][Backend] Prision Service"
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "teams/EquipoBlanco/backend/prision-service/**"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "teams/EquipoBlanco/backend/prision-service/**"
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: teams/EquipoBlanco/backend/prision-service
+
+jobs:
+  test:
+    name: "Test"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: temurin
+          cache: maven
+      - run: mvn test -B
+
+  build:
+    name: "Build"
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: temurin
+          cache: maven
+      - run: mvn package -DskipTests -B
+      - uses: actions/upload-artifact@v4
+        with:
+          name: prision-service-jar
+          path: teams/EquipoBlanco/backend/prision-service/target/*.jar

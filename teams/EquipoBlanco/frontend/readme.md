@@ -16,6 +16,232 @@
 
 ---
 
+## CI/CD — Pipeline
+
+### ¿Qué es CI/CD?
+
+**CI (Continuous Integration)**: cada vez que subes código a GitHub, GitHub Actions descarga tu repo, instala dependencias, ejecuta tests y verifica que todo funciona.
+
+**CD (Continuous Deployment)**: después de pasar los tests, el código se despliega automáticamente a Vercel.
+
+En este frontend: **CI/CD completo** — test → build → deploy a Vercel.
+
+### ¿Cómo funciona?
+
+#### 1. El archivo del pipeline
+
+```
+.github/workflows/equipoblanco-prison-web.yml
+```
+
+Define:
+- **Cuándo** se activa
+- **Qué** hacer (2 jobs: test + build-and-deploy)
+- **Dónde** (ubuntu-latest con Node 20)
+
+#### 2. ¿Cuándo se activa?
+
+| Evento | Ramas | Condición adicional |
+|---|---|---|
+| `push` (subir código) | `main`, `develop` | Cambios en `teams/EquipoBlanco/frontend/prison-web/**` |
+| `pull_request` | `main`, `develop` | Cambios en la misma ruta |
+| `workflow_dispatch` | Cualquiera | Manual desde GitHub.com |
+
+> Si cambias archivos del backend, NO se activa este pipeline. Cada servicio tiene su propio pipeline independiente.
+
+#### 3. ¿Qué hace exactamente?
+
+```
+Push a develop o main →
+  Job 1: "Test"
+    - checkout del repositorio
+    - setup Node 20 con caché de npm
+    - npm ci (instala dependencias exactas)
+    - npm test (Vitest + React Testing Library)
+    
+  Job 2: "Build & Deploy a Vercel" (solo si Test pasó Y es push, no PR)
+    - checkout
+    - setup Node 20 con caché
+    - npm ci
+    - npm run build (Vite compila a producción)
+      (inyecta VITE_API_URL desde secrets)
+    - Deploy a Vercel:
+      • Si es rama develop → vercel (preview)
+      • Si es rama main    → vercel --prod (producción)
+```
+
+### Secrets necesarios para el pipeline
+
+El pipeline necesita autenticarse en Vercel. Configúralos en:
+
+```
+GitHub → Settings → Secrets and variables → Actions → New repository secret
+```
+
+| Secret | Valor | ¿Para qué? |
+|---|---|---|
+| `VERCEL_TOKEN` | Token de Vercel | Autenticar el CLI de Vercel |
+| `VERCEL_ORG_ID` | ID del team en Vercel | Identificar la organización |
+| `VERCEL_PROJECT_ID_PRISON_WEB` | ID del proyecto en Vercel | Identificar el proyecto a desplegar |
+| `VITE_API_URL` | URL del backend | Ej: `https://e31a2aa6b01992.lhr.life` |
+
+#### Cómo obtener estos valores
+
+**VERCEL_TOKEN**: https://vercel.com/account/tokens → "Create Token" → copiar `vcp_...`
+
+**VERCEL_ORG_ID**: https://vercel.com → Dashboard → Settings → General → "Team ID"
+
+**VERCEL_PROJECT_ID**: https://vercel.com → proyecto `equipoblanco-prision-web` → Settings → General → "Project ID"
+
+### Códigos completos para terminal
+
+#### Activar el pipeline (subir cambios a GitHub)
+
+```bash
+# 1. Ir al repo
+cd C:\Users\Jeisi Rosales\Documents\SI\AICSIUDONE
+
+# 2. Verificar cambios
+git status
+
+# 3. Agregar, commitear y subir
+git add .
+git commit -m "descripción del cambio"
+git push origin develop
+# → Automáticamente GitHub Actions ejecuta Test → Build → Deploy preview a Vercel
+
+# Cuando quieras producción:
+git push origin main
+# → Test → Build → Deploy --prod a Vercel
+```
+
+#### Ver el resultado
+
+```
+1. Ir a https://github.com/TU_USER/AICSIUDONE/actions
+2. Click en el workflow en ejecución "[Equipo Blanco][Frontend] Prison Web"
+3. Ver los logs de cada job
+```
+
+#### Deploy manual a Vercel (sin usar GitHub Actions)
+
+```bash
+# 1. Ir al frontend
+cd C:\Users\Jeisi Rosales\Documents\SI\AICSIUDONE\teams\EquipoBlanco\frontend\prison-web
+
+# 2. (Si cambió la URL del túnel) Actualizar variable en Vercel
+vercel env rm VITE_API_GATEWAY_URL production
+vercel env add VITE_API_GATEWAY_URL production
+# Pegar la URL del túnel activo, ej: https://XXXX.lhr.life
+
+# 3. Reconstruir y redeployear
+vercel build --prod && vercel --prod --prebuilt --yes
+```
+
+#### Flujo completo para trabajar con backend local + Vercel
+
+```bash
+# Terminal 1 - Backend (siempre abierta)
+cd C:\Users\Jeisi Rosales\Documents\SI\AICSIUDONE\teams\EquipoBlanco\backend\prision-service
+.\mvnw.cmd spring-boot:run
+
+# Terminal 2 - Túnel (siempre abierta, después de que backend inicie)
+ssh -R 80:localhost:8081 nokey@localhost.run
+# Copiar la URL que aparece: https://XXXX.lhr.life
+
+# Terminal 3 - Configurar Vercel con la nueva URL y redeploy
+cd C:\Users\Jeisi Rosales\Documents\SI\AICSIUDONE\teams\EquipoBlanco\frontend\prison-web
+vercel env rm VITE_API_GATEWAY_URL production
+vercel env add VITE_API_GATEWAY_URL production
+# Pegar la URL del túnel
+vercel build --prod && vercel --prod --prebuilt --yes
+
+# Terminal 4 - Desarrollo local (opcional)
+npm run dev
+# Abrir http://localhost:5173
+```
+
+> **Importante**: Cada vez que reinicias el túnel SSH, la URL cambia. Debes repetir los pasos de configuración de Vercel.
+
+### Resumen
+
+| Situación | Comando |
+|---|---|
+| Subir cambios y activar pipeline | `git push origin develop` |
+| Deploy manual a Vercel | `vercel build --prod && vercel --prod --prebuilt --yes` |
+| Actualizar URL del backend en Vercel | `vercel env rm VITE_API_GATEWAY_URL production` + `vercel env add VITE_API_GATEWAY_URL production` |
+| Iniciar túnel para backend local | `ssh -R 80:localhost:8081 nokey@localhost.run` |
+| Desarrollo local | `npm run dev` |
+| Tests locales | `npm test` |
+
+---
+
+## Túnel ngrok (front en Vercel + backend local)
+
+Para que el frontend desplegado en Vercel pueda conectar a tu backend local:
+
+```bash
+# 1. Iniciar backend
+cd teams/EquipoBlanco/backend/prision-service
+./mvnw spring-boot:run
+
+# 2. Exponer con ngrok (nueva terminal)
+ngrok http 8081
+# → https://XXXX.ngrok-free.app
+
+# 3. Configurar en Vercel
+cd teams/EquipoBlanco/frontend/prison-web
+vercel env rm VITE_API_GATEWAY_URL production
+vercel env add VITE_API_GATEWAY_URL production
+# Pegar: https://XXXX.ngrok-free.app
+
+# 4. Redeploy
+vercel build --prod && vercel --prod --prebuilt --yes
+```
+
+> El túnel solo funciona mientras ngrok esté corriendo en la terminal. Al cerrarlo, la URL deja de responder.
+
+---
+
+## Flujo de trabajo recomendado
+
+| Situación | Frontend | Backend | ¿Pipeline? |
+|---|---|---|---|
+| Desarrollo diario | `npm run dev` (local) | `./mvnw spring-boot:run` | No |
+| Prueba con datos reales desde Vercel | Vercel + ngrok | `./mvnw spring-boot:run` + `ngrok http 8081` | Solo CI |
+| Deploy a producción | Vercel (main) | Backend desplegado (futuro) | CI/CD completo |
+
+---
+
+## Despliegue manual a Vercel
+
+Sin usar el pipeline de GitHub:
+
+```bash
+cd teams/EquipoBlanco/frontend/prison-web
+vercel --prod
+```
+
+La primera vez pide configuración del proyecto. Las siguientes veces despliega automáticamente.
+
+---
+
+## Estructura de Carpetas
+
+| Capa | Tecnología |
+|------|-----------|
+| Framework | React 19 |
+| Lenguaje | TypeScript (ES2023) |
+| Build Tool | Vite 8 + Rolldown |
+| Estilos | Tailwind CSS 3 + CSS Modules |
+| Enrutamiento | React Router DOM 7 |
+| HTTP Client | Axios |
+| Iconos | Lucide React |
+| Linter | ESLint 10 + TypeScript ESLint |
+| Componentes externos | `@cell-component` (librería react privada) |
+
+---
+
 ## Estructura de Carpetas
 
 ```
