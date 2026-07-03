@@ -3,6 +3,7 @@ import IncidentsModal from '../components/incident/IncidentModal';
 import { fetchWithRetry } from '../utils/fetchWithRetry';
 
 type IncidentStatus = 'ACTIVE' | 'IN_PROGRESS' | 'CLOSED';
+type IncidentFilterStatus = 'ALL' | 'ACTIVE' | 'IN_PROGRESS' | 'CLOSED';
 
 interface Incident {
   id: number;
@@ -12,6 +13,9 @@ interface Incident {
   longitude: number;
   status: IncidentStatus;
   priority: string;
+  createdAt: string;
+  updatedAt?: string;
+  closedAt?: string;
 }
 
 const Incidentes: React.FC = () => {
@@ -24,6 +28,8 @@ const Incidentes: React.FC = () => {
 
   const [isModalOpen, setIsModalOpen] =
     useState<boolean>(false);
+
+  const [filter, setFilter] = useState<IncidentFilterStatus>('ALL');
 
   const fetchIncidents = async (): Promise<void> => {
     try {
@@ -65,38 +71,48 @@ const Incidentes: React.FC = () => {
     id: number,
     status: IncidentStatus
   ): Promise<void> => {
-    let res: Response;
+    try {
+      let res: Response;
 
-    // Si el nuevo estado es CLOSED, usar el endpoint especializado
-    // que también libera la patrulla y finaliza la asignación
-    if (status === 'CLOSED') {
-      res = await fetch(
-        `http://localhost:8080/api/incidents/${id}/close`,
-        { method: 'PATCH' }
+      // Si el nuevo estado es CLOSED, usar el endpoint especializado
+      // que también libera la patrulla y finaliza la asignación
+      if (status === 'CLOSED') {
+        res = await fetch(
+          `http://localhost:8080/api/incidents/${id}/close`,
+          { method: 'PATCH' }
+        );
+      } else {
+        res = await fetch(
+          `http://localhost:8080/api/incidents/${id}/status`,
+          {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status })
+          }
+        );
+      }
+
+      const updated: Incident = await res.json();
+
+      setIncidents((prev) =>
+        prev.map((i) =>
+          i.id === id ? updated : i
+        )
       );
-    } else {
-      res = await fetch(
-        `http://localhost:8080/api/incidents/${id}/status`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ status })
-        }
-      );
+
+      setSelectedIncident(updated);
+    } catch (err) {
+      console.error('Error al actualizar el estado:', err);
     }
-
-    const updated: Incident = await res.json();
-
-    setIncidents((prev) =>
-      prev.map((i) =>
-        i.id === id ? updated : i
-      )
-    );
-
-    setSelectedIncident(updated);
   };
+
+  // Filtrado local en base al estado seleccionado
+  const filteredIncidents =
+    filter === 'ALL'
+      ? incidents
+      : incidents.filter((i) => i.status === filter);
 
   return (
     <div
@@ -151,6 +167,33 @@ const Incidentes: React.FC = () => {
         </button>
       </div>
 
+      {/* CONTROLES DE FILTRADO */}
+      <div style={{ display: 'flex', gap: 10 }}>
+        {([ 'ALL', 'ACTIVE', 'IN_PROGRESS', 'CLOSED' ] as IncidentFilterStatus[]).map((status) => (
+          <button
+            key={status}
+            onClick={() => setFilter(status)}
+            style={{
+              padding: '8px 12px',
+              borderRadius: 8,
+              border: '1px solid #1f2937',
+              cursor: 'pointer',
+              background: filter === status ? '#dc2626' : '#111827',
+              color: '#fff',
+              fontWeight: filter === status ? 600 : 400
+            }}
+          >
+            {status === 'ALL'
+              ? 'Todos'
+              : status === 'ACTIVE'
+              ? 'Activos'
+              : status === 'IN_PROGRESS'
+              ? 'En Proceso'
+              : 'Cerrados'}
+          </button>
+        ))}
+      </div>
+
       <div
         style={{
           display: 'flex',
@@ -200,12 +243,13 @@ const Incidentes: React.FC = () => {
                   <th style={thStyle}>ID</th>
                   <th style={thStyle}>Tipo</th>
                   <th style={thStyle}>Ubicación</th>
+                  <th style={thStyle}>Fecha</th>
                   <th style={thStyle}>Estado</th>
                 </tr>
               </thead>
 
               <tbody>
-                {incidents.map((i) => (
+                {filteredIncidents.map((i) => (
                   <tr
                     key={i.id}
                     onClick={() =>
@@ -231,6 +275,10 @@ const Incidentes: React.FC = () => {
 
                     <td style={tdStyle}>
                       {i.latitude.toFixed(4)}, {i.longitude.toFixed(4)}
+                    </td>
+
+                    <td style={tdStyle}>
+                      {new Date(i.createdAt).toLocaleString()}
                     </td>
 
                     <td style={tdStyle}>
@@ -327,15 +375,43 @@ const Incidentes: React.FC = () => {
 
             <div style={{ marginTop: 20 }}>
               <span style={labelStyle}>
-                UBICACIÓN
+                FECHA DE CREACIÓN
               </span>
 
               <p style={textStyle}>
-                📍 {selectedIncident.latitude.toFixed(4)},
-                  {' '}
-                {selectedIncident.longitude.toFixed(4)}
+                {new Date(
+                  selectedIncident.createdAt
+                ).toLocaleString()}
               </p>
             </div>
+
+            <div style={{ marginTop: 20 }}>
+              <span style={labelStyle}>
+                ÚLTIMA ACTUALIZACIÓN
+              </span>
+
+              <p style={textStyle}>
+                {selectedIncident.updatedAt
+                  ? new Date(
+                      selectedIncident.updatedAt
+                    ).toLocaleString()
+                  : 'Sin actualizaciones'}
+              </p>
+            </div>
+
+            {selectedIncident.closedAt && (
+              <div style={{ marginTop: 20 }}>
+                <span style={labelStyle}>
+                  FECHA DE CIERRE
+                </span>
+
+                <p style={textStyle}>
+                  {new Date(
+                    selectedIncident.closedAt
+                  ).toLocaleString()}
+                </p>
+              </div>
+            )}
 
             <div style={{ marginTop: 20 }}>
               <span style={labelStyle}>

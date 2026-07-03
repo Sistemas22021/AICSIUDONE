@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import MapView from '../components/map/MapView';
 import type { Incident } from '../types/incident';
 import type { Patrol } from '../types/patrol';
+
+import { createMapAdapter } from '../adapters/MapAdapterFactory';
 
 const Mapa: React.FC = () => {
   const [incidents, setIncidents] = useState<Incident[]>([]);
@@ -43,6 +44,11 @@ const Mapa: React.FC = () => {
     void fetchData();
   }, []);
 
+  // ==========================
+  // ADAPTER DINÁMICO (.env)
+  // ==========================
+  const mapAdapter = createMapAdapter();
+
   return (
     <div>
       <h1 style={{ marginBottom: 8, fontSize: '2rem', fontWeight: 600 }}>
@@ -65,9 +71,11 @@ const Mapa: React.FC = () => {
         </div>
       )}
 
-      {!loading && (
-        <MapView incidents={incidents} patrols={patrols} />
-      )}
+      {!loading &&
+        mapAdapter.render({
+          incidents,
+          patrols
+        })}
     </div>
   );
 };

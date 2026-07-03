@@ -10,7 +10,7 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "target": "ESNext",
-    "types": [],
+    "types": ["vite/client"],
 
     // Other Outputs
     "sourceMap": true,
