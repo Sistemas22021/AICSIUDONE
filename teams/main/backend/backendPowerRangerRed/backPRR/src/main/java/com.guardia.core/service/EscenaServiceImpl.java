@@ -1,6 +1,7 @@
 package com.guardia.core.service;
 
 import com.guardia.core.dto.request.EscenaRequest;
+import com.guardia.core.dto.request.FirmarPasoRequest;
 import com.guardia.core.dto.response.EscenaResponse;
 import com.guardia.core.dto.response.EscenaNegativaResponse;
 import com.guardia.core.dto.response.EvidenciaResponse;
@@ -18,6 +19,7 @@ import com.guardia.core.repository.EscenaRepository;
 import com.guardia.core.repository.ExpedienteRepository;
 import com.guardia.core.repository.UsuarioRepository;
 import com.guardia.core.service.EscenaService;
+import com.guardia.core.service.FirmaChecklistService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +40,7 @@ public class EscenaServiceImpl implements EscenaService {
     private final ExpedienteRepository expedienteRepository;
     private final UsuarioRepository usuarioRepository;
     private final EscenaChecklistRepository escenaChecklistRepository;
+    private final FirmaChecklistService firmaChecklistService;
 
     @Override
     public EscenaResponse crear(EscenaRequest request) {
@@ -297,5 +300,22 @@ public class EscenaServiceImpl implements EscenaService {
                         p.getFechaCierre()
                 ))
                 .toList();
+    }
+
+    @Override
+    public EscenaResponse firmarYAvanzarPaso(Long escenaId, FirmarPasoRequest request) {
+        // 1. Obtener el paso actual (lanza BusinessException si ya está completo)
+        Escena escena = findById(escenaId);
+        EscenaChecklist pasoActual = obtenerPasoActual(escena);
+        if (pasoActual == null) {
+            throw new BusinessException("El checklist ya está completado. No hay pasos pendientes de firma.");
+        }
+
+        // 2. Delegar la validación del PIN y el registro de la firma al servicio especializado
+        //    Si el PIN falla, FirmaChecklistService lanza BusinessException, el paso NO avanza
+        firmaChecklistService.firmarPaso(pasoActual.getId(), request);
+
+        // 3. PIN correcto: avanzar
+        return avanzarPaso(escenaId);
     }
 }
