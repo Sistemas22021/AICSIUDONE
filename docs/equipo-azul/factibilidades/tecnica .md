@@ -10,19 +10,18 @@ Para el desarrollo del sistema se propone el uso de las siguientes tecnologías:
 
 * **Backend:** Java con Spring Boot, para la lógica del negocio y gestión de servicios.
 * **Frontend:** TypeScript con React, para la construcción de la interfaz del sistema.
-* **Base de datos:** PostgreSQL, para el almacenamiento de incidentes, patrullas, asignaciones e historial operativo.
-* **Comunicación en tiempo real:** WebSockets implementados mediante NestJS, para la sincronización de estados e información operativa.
-* **Geolocalización:** API de Google Maps para registro georreferenciado y visualización de incidentes.
+* **Base de datos:** Supabase, utilizada para el almacenamiento y gestión de la información relacionada con incidentes, patrullas y asignaciones.
+* **Geolocalización y visualización cartográfica:** React Leaflet junto con OpenStreetMap para la representación geográfica de incidentes y patrullas dentro del mapa interactivo. Adicionalmente, la arquitectura contempla la integración de la API de Google Maps como proveedor complementario de servicios geográficos.
 * **Automatización y procesamiento:** Python para scripts auxiliares y procesamiento complementario.
 
 ## Software de desarrollo
 
 Para el desarrollo del sistema se requiere el uso de las siguientes herramientas:
 
-* IntelliJ IDEA o Visual Studio Code.
+* IntelliJ IDEA, Visual Studio Code o Google Antigravity IDE.
 * Java JDK.
 * Node.js y npm.
-* PostgreSQL.
+* Supabase.
 * Git y GitHub para control de versiones.
 * Postman para pruebas de servicios.
 * Docker (opcional para pruebas y despliegue).
@@ -44,10 +43,10 @@ Para la puesta en marcha del sistema se requiere:
 
 * Servidor o servicio de hosting para desplegar la aplicación.
 * Servidor de aplicaciones compatible con Spring Boot.
-* Instancia de PostgreSQL para operación del sistema.
+* Proyecto y servicios habilitados en Supabase para almacenamiento de datos.
 * Navegador web actualizado para acceso de usuarios.
-* Servicios habilitados de Google Maps API.
-* Servicios WebSocket para comunicación en tiempo real.
+* Servicios de geolocalización y mapas habilitados.
+* Conexión a internet para la sincronización de la información operativa.
 
 ## Capacidad técnica del equipo
 

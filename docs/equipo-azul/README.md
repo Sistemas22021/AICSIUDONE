@@ -7,19 +7,26 @@ El equipo Azul tiene como objetivo el desarrollo de un sistema de gestión de in
 ## Casos de Uso Principales
 
 ### CU-01: Registrar Incidente
-- El sistema permite registrar un incidente georreferenciado mediante integración con Google Maps.
+- El sistema permite registrar un incidente georreferenciado mediante integración con servicios de mapas.
 - Se capturan las coordenadas exactas del lugar del evento.
 - La información llega al centro de mando para su procesamiento.
 
 ### CU-02: Gestionar Patrullas
 - El sistema recibe información de disponibilidad de cada unidad patrullera.
-- Se registra y actualiza el estado de cada patrulla (disponible / no disponible).
-- Permite asignar patrullas según proximidad y disponibilidad al incidente reportado.
+- Se registra y actualiza el estado de cada patrulla (disponible / en ruta / ocupada / fuera de servicio).
+- Mantiene información actualizada para apoyar las decisiones de asignación operativa.
 
-### CU-03: Actualización de Estado y Cierre de Incidente
-- El sistema permite actualizar el estado de un incidente en curso.
-- Se registra el cierre del incidente una vez atendido.
-- Se mantiene historial del ciclo de vida completo del incidente.
+### CU-03: Asignación Operativa
+- Se selecciona el incidente a atender.
+- Se selecciona la patrulla disponible más adecuada.
+- Se genera la asignación correspondiente.
+- Se actualizan los estados relacionados con la operación.
+
+### CU-04: Cierre del Incidente
+- Se actualiza el estado final del incidente.
+- Se libera la patrulla asignada.
+- Se registra la finalización de la atención.
+- Se conserva el historial del incidente para futuras consultas.
 
 ## Actores del Sistema
 
@@ -31,9 +38,6 @@ El equipo Azul tiene como objetivo el desarrollo de un sistema de gestión de in
 
 ## Notas Técnicas
 
-- Integración con API de Google Maps para geolocalización.
-- Radio de cobertura configurable por unidad.
+- Integración con servicios de mapas para geolocalización y visualización cartográfica.
 - Sistema de estados en tiempo real para patrullas e incidentes.
 
----
-*Definición inicial capturada el 17/04/2026 — Sujeta a revisión en informe de factibilidad.*
