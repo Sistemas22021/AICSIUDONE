@@ -20,7 +20,21 @@ public class Alerta {
     private String estado;
     private String accionRequerida;
 
-    public void marcarAtendida() {
+    // Campos enriquecidos para HU-S5-02
+    private UUID expedienteId;
+    private String nombreEgresado;
+    private String cedulaEgresado;
+
+    @Column(columnDefinition = "TEXT")
+    private String observacionAtencion;
+
+    public void marcarAtendida(String observacion) {
         this.estado = "atendida";
+        this.observacionAtencion = observacion;
+    }
+
+    /** Compatibilidad retroactiva sin observación */
+    public void marcarAtendida() {
+        marcarAtendida(null);
     }
 }

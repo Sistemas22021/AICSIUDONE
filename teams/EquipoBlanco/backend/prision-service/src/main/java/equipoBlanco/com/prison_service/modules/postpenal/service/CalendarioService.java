@@ -179,11 +179,28 @@ public class CalendarioService {
     }
 
     private void crearAlertaEscalonada(ExpedienteSeguimiento exp, int contador) {
-        String mensaje = "Incumplimiento #" + contador + " registrado para expediente ID: " + exp.getIdRecluso();
-        
+        // Resolver nombre y cédula del egresado para enriquecer la alerta
+        String nombreEgresado = null;
+        String cedulaEgresado = null;
+        try {
+            var inmate = inmateRepository.findById(exp.getIdRecluso()).orElse(null);
+            if (inmate != null) {
+                nombreEgresado = inmate.getFirstName() + " " + inmate.getFirstLastname();
+                cedulaEgresado = inmate.getCedula();
+            }
+        } catch (Exception e) {
+            System.err.println("No se pudo resolver datos del egresado para alerta: " + e.getMessage());
+        }
+
+        String mensaje = "Incumplimiento #" + contador + " registrado para: "
+                + (nombreEgresado != null ? nombreEgresado : "Expediente " + exp.getId());
+
         if (contador == 1) {
             Alerta alerta = Alerta.builder()
                 .nivel(1)
+                .expedienteId(exp.getId())
+                .nombreEgresado(nombreEgresado)
+                .cedulaEgresado(cedulaEgresado)
                 .fechaEmision(java.time.LocalDateTime.now())
                 .destinatario(exp.getOficialAsignadoNombre())
                 .estado("activa")
@@ -193,6 +210,9 @@ public class CalendarioService {
         } else if (contador == 2) {
             Alerta alerta1 = Alerta.builder()
                 .nivel(2)
+                .expedienteId(exp.getId())
+                .nombreEgresado(nombreEgresado)
+                .cedulaEgresado(cedulaEgresado)
                 .fechaEmision(java.time.LocalDateTime.now())
                 .destinatario(exp.getOficialAsignadoNombre())
                 .estado("activa")
@@ -200,6 +220,9 @@ public class CalendarioService {
                 .build();
             Alerta alerta2 = Alerta.builder()
                 .nivel(2)
+                .expedienteId(exp.getId())
+                .nombreEgresado(nombreEgresado)
+                .cedulaEgresado(cedulaEgresado)
                 .fechaEmision(java.time.LocalDateTime.now())
                 .destinatario("Supervisor")
                 .estado("activa")
@@ -209,6 +232,9 @@ public class CalendarioService {
         } else if (contador >= 3) {
             Alerta alerta = Alerta.builder()
                 .nivel(3)
+                .expedienteId(exp.getId())
+                .nombreEgresado(nombreEgresado)
+                .cedulaEgresado(cedulaEgresado)
                 .fechaEmision(java.time.LocalDateTime.now())
                 .destinatario("Supervisor")
                 .estado("activa")
