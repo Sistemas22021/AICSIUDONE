@@ -1,10 +1,13 @@
 package com.guardia.core.controller;
 
 import com.guardia.core.dto.request.EscenaRequest;
+import com.guardia.core.dto.request.FirmarPasoRequest;
+import com.guardia.core.dto.response.FirmaChecklistResponse;
 import com.guardia.core.dto.response.EscenaResponse;
 import com.guardia.core.dto.response.EscenaChecklistResponse;
 import com.guardia.core.exception.ApiResponse;
 import com.guardia.core.service.EscenaService;
+import com.guardia.core.service.FirmaChecklistService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -24,6 +27,7 @@ import java.util.List;
 public class EscenaController {
 
     private final EscenaService escenaService;
+    private final FirmaChecklistService firmaChecklistService;
 
     @PostMapping
     public ResponseEntity<ApiResponse<EscenaResponse>> crear(@Valid @RequestBody EscenaRequest request) {
@@ -77,18 +81,27 @@ public class EscenaController {
         return ResponseEntity.ok(ApiResponse.ok(escenaService.validarSecuencia(id)));
     }
 
-    @PatchMapping("/{id}/avanzar")
-    public ResponseEntity<ApiResponse<EscenaResponse>> avanzarPaso(
-            @PathVariable Long id
-    ) {
-
+    @PatchMapping("/{id}/firmar-y-avanzar")
+    public ResponseEntity<ApiResponse<EscenaResponse>> firmarYAvanzarPaso(
+            @PathVariable Long id,
+            @Valid @RequestBody FirmarPasoRequest request) {
         return ResponseEntity.ok(
                 ApiResponse.ok(
-                        "Paso completado.",
-                        escenaService.avanzarPaso(id)
+                        "Paso firmado y completado.",
+                        escenaService.firmarYAvanzarPaso(id, request)
                 )
         );
     }
+
+
+    @GetMapping("/{id}/firmas")
+    public ResponseEntity<ApiResponse<List<FirmaChecklistResponse>>> obtenerHistorialFirmas(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(
+                ApiResponse.ok(firmaChecklistService.obtenerHistorialFirmas(id))
+        );
+    }
+
     @GetMapping("/{id}/checklist")
     public ResponseEntity<ApiResponse<List<EscenaChecklistResponse>>> obtenerChecklist(
             @PathVariable Long id) {

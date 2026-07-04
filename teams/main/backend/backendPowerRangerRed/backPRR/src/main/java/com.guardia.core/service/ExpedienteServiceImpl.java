@@ -36,6 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Comparator;
 
 @Service
 @RequiredArgsConstructor
@@ -134,8 +135,6 @@ public class ExpedienteServiceImpl implements ExpedienteService {
                     .add(denunciante);
         }
 
-
-        // Mapear delitos (si vienen)
         // Mapear delitos (si vienen)
         if (request.getDelitos() != null && !request.getDelitos().isEmpty()) {
             request.getDelitos().forEach(dReq -> {
@@ -405,4 +404,5 @@ public class ExpedienteServiceImpl implements ExpedienteService {
                         : "⚠ ALERTA: discrepancia detectada. El expediente fue modificado.",
                 expediente.getHashIntegridad(), recalculado);
     }
+
 }
