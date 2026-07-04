@@ -36,6 +36,14 @@ eureka:
   client:
     enabled: false
 
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tryItOutEnabled: true
+    operationsSorter: method
+
 management:
   endpoints:
     web:

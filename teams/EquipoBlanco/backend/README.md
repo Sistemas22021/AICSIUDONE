@@ -335,6 +335,50 @@ Los permisos se definen en `common/security/SecurityConfig.java`.
 
 ---
 
+## Documentación de la API (Swagger/OpenAPI)
+
+El backend utiliza **SpringDoc OpenAPI 2.5.0** para generar documentación interactiva de la API.
+
+### URLs disponibles
+
+| Recurso | URL |
+|---------|-----|
+| Swagger UI (interfaz gráfica) | `http://localhost:8081/swagger-ui.html` |
+| OpenAPI spec (JSON) | `http://localhost:8081/v3/api-docs` |
+| OpenAPI spec (YAML) | `http://localhost:8081/v3/api-docs.yaml` |
+
+### Cómo usar Swagger UI
+
+1. Iniciar el servidor local: `.\mvnw.cmd spring-boot:run`
+2. Abrir `http://localhost:8081/swagger-ui.html` en el navegador
+3. Los endpoints están agrupados por tags:
+   - **Reclusos (Inmates)** — CRUD de reclusos, egresos, salidas temporales
+   - **Celdas (Cells)** — CRUD de celdas, asignación de reclusos
+   - **Mapas (Prison Maps)** — Mapas del penal por piso
+   - **Traslados (Transfers)** — Solicitudes de traslado
+   - **Incidentes y Fallecimientos** — Reportes de muerte, incidentes, pertenencias
+   - **Post-Penitenciario (Expedientes)** — Expedientes de seguimiento
+   - **Calendario (Presentaciones)** — Calendario de presentaciones
+4. Para autenticarse, configurar los headers `X-User-Name` y `X-User-Role` en la sección "Authorize" de Swagger UI
+5. Click en "Try it out" para probar cualquier endpoint directamente
+
+### Roles disponibles para pruebas
+
+| Header | Valor |
+|--------|-------|
+| `X-User-Name` | Nombre del usuario (ej: "Carlos Méndez") |
+| `X-User-Role` | `Administrador del Sistema`, `Oficial Penitenciario`, `Supervisor`, `Oficial de Seguimiento` |
+
+### Configuración actual
+
+Los parámetros de SpringDoc se definen en `application.yml`:
+- `springdoc.api-docs.path=/api-docs`
+- `springdoc.swagger-ui.path=/swagger-ui.html`
+- `springdoc.swagger-ui.tryItOutEnabled=true`
+- `springdoc.swagger-ui.operationsSorter=method`
+
+---
+
 ## Desarrollo local
 
 ```bash

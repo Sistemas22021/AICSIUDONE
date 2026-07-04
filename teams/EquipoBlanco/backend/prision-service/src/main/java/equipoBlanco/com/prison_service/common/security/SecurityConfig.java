@@ -70,6 +70,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT, "/api/v1/calendario/**").hasAnyRole("OFICIAL_DE_SEGUIMIENTO", "SUPERVISOR")
                 .requestMatchers(HttpMethod.GET, "/api/v1/calendario/**").hasAnyRole("OFICIAL_DE_SEGUIMIENTO", "SUPERVISOR")
 
+                // ─── Swagger / OpenAPI ───
+                .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/api-docs/**", "/webjars/**").permitAll()
+
                 // ─── Actuator / health ───
                 .requestMatchers("/actuator/**").permitAll()
 
