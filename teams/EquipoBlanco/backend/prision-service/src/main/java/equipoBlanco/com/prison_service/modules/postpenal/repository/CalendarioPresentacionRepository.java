@@ -12,4 +12,5 @@ import java.util.UUID;
 public interface CalendarioPresentacionRepository extends JpaRepository<CalendarioPresentacion, UUID> {
     List<CalendarioPresentacion> findByExpedienteIdOrderByFechaProgramadaAsc(UUID expedienteId);
     List<CalendarioPresentacion> findByFechaProgramadaAndEstado(LocalDate fechaProgramada, String estado);
+    List<CalendarioPresentacion> findByFechaProgramadaLessThanEqualAndEstado(LocalDate fechaProgramada, String estado);
 }

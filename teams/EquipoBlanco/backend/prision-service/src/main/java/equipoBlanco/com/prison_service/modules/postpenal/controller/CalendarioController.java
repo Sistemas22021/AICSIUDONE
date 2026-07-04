@@ -70,4 +70,11 @@ public class CalendarioController {
             @RequestBody IncumplimientoDto dto) {
         return ResponseEntity.ok(calendarioService.registrarIncumplimiento(id, dto));
     }
+
+    @PostMapping("/procesar-vencidas")
+    @Operation(summary = "Procesar presentaciones vencidas manualmente", description = "Ejecuta de manera inmediata la detección automática de presentaciones vencidas (proceso nocturno)")
+    public ResponseEntity<Void> procesarPresentacionesVencidas() {
+        calendarioService.procesarPresentacionesVencidas();
+        return ResponseEntity.ok().build();
+    }
 }

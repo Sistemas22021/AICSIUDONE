@@ -151,6 +151,33 @@ public class CalendarioService {
         return toDto(cp);
     }
 
+    @Transactional
+    public void procesarPresentacionesVencidas() {
+        LocalDate hoy = LocalDate.now();
+        List<CalendarioPresentacion> vencidas = calendarioRepository.findByFechaProgramadaLessThanEqualAndEstado(hoy, "PENDIENTE");
+
+        for (CalendarioPresentacion cp : vencidas) {
+            cp.setEstado("INCUMPLIDA");
+            String obsActual = cp.getObservaciones() == null ? "" : cp.getObservaciones() + "\n";
+            cp.setObservaciones(obsActual + "[" + java.time.LocalDateTime.now() + " - Sistema]: Incumplida - Detectado por sistema");
+            calendarioRepository.save(cp);
+
+            ExpedienteSeguimiento exp = expedienteSeguimientoRepository.findById(cp.getExpedienteId())
+                .orElseThrow(() -> new RuntimeException("Expediente no encontrado: " + cp.getExpedienteId()));
+
+            int contador = exp.getContadorIncumplimientos() == null ? 0 : exp.getContadorIncumplimientos();
+            contador++;
+            exp.setContadorIncumplimientos(contador);
+
+            if (contador >= 3) {
+                exp.setEstado("alerta_critica");
+            }
+            expedienteSeguimientoRepository.save(exp);
+
+            crearAlertaEscalonada(exp, contador);
+        }
+    }
+
     private void crearAlertaEscalonada(ExpedienteSeguimiento exp, int contador) {
         String mensaje = "Incumplimiento #" + contador + " registrado para expediente ID: " + exp.getIdRecluso();
         
