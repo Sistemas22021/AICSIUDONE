@@ -30,7 +30,11 @@ jobs:
 
       - name: Compilar y Ejecutar Pruebas
         run: mvn clean verify
-      
+        env:
+          DB_URL: ${{ secrets.NARANJA_DB_URL }}
+          DB_USER: ${{ secrets.NARANJA_DB_USER }}
+          DB_PASSWD: ${{ secrets.NARANJA_DB_PASSWD }}
+
       - name: Guardar el archivo .JAR generado
         uses: actions/upload-artifact@v4
         with:

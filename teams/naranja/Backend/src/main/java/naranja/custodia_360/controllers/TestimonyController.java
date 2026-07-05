@@ -11,6 +11,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
 
 @RestController
 @RequestMapping("/api/v1/testimonies")
@@ -29,7 +32,9 @@ public class TestimonyController {
     @PostMapping(consumes = "multipart/form-data")
     public ResponseEntity<Testimony> registerTestimony(
             @RequestParam("audio") MultipartFile audio,
-            @RequestParam("transcription") String originalTranscription
+            @RequestParam("transcription") String originalTranscription,
+            @RequestParam("cedula") String cedula,
+            @RequestParam("caseNumber") String caseNumber
     ) throws IOException {
 
         // Validaciones de cliente con su excepción semántica correcta (400 Bad Request)
@@ -40,12 +45,20 @@ public class TestimonyController {
         if (originalTranscription == null || originalTranscription.trim().isEmpty()) {
             throw new BadRequestException("La transcripción original no puede estar vacía y es requerida.");
         }
+        if (cedula.trim().isEmpty() || caseNumber.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("La cédula y el número de casos no pueden estar vacios");
+        }
 
         log.info(originalTranscription);
 
         String modifiedTranscription = aiService.generateJudicialReport(originalTranscription);
-        String sessionId = testimonyService.saveTestimony(audio, originalTranscription, modifiedTranscription);
+        Testimony savedTestimony = testimonyService.saveTestimony(audio, originalTranscription, modifiedTranscription, cedula, caseNumber);
 
-        return ResponseEntity.ok(new Testimony(modifiedTranscription, sessionId));
+        Map<String, Object> response = new HashMap<>();
+        response.put("sessionId", savedTestimony.getSessionId());
+        response.put("content", modifiedTranscription);
+        response.put("metadata", savedTestimony);
+
+        return ResponseEntity.ok(response);
     }
 }

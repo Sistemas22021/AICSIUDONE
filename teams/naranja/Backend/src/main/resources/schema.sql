@@ -1,9 +1,8 @@
-CREATE TABLE bookings (
-    id UUID PRIMARY KEY,
-    first_name VARCHAR(100) NOT NULL,
-    last_name VARCHAR(100) NOT NULL,
-    cedula VARCHAR(50) UNIQUE NOT NULL,
-    photo_path VARCHAR(255),
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    status VARCHAR(20) NOT NULL DEFAULT 'OPEN'
+CREATE TABLE IF NOT EXISTS testimony (
+    session_id VARCHAR(255) PRIMARY KEY,
+    cedula VARCHAR(50),
+    case_number VARCHAR(50),
+    audio_path TEXT,
+    original_text_path TEXT,
+    modified_text_path TEXT
 );
