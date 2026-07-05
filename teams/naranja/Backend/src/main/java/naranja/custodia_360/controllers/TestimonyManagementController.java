@@ -1,6 +1,7 @@
 package naranja.custodia_360.controllers;
 
 
+import naranja.custodia_360.models.ResourceType;
 import naranja.custodia_360.models.TestimonyHistoryDTO;
 import naranja.custodia_360.services.TestimonyManagementService;
 import org.springframework.core.io.Resource;
@@ -30,12 +31,12 @@ public class TestimonyManagementController {
     @GetMapping("/{testimonyId}/download")
     public ResponseEntity<Resource> downloadResource(
             @PathVariable String testimonyId,
-            @RequestParam(value = "file", required = false) String fileName) {
+            @RequestParam(value = "type", required = false) ResourceType resourceType) {
 
-        Resource resource = managementService.loadTestimonyResource(testimonyId, fileName);
+        Resource resource = managementService.loadTestimonyResource(testimonyId, resourceType);
 
         // Determinar el nombre final del archivo de descarga
-        String downloadName = (fileName == null || fileName.isBlank())
+        String downloadName = (resourceType == null)
                 ? "testimony-" + testimonyId + ".zip"
                 : resource.getFilename();
 
@@ -47,7 +48,7 @@ public class TestimonyManagementController {
         }
 
         if (contentType == null) {
-            contentType = (fileName == null || fileName.isBlank()) ? "application/zip" : "application/octet-stream";
+            contentType = (resourceType == null) ? "application/zip" : "application/octet-stream";
         }
 
         return ResponseEntity.ok()

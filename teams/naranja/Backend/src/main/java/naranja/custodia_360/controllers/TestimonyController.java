@@ -30,7 +30,7 @@ public class TestimonyController {
     }
 
     @PostMapping(consumes = "multipart/form-data")
-    public ResponseEntity<Testimony> registerTestimony(
+    public ResponseEntity<?> registerTestimony(
             @RequestParam("audio") MultipartFile audio,
             @RequestParam("transcription") String originalTranscription,
             @RequestParam("cedula") String cedula,
@@ -46,7 +46,7 @@ public class TestimonyController {
             throw new BadRequestException("La transcripción original no puede estar vacía y es requerida.");
         }
         if (cedula.trim().isEmpty() || caseNumber.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("La cédula y el número de casos no pueden estar vacios");
+            throw new BadRequestException("La cédula y el número de casos no pueden estar vacios");
         }
 
         log.info(originalTranscription);
