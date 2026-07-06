@@ -2,7 +2,7 @@ package naranja.custodia_360.controllers;
 
 
 import naranja.custodia_360.models.ResourceType;
-import naranja.custodia_360.models.TestimonyHistoryDTO;
+import naranja.custodia_360.dtos.TestimonyHistoryDTO;
 import naranja.custodia_360.services.TestimonyManagementService;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;

@@ -2,11 +2,11 @@ name: Naranja - Backend Build Dev
 
 on:
   push:
-    branches: [ naranja-dev/main ]
+    branches: [ naranja-dev/main main ]
     paths:
       - 'teams/naranja/Backend/**'
   pull_request:
-    branches: [ naranja-dev/main ]
+    branches: [ naranja-dev/main main ]
     paths:
       - 'teams/naranja/Backend/**'
 
@@ -34,6 +34,8 @@ jobs:
           DB_URL: ${{ secrets.NARANJA_DB_URL }}
           DB_USER: ${{ secrets.NARANJA_DB_USER }}
           DB_PASSWD: ${{ secrets.NARANJA_DB_PASSWD }}
+          SPRINGDOC_API_DOCS_ENABLED: ${{ github.ref_name != 'main' }}
+          SPRINGDOC_SWAGGER_UI_ENABLED: ${{ github.ref_name != 'main' }}
 
       - name: Guardar el archivo .JAR generado
         uses: actions/upload-artifact@v4

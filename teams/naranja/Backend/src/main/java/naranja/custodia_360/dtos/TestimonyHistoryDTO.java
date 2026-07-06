@@ -1,4 +1,4 @@
-package naranja.custodia_360.models;
+package naranja.custodia_360.dtos;
 
 public record TestimonyHistoryDTO(
         String sessionId,

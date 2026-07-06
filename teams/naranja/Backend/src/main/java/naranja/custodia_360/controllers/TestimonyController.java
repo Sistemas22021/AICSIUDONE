@@ -1,5 +1,6 @@
 package naranja.custodia_360.controllers;
 
+import naranja.custodia_360.dtos.TestimonyDTO;
 import naranja.custodia_360.exception.type.BadRequestException;
 import naranja.custodia_360.models.Testimony;
 import naranja.custodia_360.services.AiService;
@@ -30,7 +31,7 @@ public class TestimonyController {
     }
 
     @PostMapping(consumes = "multipart/form-data")
-    public ResponseEntity<?> registerTestimony(
+    public ResponseEntity<TestimonyDTO> registerTestimony(
             @RequestParam("audio") MultipartFile audio,
             @RequestParam("transcription") String originalTranscription,
             @RequestParam("cedula") String cedula,
@@ -54,10 +55,7 @@ public class TestimonyController {
         String modifiedTranscription = aiService.generateJudicialReport(originalTranscription);
         Testimony savedTestimony = testimonyService.saveTestimony(audio, originalTranscription, modifiedTranscription, cedula, caseNumber);
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("sessionId", savedTestimony.getSessionId());
-        response.put("content", modifiedTranscription);
-        response.put("metadata", savedTestimony);
+        TestimonyDTO response = new TestimonyDTO(savedTestimony, modifiedTranscription);
 
         return ResponseEntity.ok(response);
     }
