@@ -1,6 +1,7 @@
 package naranja.custodia_360.controllers;
 
 
+import naranja.custodia_360.dtos.TestimonyContentDTO;
 import naranja.custodia_360.models.ResourceType;
 import naranja.custodia_360.dtos.TestimonyHistoryDTO;
 import naranja.custodia_360.services.TestimonyManagementService;
@@ -28,32 +29,57 @@ public class TestimonyManagementController {
         return ResponseEntity.ok(managementService.getHistory());
     }
 
-    @GetMapping("/{testimonyId}/download")
+    @GetMapping("/{sessionId}/download")
     public ResponseEntity<Resource> downloadResource(
-            @PathVariable String testimonyId,
+            @PathVariable String sessionId,
             @RequestParam(value = "type", required = false) ResourceType resourceType) {
 
-        Resource resource = managementService.loadTestimonyResource(testimonyId, resourceType);
+        Resource resource = managementService.loadTestimonyResource(sessionId, resourceType);
 
-        // Determinar el nombre final del archivo de descarga
         String downloadName = (resourceType == null)
-                ? "testimony-" + testimonyId + ".zip"
+                ? "testimony-" + sessionId + ".zip"
                 : resource.getFilename();
 
-        String contentType = null;
-        try {
-            contentType = URLConnection.guessContentTypeFromName(downloadName);
-        } catch (Exception e) {
-            contentType = "application/octet-stream";
-        }
-
-        if (contentType == null) {
-            contentType = (resourceType == null) ? "application/zip" : "application/octet-stream";
-        }
+        String contentType = getContentTypeOfFile(downloadName, resourceType);
 
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(contentType))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + downloadName + "\"")
                 .body(resource);
     }
+
+    @GetMapping("/{sessionId}/details")
+    public ResponseEntity<TestimonyContentDTO> getTestimonyDetails(@PathVariable String sessionId) {
+        return ResponseEntity.ok(managementService.getFullTestimonyContent(sessionId));
+    }
+
+    @GetMapping("/{sessionId}/content")
+    public ResponseEntity<Resource> viewResourceContent(
+            @PathVariable String sessionId,
+            @RequestParam("type") ResourceType resourceType) {
+
+        Resource resource = managementService.loadTestimonyResource(sessionId, resourceType);
+        String contentType = getContentTypeOfFile(resource.getFilename(), resourceType);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .body(resource);
+    }
+
+    private String getContentTypeOfFile(String filename, ResourceType resourceType) {
+        String contentType = null;
+        try {
+            contentType = URLConnection.guessContentTypeFromName(filename);
+        } catch (Exception e) {
+            contentType = "application/octet-stream";
+        }
+
+        if (contentType == null) {
+            if (resourceType == ResourceType.AUDIO) return "audio/webm";
+            if (resourceType == ResourceType.ORIGINAL || resourceType == ResourceType.MODIFIED) return "text/plain";
+            contentType = "application/octet-stream";
+        }
+        return contentType;
+    }
+
 }
