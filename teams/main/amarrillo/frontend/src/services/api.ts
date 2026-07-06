@@ -5,3 +5,5 @@ export const api = () => {
     return <div>api Module Loaded Successfully</div>;
 };
 export default api;
+
+// Relation types extension
