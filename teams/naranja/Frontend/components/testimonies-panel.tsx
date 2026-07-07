@@ -39,7 +39,7 @@ export function TestimoniesPanel() {
     setDetailData(null)
 
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:58080'
+      const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'
       
       // 1. Un solo viaje para traer texto y metadatos del audio
       const response = await fetch(`${baseUrl}/api/v1/testimonies/${sessionId}/details`)
@@ -60,7 +60,7 @@ export function TestimoniesPanel() {
   useEffect(() => {
     const fetchTestimonies = async () => {
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL
+        const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'
         if (!baseUrl) {
           console.error('Error: NEXT_PUBLIC_BACKEND_URL no está definida.')
           setIsLoading(false)
@@ -104,96 +104,98 @@ export function TestimoniesPanel() {
         <p className="text-sm text-muted-foreground mt-1">Listado de testimonios y sus estados de procesamiento.</p>
       </div>
 
-      {/* Contenedor de la Tabla */}
+      {/* Contenedor de la Tabla con Scroll Dedicado */}
       <div className="w-full bg-card rounded-xl shadow-sm border border-border overflow-hidden">
-        <table className="w-full border-collapse text-left text-sm">
-          {/* Cabecera adaptada con los estilos de grises de tu app */}
-          <thead className="bg-slate-900 text-white font-semibold uppercase text-xs tracking-wider">
-            <tr>
-              <th className="px-6 py-4 text-center">Caso</th>
-              <th className="px-6 py-4 text-center">Cédula</th>
-              <th className="px-6 py-4 text-center">Audio</th>
-              <th className="px-6 py-4 text-center">Transcripción</th>
-              <th className="px-6 py-4 text-center">Resumen</th>
-              <th className="px-6 py-4 text-right">Acciones</th>
-            </tr>
-          </thead>
-          
-          <tbody className="divide-y divide-border text-foreground">
-            {testimonies.length === 0 ? (
+        <div className="w-full overflow-x-auto max-h-[65vh] overflow-y-auto"> 
+          <table className="w-full border-collapse text-left text-sm table-auto">
+            {/* Cabecera adaptada con los estilos de grises de tu app */}
+            <thead className="bg-slate-900 text-white font-semibold uppercase text-xs tracking-wider">
               <tr>
-                <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground font-medium">
-                  No hay testimonios grabados aún.
-                </td>
+                <th className="px-6 py-4 text-center">Caso</th>
+                <th className="px-6 py-4 text-center">Cédula</th>
+                <th className="px-6 py-4 text-center">Audio</th>
+                <th className="px-6 py-4 text-center">Transcripción</th>
+                <th className="px-6 py-4 text-center">Resumen</th>
+                <th className="px-6 py-4 text-center">Acciones</th>
               </tr>
-            ) : (
-              testimonies.map((testimony, index) => (
-                <tr 
-                  key={testimony.sessionId} 
-                  className={`${index % 2 === 0 ? 'bg-card' : 'bg-muted/30'} hover:bg-muted/60 transition-colors`}
-                >
-                  {/* Caso */}
-                  <td className="px-6 py-4 font-semibold text-foreground text-center">
-                    {testimony.caseNumber}
-                  </td>
-                  
-                  {/* Cédula */}
-                  <td className="px-6 py-4 text-muted-foreground font-medium text-center">
-                    {testimony.cedula}
-                  </td>
-                  
-                  {/* Audio */}
-                  <td className="px-6 py-4 text-center">
-                    {testimony.hasAudio ? (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-                        <Check className="w-3.5 h-3.5" /> Sí
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-sky-500/10 text-sky-600 border border-sky-500/20">
-                        <Volume2 className="w-3.5 h-3.5" /> Sin Audio
-                      </span>
-                    )}
-                  </td>
-                  
-                  {/* Transcripción */}
-                  <td className="px-6 py-4 text-center">
-                    {testimony.hasOriginalText ? (
-                      <span className=" inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-                        <Check className="w-3.5 h-3.5" /> Sí
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-muted text-muted-foreground border border-border">
-                        Sin transcripción
-                      </span>
-                    )}
-                  </td>
-                  
-                  {/* Resumen */}
-                  <td className="px-6 py-4 text-center">
-                    {testimony.hasModifiedText ? (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-                        Generado
-                      </span>
-                    ) : (
-                      <span className="text-xs text-muted-foreground italic">No solicitado</span>
-                    )}
-                  </td>
-                  
-                  {/* Acciones */}
-                  <td className="px-6 py-4 text-right whitespace-nowrap space-x-2">
-                    <Button 
-                      size="sm"
-                      onClick={() => handleVerDetalles(testimony.sessionId)}
-                      className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm gap-2 rounded-full px-6 transition-all duration-300 hover:scale-105 hover:shadow-md hover:shadow-primary/20 active:scale-95"
-                    >
-                      <Eye className="w-3.5 h-3.5" /> Ver Detalles
-                    </Button>
+            </thead>
+            
+            <tbody className="divide-y divide-border text-foreground">
+              {testimonies.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground font-medium">
+                    No hay testimonios grabados aún.
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                testimonies.map((testimony, index) => (
+                  <tr 
+                    key={testimony.sessionId} 
+                    className={`${index % 2 === 0 ? 'bg-card' : 'bg-muted/30'} hover:bg-muted/60 transition-colors`}
+                  >
+                    {/* Caso */}
+                    <td className="px-6 py-4 font-semibold text-foreground text-center">
+                      {testimony.caseNumber}
+                    </td>
+                    
+                    {/* Cédula */}
+                    <td className="px-6 py-4 text-muted-foreground font-medium text-center">
+                      {testimony.cedula}
+                    </td>
+                    
+                    {/* Audio */}
+                    <td className="px-6 py-4 text-center">
+                      {testimony.hasAudio ? (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                          <Check className="w-3.5 h-3.5" /> Sí
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-sky-500/10 text-sky-600 border border-sky-500/20">
+                          <Volume2 className="w-3.5 h-3.5" /> Sin Audio
+                        </span>
+                      )}
+                    </td>
+                    
+                    {/* Transcripción */}
+                    <td className="px-6 py-4 text-center">
+                      {testimony.hasOriginalText ? (
+                        <span className=" inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                          <Check className="w-3.5 h-3.5" /> Sí
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-muted text-muted-foreground border border-border">
+                          Sin transcripción
+                        </span>
+                      )}
+                    </td>
+                    
+                    {/* Resumen */}
+                    <td className="px-6 py-4 text-center">
+                      {testimony.hasModifiedText ? (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                          Generado
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground italic">No solicitado</span>
+                      )}
+                    </td>
+                    
+                    {/* Acciones */}
+                    <td className="px-6 py-4 text-right whitespace-nowrap space-x-2">
+                      <Button 
+                        size="sm"
+                        onClick={() => handleVerDetalles(testimony.sessionId)}
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm gap-2 rounded-full px-6 transition-all duration-300 hover:scale-105 hover:shadow-md hover:shadow-primary/20 active:scale-95"
+                      >
+                        <Eye className="w-3.5 h-3.5" /> Ver Detalles
+                      </Button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     
       {/* Modal Emergente de Detalles */}
@@ -227,7 +229,8 @@ export function TestimoniesPanel() {
                   </span>
                   {/* Inyección directa del src anteponiendo la URL base */}
                   <audio 
-                    src={`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:58080'}${detailData.audioUrl}`} 
+                    src={`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'}${detailData.audioUrl}`} 
+                    preload="metadata"
                     controls 
                     className="w-full mt-1"
                   />
