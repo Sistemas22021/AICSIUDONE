@@ -156,7 +156,7 @@ public class TestimonyManagementService {
             }
         }
 
-        String audioUrl = "/api/v1/testimonies/" + sessionId + "/content?type=AUDIO";
+        String audioUrl = "/api/v1/testimonies/" + sessionId + "/audio";
 
         return new TestimonyContentDTO(
                 testimony.getSessionId(),

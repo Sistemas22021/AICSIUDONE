@@ -12,9 +12,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
 
 @RestController
 @RequestMapping("/api/v1/testimonies")
@@ -25,7 +22,6 @@ public class TestimonyController {
     private final AiService aiService;
 
     public TestimonyController(TestimonyService testimonyService, AiService aiService) {
-
         this.testimonyService = testimonyService;
         this.aiService = aiService;
     }
@@ -47,12 +43,16 @@ public class TestimonyController {
             throw new BadRequestException("La transcripción original no puede estar vacía y es requerida.");
         }
         if (cedula.trim().isEmpty() || caseNumber.trim().isEmpty()) {
-            throw new BadRequestException("La cédula y el número de casos no pueden estar vacios");
+            throw new BadRequestException("La cédula y el número de casos no pueden estar vacíos");
         }
 
-        log.info(originalTranscription);
-
         String modifiedTranscription = aiService.generateJudicialReport(originalTranscription);
+
+        log.info(modifiedTranscription);
+
+        if(modifiedTranscription == null || modifiedTranscription.trim().isEmpty()) {
+            modifiedTranscription = "[ERROR: No se pudieron extraer hechos coherentes o la transcripción es inválida]";
+        }
         Testimony savedTestimony = testimonyService.saveTestimony(audio, originalTranscription, modifiedTranscription, cedula, caseNumber);
 
         TestimonyDTO response = new TestimonyDTO(savedTestimony, modifiedTranscription);
