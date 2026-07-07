@@ -29,9 +29,11 @@ public interface PersonaDesaparecidaRepository extends JpaRepository<PersonaDesa
         WHERE pd.estado = 'BUSCADA'
         AND (
             6371000 * acos(
-                cos(radians(:lat)) * cos(radians(u.latitud)) *
-                cos(radians(u.longitud) - radians(:lng)) +
-                sin(radians(:lat)) * sin(radians(u.latitud))
+                LEAST(1, GREATEST(-1,
+                    cos(radians(:lat)) * cos(radians(u.latitud)) *
+                    cos(radians(u.longitud) - radians(:lng)) +
+                    sin(radians(:lat)) * sin(radians(u.latitud))
+                ))
             )
         ) <= :radioMetros
         """, nativeQuery = true)
