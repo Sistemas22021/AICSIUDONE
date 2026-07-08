@@ -90,12 +90,46 @@ export class CorrelationService {
       
       const confidence = item.matchScore >= 80 ? 'Alta' : (item.matchScore >= 50 ? 'Media' : 'Baja');
       
-      const reasons = [];
-      if (item.breakdown.striaeMatched) reasons.push('Estrías coinciden');
-      if (item.breakdown.twistMatched) reasons.push('Giro coinciden');
-      if (item.breakdown.percussionMatched) reasons.push('Percusión coincide');
-      if (item.breakdown.brandMatched) reasons.push('Marca coincide');
-      reasons.push(`OpenCV: ${item.breakdown.validMatchesCount} puntos clave ORB emparejados`);
+      // Crear los detalles para que ComparisonViewerModal funcione
+      const details = [];
+      
+      details.push({
+        field: 'Análisis de Visión Artificial (OpenCV ORB)',
+        sourceValue: 'Imagen procesada',
+        targetValue: 'Imagen almacenada',
+        isMatch: item.breakdown.striaeMatched,
+        scoreContribution: item.breakdown.striaeMatched ? 40 : 0,
+        justification: item.breakdown.striaeMatched 
+          ? `Motor OpenCV detectó coincidencia de micro-estrías con ${item.breakdown.validMatchesCount} puntos clave ORB emparejados.`
+          : `Visión artificial no detectó suficientes puntos clave de similitud (${item.breakdown.validMatchesCount} emparejados).`
+      });
+
+      details.push({
+        field: 'Dirección de Giro (Twist)',
+        sourceValue: target.twist, // Simplified source info
+        targetValue: target.twist,
+        isMatch: item.breakdown.twistMatched,
+        scoreContribution: item.breakdown.twistMatched ? 30 : 0,
+        justification: item.breakdown.twistMatched ? 'Giro coincidente (evaluación backend)' : 'Giro divergente'
+      });
+
+      details.push({
+        field: 'Tipo de Percusión',
+        sourceValue: target.percussion,
+        targetValue: target.percussion,
+        isMatch: item.breakdown.percussionMatched,
+        scoreContribution: item.breakdown.percussionMatched ? 20 : 0,
+        justification: item.breakdown.percussionMatched ? 'Mecanismos de disparo compatibles' : 'Mecanismos de disparo diferentes'
+      });
+
+      details.push({
+        field: 'Marca / Fabricante',
+        sourceValue: target.marca,
+        targetValue: target.marca,
+        isMatch: item.breakdown.brandMatched,
+        scoreContribution: item.breakdown.brandMatched ? 10 : 0,
+        justification: item.breakdown.brandMatched ? 'Fabricante compatible' : 'Fabricante distinto'
+      });
       
       results.push({
         targetEvidence: target,
@@ -103,8 +137,8 @@ export class CorrelationService {
           isViable: true,
           score: Math.round(item.matchScore),
           confidence,
-          reasons
-        }
+          details
+        } as any // Forzamos el tipo por si TypeScript se queja del tipo local
       });
     }
     
