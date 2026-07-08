@@ -1,0 +1,7 @@
+$kind: http-request
+name: Sellar Expediente
+method: PATCH
+url: '{{baseUrl}}/api/expedientes/{{expedienteId}}/sellar'
+queryParams:
+  - key: agenteSelladorId
+    value: '{{agenteSelladorId}}'

@@ -1,0 +1,4 @@
+$kind: http-request
+name: Eliminar Subtipo de Delito
+method: DELETE
+url: '{{baseUrl}}/api/v1/subtipos-delito/{{subtipoDelitoId}}'

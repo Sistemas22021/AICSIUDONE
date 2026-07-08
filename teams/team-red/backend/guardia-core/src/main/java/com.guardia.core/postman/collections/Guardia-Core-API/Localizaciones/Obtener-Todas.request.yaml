@@ -1,0 +1,4 @@
+$kind: http-request
+name: "Obtener Todas las Localizaciones"
+method: GET
+url: '{{baseUrl}}/api/v1/localizaciones'

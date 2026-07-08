@@ -1,0 +1,4 @@
+$kind: http-request
+name: Avanzar Paso
+method: PATCH
+url: '{{baseUrl}}/api/v1/escenas/{{escenaId}}/avanzar'

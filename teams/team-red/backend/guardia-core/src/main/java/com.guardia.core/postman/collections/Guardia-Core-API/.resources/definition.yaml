@@ -1,0 +1,8 @@
+$kind: collection
+name: Guardia Core API
+description: |-
+  API REST del sistema Guardia Core para la gestión de expedientes, incidentes, escenas, evidencias, involucrados, localizaciones, modus operandi, tipos y subtipos de delito, y usuarios.
+variables:
+  - key: baseUrl
+    value: 'http://localhost:8080'
+    description: URL base del servidor local

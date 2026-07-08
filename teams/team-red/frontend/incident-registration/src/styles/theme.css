@@ -1,0 +1,209 @@
+/* Define todas las variables CSS del sistema ZAC (colores, sombras neon, tipografía) */
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --font-size: 16px;
+
+  /* ZAC Neon Color System - High-Tech Cyber-Noir */
+  --neon-cyan: #3399FF;
+  --neon-blue: #0099FF;
+  --neon-green: #00FF88;
+  --neon-amber: #FFAA00;
+  --neon-red: #FF4B4B;
+  --neon-purple: #AA00FF;
+  --neutral-gray: #4A4A4A;
+
+  /* Background colors - Dark Blue Noir */
+  --bg-black: #050A0F;
+  --bg-dark: #060B10;
+  --bg-panel: #070C12;
+  --bg-input: #080D13;
+
+  /* Standard theme mappings */
+  --background: var(--bg-black);
+  --foreground: var(--neon-cyan);
+  --card: var(--bg-panel);
+  --card-foreground: var(--neon-cyan);
+  --popover: var(--bg-panel);
+  --popover-foreground: var(--neon-cyan);
+  --primary: var(--neon-cyan);
+  --primary-foreground: var(--bg-black);
+  --secondary: var(--neon-blue);
+  --secondary-foreground: var(--bg-black);
+  --muted: #2a2a3a;
+  --muted-foreground: #6a6a8a;
+  --accent: var(--neon-blue);
+  --accent-foreground: var(--bg-black);
+  --destructive: var(--neon-red);
+  --destructive-foreground: #ffffff;
+  --border: var(--neon-cyan);
+  --input: var(--bg-input);
+  --input-background: var(--bg-input);
+  --switch-background: #2a2a3a;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: var(--neon-cyan);
+  --chart-1: var(--neon-cyan);
+  --chart-2: var(--neon-blue);
+  --chart-3: var(--neon-green);
+  --chart-4: var(--neon-amber);
+  --chart-5: var(--neon-red);
+  --radius: 0.1875rem;
+  --sidebar: var(--bg-panel);
+  --sidebar-foreground: var(--neon-cyan);
+  --sidebar-primary: var(--neon-cyan);
+  --sidebar-primary-foreground: var(--bg-black);
+  --sidebar-accent: var(--bg-input);
+  --sidebar-accent-foreground: var(--neon-cyan);
+  --sidebar-border: var(--neon-cyan);
+  --sidebar-ring: var(--neon-cyan);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Rajdhani', 'Orbitron', 'Courier New', monospace;
+    background: #050A0F;
+    background-image:
+      linear-gradient(rgba(51, 153, 255, 0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(51, 153, 255, 0.02) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  .neon-glow {
+    text-shadow:
+      0 0 5px currentColor,
+      0 0 10px currentColor,
+      0 0 20px currentColor,
+      0 0 30px currentColor;
+  }
+
+  .neon-border {
+    box-shadow:
+      0 0 3px rgba(51, 153, 255, 0.4),
+      0 0 8px rgba(51, 153, 255, 0.3),
+      0 0 15px rgba(51, 153, 255, 0.2),
+      inset 0 0 8px rgba(51, 153, 255, 0.08);
+  }
+
+  .neon-text {
+    color: var(--neon-cyan);
+    text-shadow:
+      0 0 10px rgba(51, 153, 255, 0.7),
+      0 0 20px rgba(51, 153, 255, 0.4),
+      0 0 30px rgba(51, 153, 255, 0.2);
+  }
+
+  .input-glow:focus {
+    box-shadow:
+      0 0 5px rgba(51, 153, 255, 0.5),
+      0 0 10px rgba(51, 153, 255, 0.3),
+      0 0 15px rgba(51, 153, 255, 0.2),
+      inset 0 0 5px rgba(51, 153, 255, 0.1);
+  }
+
+  .error-glow {
+    border-color: var(--neon-red) !important;
+    box-shadow:
+      0 0 5px rgba(255, 75, 75, 0.5),
+      0 0 10px rgba(255, 75, 75, 0.3),
+      inset 0 0 5px rgba(255, 75, 75, 0.1) !important;
+  }
+
+  .holo-panel {
+    box-shadow:
+      0 2px 8px rgba(51, 153, 255, 0.15),
+      0 4px 16px rgba(51, 153, 255, 0.1),
+      inset 0 1px 3px rgba(51, 153, 255, 0.08),
+      inset 0 -1px 3px rgba(51, 153, 255, 0.05);
+  }
+
+  h1, h2, h3, h4 {
+    font-family: 'Orbitron', 'Rajdhani', monospace;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    height: 4px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: rgba(51, 153, 255, 0.1);
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(51, 153, 255, 0.5);
+    border-radius: 2px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: rgba(51, 153, 255, 0.7);
+  }
+
+  html {
+    font-size: var(--font-size);
+  }
+
+  h1 { font-size: var(--text-2xl); font-weight: var(--font-weight-medium); line-height: 1.5; }
+  h2 { font-size: var(--text-xl);  font-weight: var(--font-weight-medium); line-height: 1.5; }
+  h3 { font-size: var(--text-lg);  font-weight: var(--font-weight-medium); line-height: 1.5; }
+  h4 { font-size: var(--text-base); font-weight: var(--font-weight-medium); line-height: 1.5; }
+  label  { font-size: var(--text-base); font-weight: var(--font-weight-medium); line-height: 1.5; }
+  button { font-size: var(--text-base); font-weight: var(--font-weight-medium); line-height: 1.5; }
+  input  { font-size: var(--text-base); font-weight: var(--font-weight-normal); line-height: 1.5; }
+
+  /* Íconos de calendario y reloj */
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.6) sepia(1) saturate(5) hue-rotate(175deg) brightness(1.4);
+    cursor: pointer;
+    opacity: 0.8;
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator:hover,
+  input[type="time"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+    filter: invert(0.8) sepia(1) saturate(6) hue-rotate(175deg) brightness(1.8);
+  }
+}

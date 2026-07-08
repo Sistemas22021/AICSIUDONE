@@ -1,0 +1,15 @@
+$kind: http-request
+name: "Crear Localización"
+method: POST
+url: '{{baseUrl}}/api/v1/localizaciones'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "descripcion": "Descripción de la localización",
+      "latitud": 14.6349,
+      "longitud": -90.5069
+    }
