@@ -9,11 +9,27 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import software.amazon.awssdk.core.exception.SdkClientException;
 
 import java.time.LocalDateTime;
 
 @RestControllerAdvice
 public class FileExceptionHandler {
+
+    @ExceptionHandler(SdkClientException.class)
+    public ResponseEntity<ApiErrorResponse> handleSdkClientException(SdkClientException ex, WebRequest request) {
+
+
+        ApiErrorResponse apiError = ApiErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                .error("Internal Server Error")
+                .message("LocalStack or AWS Services not prepared")
+                .path(request.getDescription(false))
+                .build();
+
+        return new ResponseEntity<>(apiError,HttpStatus.CONTENT_TOO_LARGE);
+    }
     @ExceptionHandler(ImageNotFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleImageNotFound(ImageNotFoundException ex, WebRequest request) {
 

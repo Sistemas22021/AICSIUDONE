@@ -26,4 +26,10 @@ public class BulletImagesEntity {
 
     private String hashImage;
 
+    @Column(name = "descriptor", columnDefinition = "bytea")
+    private byte[] descriptor;
+
+    @Column(name = "keypoints", columnDefinition = "bytea")
+    private byte[] keypoints;
+
 }

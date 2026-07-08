@@ -9,7 +9,9 @@ import com.ccc.sistema_balistico.core.infrastructure.out.persistence.entity.Bull
 import com.ccc.sistema_balistico.core.domain.exceptions.custom.BulletNotFound;
 import com.ccc.sistema_balistico.core.infrastructure.out.persistence.jpa.BulletRepository;
 import com.ccc.sistema_balistico.core.infrastructure.out.persistence.jpa.BulletImageRepository;
+import com.ccc.sistema_balistico.core.application.dto.ExtractedFeatures;
 import com.ccc.sistema_balistico.core.application.services.FileStorageService;
+import com.ccc.sistema_balistico.core.application.services.ImageProcessingService;
 import com.ccc.sistema_balistico.core.domain.exceptions.custom.storage.FileAlreadyExistsException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
@@ -31,6 +33,8 @@ public class BulletImageImpl implements BulletImagesService {
     private BulletRepository bulletRepository;
     @Autowired
     private FileStorageService fileStorageService;
+    @Autowired
+    private ImageProcessingService imageProcessingService;
 
     private String calculateSHA256(MultipartFile file) {
         try {
@@ -41,7 +45,16 @@ public class BulletImageImpl implements BulletImagesService {
             throw new RuntimeException("Error calculating SHA-256 hash: " + e.getMessage(), e);
         }
     }
+    private ExtractedFeatures getBytes(MultipartFile file){
+        byte[] fileBytes;
+        try {
+            fileBytes = file.getBytes();
+        } catch (Exception e) {
+            throw new RuntimeException("Error reading file bytes: " + e.getMessage(), e);
+        }
 
+        return imageProcessingService.extractFeatures(fileBytes);
+    }
     private BulletImagesEntity saveImage(MultipartFile file, BulletEntity bullet) {
         String fileHash = calculateSHA256(file);
         
@@ -49,6 +62,7 @@ public class BulletImageImpl implements BulletImagesService {
             throw new FileAlreadyExistsException("This image already exists in the system.");
         }
 
+        ExtractedFeatures features = getBytes(file);
         UUID imageUuid = UUID.randomUUID();
         String imagePath = fileStorageService.saveImageFile(file, imageUuid.toString());
         BulletImagesEntity bulletImages = BulletImagesEntity.builder().
@@ -56,6 +70,8 @@ public class BulletImageImpl implements BulletImagesService {
                 idBullet(bullet).
                 pathImage(imagePath).
                 hashImage(fileHash).
+                descriptor(features.descriptors()).
+                keypoints(features.keypoints()).
                 build();
 
         return bulletImageRepository.save(bulletImages);
