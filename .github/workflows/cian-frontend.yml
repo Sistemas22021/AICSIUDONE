@@ -28,9 +28,10 @@ on:
   # útil para re-ejecutar tras configurar Secrets o para depurar.
   workflow_dispatch:
 
-defaults:
-  run:
-    working-directory: teams/main/frontend/equipo-azul-cian/frontend
+# NOTA: El working-directory NO se define aquí de forma global.
+# Se define por Job para que solo aplique a los Jobs que trabajan
+# con el código fuente del frontend (Build, Lint, Test).
+# Los Jobs de Deploy y Smoke Test no necesitan estar en esa carpeta.
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Job 1: Build
@@ -47,6 +48,9 @@ jobs:
   build:
     name: "Build"
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: teams/main/frontend/equipo-azul-cian/frontend
 
     steps:
       - uses: actions/checkout@v4
@@ -85,6 +89,9 @@ jobs:
     name: "Lint"
     runs-on: ubuntu-latest
     needs: build
+    defaults:
+      run:
+        working-directory: teams/main/frontend/equipo-azul-cian/frontend
 
     steps:
       - uses: actions/checkout@v4
@@ -117,6 +124,9 @@ jobs:
     name: "Test"
     runs-on: ubuntu-latest
     needs: lint
+    defaults:
+      run:
+        working-directory: teams/main/frontend/equipo-azul-cian/frontend
 
     steps:
       - uses: actions/checkout@v4
@@ -146,6 +156,9 @@ jobs:
   #
   # Solo se ejecuta en eventos `push`, nunca en Pull Requests, porque
   # desplegar desde una PR significaría publicar código no revisado aún.
+  #
+  # NOTA: Este Job no necesita working-directory porque sus steps run
+  # son simples comandos de infraestructura, no de código fuente.
   # ─────────────────────────────────────────────────────────────────────────
   deploy:
     name: "Deploy"
@@ -165,6 +178,7 @@ jobs:
       # ── Opción A: Deploy a Vercel ──────────────────────────────────────
       # Requiere los Secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
       # - name: Deploy a Vercel
+      #   working-directory: teams/main/frontend/equipo-azul-cian/frontend
       #   run: |
       #     npm install -g vercel
       #     vercel --token=${{ secrets.VERCEL_TOKEN }} --yes
@@ -182,11 +196,11 @@ jobs:
       #     aws-region: us-east-1
       # - name: Deploy a S3
       #   run: |
-      #     aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_CIAN_FRONTEND }} \
+      #     aws s3 sync teams/main/frontend/equipo-azul-cian/frontend/dist/ s3://${{ secrets.S3_BUCKET_CIAN_FRONTEND }} \
       #       --delete \
       #       --cache-control "max-age=31536000,immutable" \
       #       --exclude "index.html"
-      #     aws s3 cp dist/index.html s3://${{ secrets.S3_BUCKET_CIAN_FRONTEND }}/index.html \
+      #     aws s3 cp teams/main/frontend/equipo-azul-cian/frontend/dist/index.html s3://${{ secrets.S3_BUCKET_CIAN_FRONTEND }}/index.html \
       #       --cache-control "no-cache,no-store,must-revalidate"
 
       - name: Deploy pendiente de configuración
@@ -206,6 +220,9 @@ jobs:
   #
   # ESTADO: Comentado — se activa junto con el Deploy cuando se defina
   # la plataforma y se configure el Secret FRONTEND_URL.
+  #
+  # NOTA: Este Job no necesita working-directory. El curl corre en el
+  # workspace raíz del runner, no en la carpeta del frontend.
   # ─────────────────────────────────────────────────────────────────────────
   smoke-test:
     name: "Smoke Test (Test de Aprobación)"
@@ -214,8 +231,6 @@ jobs:
     if: github.event_name == 'push'
 
     steps:
-      - uses: actions/checkout@v4
-
       # - name: Verificar que la app responde (HTTP 200)
       #   run: |
       #     URL="${{ secrets.FRONTEND_URL }}"
@@ -229,4 +244,3 @@ jobs:
 
       - name: Smoke Test pendiente de configuración
         run: echo "Smoke Test comentado. Descomentar cuando se configure FRONTEND_URL en los Secrets de GitHub."
-
