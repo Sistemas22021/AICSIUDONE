@@ -11,6 +11,7 @@ const viewTitles: Record<string, { title: string; role: string }> = {
   'dashboard': { title: 'Toma de Testimonios', role: 'Investigador' },
   'guard-officer': { title: 'Oficial de Guardia', role: 'Oficial de Guardia' },
   'interrogation': { title: 'Toma de Testimonios', role: 'Investigador' },
+  'testimonies-list': { title: 'Consulta de Testimonios', role: 'Investigador' },
   'audit': { title: 'Auditoría de Cadena de Custodia', role: 'Auditor' },
   'settings': { title: 'Configuración del Sistema', role: 'Administrador' },
 }

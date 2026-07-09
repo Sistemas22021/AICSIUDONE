@@ -1,12 +1,12 @@
 package naranja.custodia_360.services;
 
+import naranja.custodia_360.dtos.TestimonyContentDTO;
 import naranja.custodia_360.exception.type.StorageException;
 import naranja.custodia_360.models.ResourceType;
 import naranja.custodia_360.models.Testimony;
-import naranja.custodia_360.models.TestimonyHistoryDTO;
+import naranja.custodia_360.dtos.TestimonyHistoryDTO;
 import naranja.custodia_360.repositories.TestimonyRepository;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -129,5 +129,40 @@ public class TestimonyManagementService {
             throw new StorageException("Este testimonio no contiene ningún archivo para descargar.", HttpStatus.NOT_FOUND);
         }
         return pathsToZip;
+    }
+
+    public TestimonyContentDTO getFullTestimonyContent(String sessionId) {
+        Testimony testimony = testimonyRepository.findById(sessionId)
+                .orElseThrow(() -> new StorageException("El testimonio con ID " + sessionId + " no existe.", HttpStatus.NOT_FOUND));
+
+        String originalText = "";
+        String modifiedText = "";
+
+        // Leer el archivo de texto original si la ruta existe
+        if (testimony.getOriginalTextPath() != null && !testimony.getOriginalTextPath().isBlank()) {
+            try {
+                originalText = Files.readString(Paths.get(testimony.getOriginalTextPath()));
+            } catch (IOException e) {
+                originalText = "[Error: No se pudo leer el archivo de texto original]";
+            }
+        }
+
+        // Leer el archivo de texto modificado si la ruta existe
+        if (testimony.getModifiedTextPath() != null && !testimony.getModifiedTextPath().isBlank()) {
+            try {
+                modifiedText = Files.readString(Paths.get(testimony.getModifiedTextPath()));
+            } catch (IOException e) {
+                modifiedText = "[Error: No se pudo leer el archivo de texto modificado]";
+            }
+        }
+
+        String audioUrl = "/api/v1/testimonies/" + sessionId + "/audio";
+
+        return new TestimonyContentDTO(
+                testimony.getSessionId(),
+                originalText,
+                modifiedText,
+                audioUrl
+        );
     }
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { LayoutDashboard, FileText, Mic2, Shield, Settings, Circle } from 'lucide-react'
+import { LayoutDashboard, FileText, Mic2, Shield, Settings, Circle, History } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface NavItem {
@@ -11,6 +11,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { icon: <Mic2 size={20} />, label: 'Toma de Testimonios', id: 'interrogation' },
+  { icon: <History size={20} />, label: 'Consulta de Testimonios', id: 'testimonies-list' },
 ]
 
 interface CustodiaSidebarProps {
