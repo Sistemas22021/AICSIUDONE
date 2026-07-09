@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import type { Incident } from '../types/incident';
 import type { Patrol } from '../types/patrol';
+import type { Assignment } from '../types/assignment';
 
 import { createMapAdapter } from '../adapters/MapAdapterFactory';
 
 const Mapa: React.FC = () => {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [patrols, setPatrols] = useState<Patrol[]>([]);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -14,20 +16,23 @@ const Mapa: React.FC = () => {
     try {
       setLoading(true);
 
-      const [incidentsRes, patrolsRes] = await Promise.all([
+      const [incidentsRes, patrolsRes, assignmentsRes] = await Promise.all([
         fetch('http://localhost:8080/api/incidents'),
-        fetch('http://localhost:8080/api/patrols')
+        fetch('http://localhost:8080/api/patrols'),
+        fetch('http://localhost:8080/api/assignments')
       ]);
 
-      if (!incidentsRes.ok || !patrolsRes.ok) {
+      if (!incidentsRes.ok || !patrolsRes.ok || !assignmentsRes.ok) {
         throw new Error('Error al obtener datos del servidor');
       }
 
       const incidentsData: Incident[] = await incidentsRes.json();
       const patrolsData: Patrol[] = await patrolsRes.json();
+      const assignmentsData: Assignment[] = await assignmentsRes.json();
 
       setIncidents(incidentsData);
       setPatrols(patrolsData);
+      setAssignments(assignmentsData);
       setError(null);
     } catch (err) {
       if (err instanceof Error) {
@@ -74,7 +79,8 @@ const Mapa: React.FC = () => {
       {!loading &&
         mapAdapter.render({
           incidents,
-          patrols
+          patrols,
+          assignments
         })}
     </div>
   );

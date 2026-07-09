@@ -16,6 +16,8 @@ interface Incident {
   createdAt: string;
   updatedAt?: string;
   closedAt?: string;
+  patrolCode?: string;
+  patrolOfficerName?: string;
 }
 
 const Incidentes: React.FC = () => {
@@ -74,8 +76,6 @@ const Incidentes: React.FC = () => {
     try {
       let res: Response;
 
-      // Si el nuevo estado es CLOSED, usar el endpoint especializado
-      // que también libera la patrulla y finaliza la asignación
       if (status === 'CLOSED') {
         res = await fetch(
           `http://localhost:8080/api/incidents/${id}/close`,
@@ -94,21 +94,25 @@ const Incidentes: React.FC = () => {
         );
       }
 
-      const updated: Incident = await res.json();
+      await res.json();
 
-      setIncidents((prev) =>
-        prev.map((i) =>
-          i.id === id ? updated : i
-        )
-      );
+      // Forzar la recarga de los datos en el estado local
+      await fetchIncidents();
 
-      setSelectedIncident(updated);
+      // Buscar el objeto actualizado usando una callback funcional para asegurar la lectura del estado más fresco
+      setIncidents((currentIncidents) => {
+        const updated = currentIncidents.find((incident) => incident.id === id);
+        if (updated) {
+          setSelectedIncident(updated);
+        }
+        return currentIncidents;
+      });
+      
     } catch (err) {
       console.error('Error al actualizar el estado:', err);
     }
   };
 
-  // Filtrado local en base al estado seleccionado
   const filteredIncidents =
     filter === 'ALL'
       ? incidents
@@ -252,9 +256,9 @@ const Incidentes: React.FC = () => {
                 {filteredIncidents.map((i) => (
                   <tr
                     key={i.id}
-                    onClick={() =>
-                      setSelectedIncident(i)
-                    }
+                    onClick={() => {
+                      setSelectedIncident(i);
+                    }}
                     style={{
                       cursor: 'pointer',
                       borderBottom:
@@ -278,7 +282,7 @@ const Incidentes: React.FC = () => {
                     </td>
 
                     <td style={tdStyle}>
-                      {new Date(i.createdAt).toLocaleString()}
+                      {new Date(i.createdAt || '').toLocaleString()}
                     </td>
 
                     <td style={tdStyle}>
@@ -365,6 +369,28 @@ const Incidentes: React.FC = () => {
 
             <div style={{ marginTop: 20 }}>
               <span style={labelStyle}>
+                PRIORIDAD
+              </span>
+
+              <p style={textStyle}>
+                {translatePriority(selectedIncident.priority)}
+              </p>
+            </div>
+
+            <div style={{ marginTop: 20 }}>
+              <span style={labelStyle}>
+                PATRULLA ASIGNADA
+              </span>
+
+              <p style={textStyle}>
+                {selectedIncident.patrolCode
+                  ? `${selectedIncident.patrolCode} - ${selectedIncident.patrolOfficerName}`
+                  : "Sin patrulla asignada"}
+              </p>
+            </div>
+
+            <div style={{ marginTop: 20 }}>
+              <span style={labelStyle}>
                 DESCRIPCIÓN
               </span>
 
@@ -379,9 +405,9 @@ const Incidentes: React.FC = () => {
               </span>
 
               <p style={textStyle}>
-                {new Date(
-                  selectedIncident.createdAt
-                ).toLocaleString()}
+                {selectedIncident.createdAt
+                  ? new Date(selectedIncident.createdAt).toLocaleString()
+                  : 'Sin fecha de creación'}
               </p>
             </div>
 
@@ -392,26 +418,22 @@ const Incidentes: React.FC = () => {
 
               <p style={textStyle}>
                 {selectedIncident.updatedAt
-                  ? new Date(
-                      selectedIncident.updatedAt
-                    ).toLocaleString()
+                  ? new Date(selectedIncident.updatedAt).toLocaleString()
                   : 'Sin actualizaciones'}
               </p>
             </div>
 
-            {selectedIncident.closedAt && (
-              <div style={{ marginTop: 20 }}>
-                <span style={labelStyle}>
-                  FECHA DE CIERRE
-                </span>
+            <div style={{ marginTop: 20 }}>
+              <span style={labelStyle}>
+                FECHA DE CIERRE
+              </span>
 
-                <p style={textStyle}>
-                  {new Date(
-                    selectedIncident.closedAt
-                  ).toLocaleString()}
-                </p>
-              </div>
-            )}
+              <p style={textStyle}>
+                {selectedIncident.closedAt
+                  ? new Date(selectedIncident.closedAt).toLocaleString()
+                  : 'Sin fecha de cierre'}
+              </p>
+            </div>
 
             <div style={{ marginTop: 20 }}>
               <span style={labelStyle}>
@@ -448,23 +470,7 @@ const Incidentes: React.FC = () => {
                 marginTop: 24
               }}
             >
-              {selectedIncident.status ===
-                'ACTIVE' && (
-                <button
-                  style={processBtn}
-                  onClick={() =>
-                    void handleStatusUpdate(
-                      selectedIncident.id,
-                      'IN_PROGRESS'
-                    )
-                  }
-                >
-                  Procesar
-                </button>
-              )}
-
-              {selectedIncident.status !==
-                'CLOSED' && (
+              {selectedIncident.status === 'IN_PROGRESS' && (
                 <button
                   style={closeBtn}
                   onClick={() =>
@@ -523,16 +529,6 @@ const coordBox: React.CSSProperties = {
   color: '#38bdf8'
 };
 
-const processBtn: React.CSSProperties = {
-  flex: 1,
-  padding: 10,
-  borderRadius: 8,
-  border: '1px solid #f59e0b',
-  background: 'transparent',
-  color: '#f59e0b',
-  cursor: 'pointer'
-};
-
 const closeBtn: React.CSSProperties = {
   flex: 1,
   padding: 10,
@@ -584,6 +580,16 @@ const StatusBadge: React.FC<
       {item.text}
     </span>
   );
+};
+
+const translatePriority = (priority: string): string => {
+  const priorities: Record<string, string> = {
+    LOW: 'Baja',
+    MEDIUM: 'Media',
+    HIGH: 'Alta'
+  };
+
+  return priorities[priority] || priority;
 };
 
 export default Incidentes;

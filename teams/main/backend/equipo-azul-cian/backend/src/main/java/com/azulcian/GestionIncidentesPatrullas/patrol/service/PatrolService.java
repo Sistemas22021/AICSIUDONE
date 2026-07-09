@@ -1,5 +1,8 @@
 package com.azulcian.GestionIncidentesPatrullas.patrol.service;
 
+import com.azulcian.GestionIncidentesPatrullas.assignment.model.Assignment;
+import com.azulcian.GestionIncidentesPatrullas.assignment.repository.AssignmentRepository;
+import com.azulcian.GestionIncidentesPatrullas.incident.model.Incident;
 import com.azulcian.GestionIncidentesPatrullas.patrol.model.Patrol;
 import com.azulcian.GestionIncidentesPatrullas.patrol.model.PatrolStatus;
 import com.azulcian.GestionIncidentesPatrullas.patrol.repository.PatrolRepository;
@@ -11,9 +14,12 @@ import java.util.List;
 public class PatrolService {
 
     private final PatrolRepository patrolRepository;
+    private final AssignmentRepository assignmentRepository;
 
-    public PatrolService(PatrolRepository patrolRepository) {
+    // Inyección de dependencias por constructor
+    public PatrolService(PatrolRepository patrolRepository, AssignmentRepository assignmentRepository) {
         this.patrolRepository = patrolRepository;
+        this.assignmentRepository = assignmentRepository;
     }
 
     // =========================================
@@ -43,7 +49,7 @@ public class PatrolService {
 
         return patrolRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("Patrol not found with id: " + id));
+                        new RuntimeException("No se encontró la patrulla con el ID: " + id));
     }
 
     // =========================================
@@ -63,5 +69,38 @@ public class PatrolService {
     // =========================================
     public List<Patrol> getAvailablePatrols() {
         return patrolRepository.findByStatus(PatrolStatus.AVAILABLE);
+    }
+
+    // =========================================
+    // MARK PATROL AS ARRIVED
+    // =========================================
+    public Patrol markAsArrived(Long id) {
+
+        Patrol patrol = getPatrolById(id);
+
+        // Controlar que solo las patrullas en camino puedan marcar llegada
+        if (patrol.getStatus() != PatrolStatus.EN_ROUTE) {
+            throw new RuntimeException(
+                    "Solo las patrullas en ruta (EN_ROUTE) pueden marcar su llegada."
+            );
+        }
+
+        // Buscar la asignación activa usando el repositorio inyectado
+        Assignment assignment = assignmentRepository
+                .findByPatrolAndFinishedAtIsNull(patrol)
+                .orElseThrow(() ->
+                        new RuntimeException("No se encontró una asignación activa para esta patrulla.")
+                );
+
+        Incident incident = assignment.getIncident();
+
+        // Simular llegada al lugar del incidente
+        patrol.setLatitude(incident.getLatitude());
+        patrol.setLongitude(incident.getLongitude());
+
+        // Cambiar estado operativo a ocupado
+        patrol.setStatus(PatrolStatus.BUSY);
+
+        return patrolRepository.save(patrol);
     }
 }

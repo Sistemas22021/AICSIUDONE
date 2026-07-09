@@ -56,8 +56,16 @@ const Asignaciones: React.FC = () => {
       setPatrols(availablePatrols);
       setAssignments(dataAssignments);
       
-      if (activeIncidents.length > 0) setSelectedIncident(activeIncidents[0].id.toString());
-      if (availablePatrols.length > 0) setSelectedPatrol(availablePatrols[0].id.toString());
+      // Corrección segura usando .at(0) para evitar errores de tipo 'undefined'
+      const firstIncident = activeIncidents.at(0);
+      const firstPatrol = availablePatrols.at(0);
+
+      if (firstIncident) {
+        setSelectedIncident(firstIncident.id.toString());
+      }
+      if (firstPatrol) {
+        setSelectedPatrol(firstPatrol.id.toString());
+      }
 
       setError(null);
     } catch (err) {
@@ -100,6 +108,33 @@ const Asignaciones: React.FC = () => {
         alert(err.message);
       } else {
         alert('Error al asignar');
+      }
+    }
+  };
+
+  // =========================================
+  // MARK ARRIVAL
+  // =========================================
+  const handleMarkArrival = async (patrolId: number): Promise<void> => {
+    try {
+      const res = await fetch(
+        `http://localhost:8080/api/patrols/${patrolId}/arrive`,
+        {
+          method: 'PATCH'
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error('No se pudo registrar la llegada de la patrulla');
+      }
+
+      // Refrescar datos para actualizar los estados en la UI
+      await fetchData();
+    } catch (err) {
+      if (err instanceof Error) {
+        alert(err.message);
+      } else {
+        alert('Error al registrar la llegada');
       }
     }
   };
@@ -185,6 +220,24 @@ const Asignaciones: React.FC = () => {
                 </div>
                 <div className="assignment-status">
                   <span className="badge badge-orange">En Proceso</span>
+                  
+                  {/* Control inteligente del flujo del estado de la patrulla */}
+                  {assignment.patrol.status === 'EN_ROUTE' ? (
+                    <button
+                      className="btn btn-primary"
+                      style={{ marginTop: '8px', display: 'block', width: '100%' }}
+                      onClick={() => void handleMarkArrival(assignment.patrol.id)}
+                    >
+                      Marcar llegada
+                    </button>
+                  ) : (
+                    <span 
+                      className="arrival-confirmed" 
+                      style={{ marginTop: '8px', display: 'block', color: '#2ec4b6', fontSize: '0.9em', fontWeight: 'bold' }}
+                    >
+                      ✅ Llegó al incidente
+                    </span>
+                  )}
                 </div>
               </div>
             ))}

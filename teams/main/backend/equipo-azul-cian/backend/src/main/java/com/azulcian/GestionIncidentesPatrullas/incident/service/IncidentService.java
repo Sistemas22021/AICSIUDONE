@@ -2,6 +2,7 @@ package com.azulcian.GestionIncidentesPatrullas.incident.service;
 
 import com.azulcian.GestionIncidentesPatrullas.assignment.model.Assignment;
 import com.azulcian.GestionIncidentesPatrullas.assignment.repository.AssignmentRepository;
+import com.azulcian.GestionIncidentesPatrullas.incident.dto.IncidentDetailDTO;
 import com.azulcian.GestionIncidentesPatrullas.incident.dto.IncidentSummaryDTO;
 import com.azulcian.GestionIncidentesPatrullas.incident.model.Incident;
 import com.azulcian.GestionIncidentesPatrullas.incident.model.IncidentStatus;
@@ -41,12 +42,16 @@ public class IncidentService {
     // =========================================
     // LIST RECENT INCIDENTS
     // =========================================
-    public List<Incident> getAllIncidents() {
-        return incidentRepository.findTop10ByOrderByCreatedAtDesc();
+    public List<IncidentDetailDTO> getAllIncidents() {
+        return incidentRepository
+                .findTop10ByOrderByCreatedAtDesc()
+                .stream()
+                .map(this::convertToDetailDTO)
+                .toList();
     }
 
     // =========================================
-    // GET BY ID
+    // GET BY ID (INTERNAL / ENTITY)
     // =========================================
     public Incident getIncidentById(Long id) {
         return incidentRepository.findById(id)
@@ -54,10 +59,45 @@ public class IncidentService {
     }
 
     // =========================================
+    // GET DETAILS BY ID (DTO FOR VIEW)
+    // =========================================
+    public IncidentDetailDTO getIncidentDetailById(Long id) {
+        Incident incident = getIncidentById(id);
+        return convertToDetailDTO(incident);
+    }
+
+    // =========================================
+    // METODO AUXILIAR: CONVERT TO DETAIL DTO
+    // =========================================
+    private IncidentDetailDTO convertToDetailDTO(Incident incident) {
+        IncidentDetailDTO dto = new IncidentDetailDTO();
+
+        dto.setId(incident.getId());
+        dto.setType(incident.getType());
+        dto.setDescription(incident.getDescription());
+        dto.setLatitude(incident.getLatitude());
+        dto.setLongitude(incident.getLongitude());
+        dto.setStatus(incident.getStatus());
+        dto.setPriority(incident.getPriority());
+        dto.setCreatedAt(incident.getCreatedAt());
+        dto.setUpdatedAt(incident.getUpdatedAt());
+        dto.setClosedAt(incident.getClosedAt());
+
+        assignmentRepository
+                .findByIncident(incident)
+                .ifPresent(assignment -> {
+                    Patrol patrol = assignment.getPatrol();
+                    dto.setPatrolCode(patrol.getCode());
+                    dto.setPatrolOfficerName(patrol.getOfficerName());
+                });
+
+        return dto;
+    }
+
+    // =========================================
     // SUMMARY DASHBOARD
     // =========================================
     public IncidentSummaryDTO getSummary() {
-
         List<Incident> incidents = incidentRepository.findAll();
 
         int active = 0;
@@ -65,15 +105,12 @@ public class IncidentService {
         int closed = 0;
 
         for (Incident incident : incidents) {
-
             if (incident.getStatus() == IncidentStatus.ACTIVE) {
                 active++;
             }
-
             else if (incident.getStatus() == IncidentStatus.IN_PROGRESS) {
                 inProgress++;
             }
-
             else if (incident.getStatus() == IncidentStatus.CLOSED) {
                 closed++;
             }
@@ -91,10 +128,12 @@ public class IncidentService {
     // UPDATE STATUS
     // =========================================
     public Incident updateStatus(Long id, IncidentStatus newStatus) {
-
         Incident incident = getIncidentById(id);
-
         incident.setStatus(newStatus);
+
+        if (newStatus == IncidentStatus.CLOSED) {
+            incident.setClosedAt(java.time.LocalDateTime.now());
+        }
 
         return incidentRepository.save(incident);
     }
@@ -103,7 +142,6 @@ public class IncidentService {
     // CLOSE INCIDENT (CORE OPERATIVO)
     // =========================================
     public Incident closeIncident(Long id) {
-
         // 1. Buscar incidente
         Incident incident = getIncidentById(id);
 
@@ -129,6 +167,7 @@ public class IncidentService {
 
         // 6. Cerrar incidente
         incident.setStatus(IncidentStatus.CLOSED);
+        incident.setClosedAt(java.time.LocalDateTime.now());
 
         // 7. Marcar asignación como finalizada
         assignment.setFinishedAt(java.time.LocalDateTime.now());

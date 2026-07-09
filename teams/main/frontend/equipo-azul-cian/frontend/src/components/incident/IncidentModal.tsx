@@ -186,6 +186,7 @@ const IncidentsModal: React.FC<Props> = ({ onClose, onCreated }) => {
                     ]
                   : null
               }
+              showCounters={false}
             />
           </div>
 

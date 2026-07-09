@@ -374,7 +374,9 @@ const Patrullas: React.FC = () => {
                         ? [parseFloat(newPatrol.latitude), parseFloat(newPatrol.longitude)]
                         : null
                     }
-                    height="100%"
+                    selectionType="patrol"
+                    height="250px"
+                    showCounters={false}
                   />
                 </div>
                 {newPatrol.latitude && newPatrol.longitude ? (
