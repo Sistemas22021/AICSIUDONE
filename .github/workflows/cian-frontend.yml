@@ -1,0 +1,229 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Pipeline: Frontend Equipo Azul-Cian
+#
+# IMPORTANTE: Este pipeline es INDEPENDIENTE de todos los demás equipos.
+# Solo se activa cuando hay cambios dentro de la carpeta del frontend
+# del equipo Azul-Cian Y en la rama rama-equipo-cian.
+#
+# Sin el filtro `paths`, cualquier commit en rama-equipo-cian (incluso del
+# backend u otros equipos) activaría este pipeline innecesariamente.
+#
+# Flujo de Jobs: Build → Lint → Test → Deploy (comentado) → Smoke Test (comentado)
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: "[Frontend] Equipo Azul-Cian"
+
+on:
+  push:
+    branches:
+      - rama-equipo-cian
+    paths:
+      - "teams/main/frontend/equipo-azul-cian/frontend/**"
+  pull_request:
+    branches:
+      - rama-equipo-cian
+    paths:
+      - "teams/main/frontend/equipo-azul-cian/frontend/**"
+  # Permite ejecutar el pipeline manualmente desde la UI de GitHub,
+  # útil para re-ejecutar tras configurar Secrets o para depurar.
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: teams/main/frontend/equipo-azul-cian/frontend
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Job 1: Build
+#
+# Primera barrera de calidad. Si el proyecto no compila, no tiene sentido
+# ejecutar lint ni tests. Se usa `npm ci` (en lugar de `npm install`) porque
+# instala exactamente lo que está en el package-lock.json sin modificarlo,
+# garantizando builds reproducibles en CI.
+#
+# El artefacto `dist/` se sube para que el Job de Deploy lo descargue
+# directamente sin necesidad de re-compilar.
+# ─────────────────────────────────────────────────────────────────────────────
+jobs:
+  build:
+    name: "Build"
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: teams/main/frontend/equipo-azul-cian/frontend/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Build de producción
+        run: npm run build
+
+      - name: Subir artefacto dist/
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: teams/main/frontend/equipo-azul-cian/frontend/dist/
+          retention-days: 1
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Job 2: Lint
+  #
+  # Analiza el código con ESLint. Se ejecuta después del Build porque si el
+  # proyecto ni compila, el lint no aporta valor. Además, el Build ya valida
+  # errores de TypeScript (más graves que problemas de estilo).
+  #
+  # Si detecta errores, el pipeline falla aquí y los Jobs siguientes
+  # (Test, Deploy) no se ejecutan.
+  # ─────────────────────────────────────────────────────────────────────────
+  lint:
+    name: "Lint"
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: teams/main/frontend/equipo-azul-cian/frontend/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Ejecutar Lint
+        run: npm run lint
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Job 3: Test
+  #
+  # Ejecuta los tests unitarios con Vitest. Se ejecuta después del Lint
+  # porque si el código no pasa las reglas de calidad mínima, tampoco
+  # tiene sentido ejecutar tests.
+  #
+  # `npm test` ejecuta `vitest run`, que termina el proceso al finalizar
+  # (a diferencia de `vitest` sin argumentos, que queda en modo watch
+  # y bloquearía el pipeline indefinidamente).
+  # ─────────────────────────────────────────────────────────────────────────
+  test:
+    name: "Test"
+    runs-on: ubuntu-latest
+    needs: lint
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: teams/main/frontend/equipo-azul-cian/frontend/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Ejecutar Tests
+        run: npm test
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Job 4: Deploy
+  #
+  # ESTADO: Desactivado temporalmente — el destino de despliegue (Vercel,
+  # S3 u otra plataforma) aún no ha sido definido por el equipo.
+  # Esto NO es un error del pipeline, sino una decisión de implementación.
+  #
+  # Cuando se decida la plataforma y se configuren los Secrets en GitHub,
+  # se deben descomentar los steps correspondientes (Vercel o S3).
+  #
+  # Solo se ejecuta en eventos `push`, nunca en Pull Requests, porque
+  # desplegar desde una PR significaría publicar código no revisado aún.
+  # ─────────────────────────────────────────────────────────────────────────
+  deploy:
+    name: "Deploy"
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Descargar artefacto dist/
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: teams/main/frontend/equipo-azul-cian/frontend/dist/
+
+      # ── Opción A: Deploy a Vercel ──────────────────────────────────────
+      # Requiere los Secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
+      # - name: Deploy a Vercel
+      #   run: |
+      #     npm install -g vercel
+      #     vercel --token=${{ secrets.VERCEL_TOKEN }} --yes
+      #   env:
+      #     VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      #     VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_CIAN_FRONTEND }}
+
+      # ── Opción B: Deploy a S3 (AWS) ────────────────────────────────────
+      # Requiere los Secrets: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, S3_BUCKET
+      # - name: Configurar credenciales AWS
+      #   uses: aws-actions/configure-aws-credentials@v4
+      #   with:
+      #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     aws-region: us-east-1
+      # - name: Deploy a S3
+      #   run: |
+      #     aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_CIAN_FRONTEND }} \
+      #       --delete \
+      #       --cache-control "max-age=31536000,immutable" \
+      #       --exclude "index.html"
+      #     aws s3 cp dist/index.html s3://${{ secrets.S3_BUCKET_CIAN_FRONTEND }}/index.html \
+      #       --cache-control "no-cache,no-store,must-revalidate"
+
+      - name: Deploy pendiente de configuración
+        run: echo "Deploy comentado. Descomentar los steps de Vercel o S3 cuando se defina la plataforma."
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Job 5: Smoke Test (Test de Aprobación)
+  #
+  # El Smoke Test es el Test de Aprobación del pipeline. A diferencia de los
+  # tests unitarios (que validan lógica interna), el Smoke Test valida el
+  # comportamiento observable por el usuario una vez finalizado el despliegue:
+  # comprueba que la URL pública responde con HTTP 200, confirmando que la
+  # aplicación quedó efectivamente publicada y accesible.
+  #
+  # Si falla, indica que el Deploy técnicamente "funcionó" (no falló el Job),
+  # pero algo salió mal en la plataforma (CDN, DNS, configuración, etc.).
+  #
+  # ESTADO: Comentado — se activa junto con el Deploy cuando se defina
+  # la plataforma y se configure el Secret FRONTEND_URL.
+  # ─────────────────────────────────────────────────────────────────────────
+  smoke-test:
+    name: "Smoke Test (Test de Aprobación)"
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: github.event_name == 'push'
+
+    steps:
+      # - name: Verificar que la app responde (HTTP 200)
+      #   run: |
+      #     URL="${{ secrets.FRONTEND_URL }}"
+      #     STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
+      #     echo "Código de respuesta recibido: $STATUS"
+      #     if [ "$STATUS" != "200" ]; then
+      #       echo "ERROR: La app no responde correctamente. Se esperaba 200, se obtuvo $STATUS."
+      #       exit 1
+      #     fi
+      #     echo "OK: La app está en línea y responde con HTTP 200."
+
+      - name: Smoke Test pendiente de configuración
+        run: echo "Smoke Test comentado. Descomentar cuando se configure FRONTEND_URL en los Secrets de GitHub."
