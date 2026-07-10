@@ -82,7 +82,8 @@ const ALL_MENU_ITEMS: (MenuItem & { roles?: UserRole[] })[] = [
     to: '/control', 
     roles: [
       'Oficial de Seguimiento', 
-      'Supervisor'
+      'Supervisor',
+      'Oficial Penitenciario'
     ] 
   },
   { 

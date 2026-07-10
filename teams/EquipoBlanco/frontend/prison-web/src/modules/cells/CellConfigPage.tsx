@@ -140,7 +140,7 @@ export default function CellConfigPage() {
                 <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-3.5">Identificador</th>
                 <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-3.5">Nivel Conducta</th>
                 <th className="hidden sm:table-cell text-left text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-3.5">Dimensiones (m)</th>
-                <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-3.5">Ocupaci\u00f3n</th>
+                <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-3.5">Ocupación</th>
                 <th className="text-right text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-3.5">Acciones</th>
               </tr>
             </thead>
@@ -162,7 +162,7 @@ export default function CellConfigPage() {
                     </td>
                     <td className="hidden sm:table-cell px-4 py-4 text-gray-600">
                       {cell.lengthMeters != null && cell.widthMeters != null
-                        ? `${cell.lengthMeters}\u00d7${cell.widthMeters}`
+                        ? `${cell.lengthMeters}x${cell.widthMeters}`
                         : '\u2014'}
                     </td>
                     <td className="px-4 py-4 text-gray-600">{cell.currentOccupancy}/{cell.maxCapacity}</td>

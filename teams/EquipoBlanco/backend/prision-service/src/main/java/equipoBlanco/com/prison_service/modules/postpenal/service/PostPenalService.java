@@ -74,7 +74,13 @@ public class PostPenalService {
     public List<ExpedienteDto> getAllExpedientes() {
         List<ExpedienteSeguimiento> expedientes = expedienteSeguimientoRepository.findAll();
         expedientes.sort(Comparator.comparing(
-            (ExpedienteSeguimiento e) -> "Perfil Incompleto".equals(e.getEstado()) ? 0 : 1)
+            (ExpedienteSeguimiento e) -> {
+                String estado = e.getEstado();
+                if ("Alerta Crítica Activa".equals(estado)) return 0;
+                if ("Alerta Crítica — Atendida".equals(estado)) return 1;
+                if ("Perfil Incompleto".equals(estado)) return 2;
+                return 3;
+            })
             .thenComparing(e -> e.getFechaEgreso() != null ? e.getFechaEgreso() : LocalDate.MAX));
 
         return expedientes.stream().map(this::toDto).collect(Collectors.toList());

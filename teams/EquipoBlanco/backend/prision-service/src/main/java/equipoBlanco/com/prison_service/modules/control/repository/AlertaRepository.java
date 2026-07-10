@@ -15,5 +15,8 @@ public interface AlertaRepository extends JpaRepository<Alerta, UUID> {
 
     /** Para filtrar alertas de nivel 1 que siguen activas */
     List<Alerta> findByNivelAndEstado(Integer nivel, String estado);
+
+    /** Para buscar alertas hermanas del mismo expediente y nivel */
+    List<Alerta> findByExpedienteIdAndNivelAndEstado(UUID expedienteId, Integer nivel, String estado);
 }
 

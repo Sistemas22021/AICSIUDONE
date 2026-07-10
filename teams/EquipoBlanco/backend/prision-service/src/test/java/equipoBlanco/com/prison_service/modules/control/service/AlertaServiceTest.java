@@ -102,4 +102,70 @@ class AlertaServiceTest {
 
         verify(alertaRepository, never()).save(any());
     }
+
+    // ─── Test 4: Obtener alertas de Nivel 2 ──────────────────────────────────
+
+    @Test
+    void testObtenerAlertasNivel2() {
+        Alerta alertaN2 = Alerta.builder()
+                .id(UUID.randomUUID())
+                .nivel(2)
+                .destinatario("Supervisor")
+                .estado("activa")
+                .build();
+
+        when(alertaRepository.findByNivel(2)).thenReturn(List.of(alertaN2));
+
+        List<AlertaDto> resultado = alertaService.obtenerAlertasNivel2();
+
+        assertThat(resultado).hasSize(1);
+        assertThat(resultado.get(0).getNivel()).isEqualTo(2);
+
+        verify(alertaRepository).findByNivel(2);
+    }
+
+    // ─── Test 5: Obtener alertas activas por destinatario con rol Supervisor ─────
+
+    @Test
+    void testObtenerAlertasActivasPorDestinatario_Supervisor() {
+        org.springframework.security.core.Authentication auth = mock(org.springframework.security.core.Authentication.class);
+        org.springframework.security.core.context.SecurityContext securityContext = mock(org.springframework.security.core.context.SecurityContext.class);
+        
+        doReturn(List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_SUPERVISOR")))
+                .when(auth).getAuthorities();
+        when(securityContext.getAuthentication()).thenReturn(auth);
+        org.springframework.security.core.context.SecurityContextHolder.setContext(securityContext);
+
+        Alerta alertaPersonal = Alerta.builder()
+                .id(UUID.randomUUID())
+                .nivel(2)
+                .destinatario("Pedro Castillo")
+                .estado("activa")
+                .build();
+
+        Alerta alertaSupervisor = Alerta.builder()
+                .id(UUID.randomUUID())
+                .nivel(2)
+                .destinatario("Supervisor")
+                .estado("activa")
+                .build();
+
+        when(alertaRepository.findByDestinatarioAndEstado("Pedro Castillo", "activa"))
+                .thenReturn(List.of(alertaPersonal));
+        when(alertaRepository.findByDestinatarioAndEstado("Supervisor", "activa"))
+                .thenReturn(List.of(alertaSupervisor));
+
+        try {
+            List<AlertaDto> resultado = alertaService.obtenerAlertasActivasPorDestinatario("Pedro Castillo");
+
+            assertThat(resultado).hasSize(2);
+            assertThat(resultado.stream().map(AlertaDto::getDestinatario))
+                    .containsExactlyInAnyOrder("Pedro Castillo", "Supervisor");
+
+            verify(alertaRepository).findByDestinatarioAndEstado("Pedro Castillo", "activa");
+            verify(alertaRepository).findByDestinatarioAndEstado("Supervisor", "activa");
+        } finally {
+            org.springframework.security.core.context.SecurityContextHolder.clearContext();
+        }
+    }
 }

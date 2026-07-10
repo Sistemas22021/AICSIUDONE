@@ -55,6 +55,13 @@ public class CalendarioController {
         return ResponseEntity.ok(calendarioService.obtenerPendientesHoy(oficialCedula));
     }
 
+    @GetMapping("/incumplimientos/30-dias")
+    @Operation(summary = "Incumplimientos en últimos 30 días", description = "Obtiene las presentaciones incumplidas en los últimos 30 días, opcionalmente filtradas por oficial")
+    public ResponseEntity<List<CalendarioDto>> obtenerIncumplimientosUltimos30Dias(
+            @Parameter(description = "Cédula del oficial (opcional)") @RequestParam(required = false) String oficialCedula) {
+        return ResponseEntity.ok(calendarioService.obtenerIncumplimientosUltimos30Dias(oficialCedula));
+    }
+
     @PutMapping("/{id}/registrar")
     @Operation(summary = "Registrar cumplimiento", description = "Registra que una presentación fue cumplida (asistió)")
     public ResponseEntity<CalendarioDto> registrarCumplimiento(

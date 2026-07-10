@@ -110,6 +110,23 @@ public class CalendarioService {
         return pendientes.stream().map(this::toDto).collect(Collectors.toList());
     }
 
+    public List<CalendarioDto> obtenerIncumplimientosUltimos30Dias(String oficialCedula) {
+        LocalDate hace30Dias = LocalDate.now().minusDays(30);
+        List<CalendarioPresentacion> incumplimientos = calendarioRepository.findByEstadoAndFechaProgramadaGreaterThanEqual("INCUMPLIDA", hace30Dias);
+
+        if (oficialCedula != null && !oficialCedula.isEmpty()) {
+            return incumplimientos.stream()
+                .filter(p -> {
+                    ExpedienteSeguimiento exp = expedienteSeguimientoRepository.findById(p.getExpedienteId()).orElse(null);
+                    return exp != null && (oficialCedula.equals(exp.getOficialAsignadoCedula()) || oficialCedula.equals(exp.getOficialAsignadoNombre()));
+                })
+                .map(this::toDto)
+                .collect(Collectors.toList());
+        }
+
+        return incumplimientos.stream().map(this::toDto).collect(Collectors.toList());
+    }
+
     @Transactional
     public CalendarioDto registrarCumplimiento(UUID id, CumplimientoDto dto) {
         CalendarioPresentacion cp = calendarioRepository.findById(id)
@@ -142,7 +159,7 @@ public class CalendarioService {
         exp.setContadorIncumplimientos(contador);
 
         if (contador >= 3) {
-            exp.setEstado("alerta_critica");
+            exp.setEstado("Alerta Crítica Activa");
         }
         expedienteSeguimientoRepository.save(exp);
 
@@ -170,7 +187,7 @@ public class CalendarioService {
             exp.setContadorIncumplimientos(contador);
 
             if (contador >= 3) {
-                exp.setEstado("alerta_critica");
+                exp.setEstado("Alerta Crítica Activa");
             }
             expedienteSeguimientoRepository.save(exp);
 
@@ -238,7 +255,7 @@ public class CalendarioService {
                 .fechaEmision(java.time.LocalDateTime.now())
                 .destinatario("Supervisor")
                 .estado("activa")
-                .accionRequerida("CRÍTICO: " + mensaje)
+                .accionRequerida("Solicitud de medida urgente ante tribunal")
                 .build();
             alertaRepository.save(alerta);
         }

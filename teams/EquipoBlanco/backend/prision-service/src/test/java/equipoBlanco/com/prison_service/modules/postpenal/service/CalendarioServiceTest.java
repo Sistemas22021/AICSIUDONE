@@ -129,6 +129,45 @@ public class CalendarioServiceTest {
     }
 
     @Test
+    void testProcesarPresentacionesVencidas_ExitoSegundoIncumplimiento() {
+        // Arrange
+        expediente.setContadorIncumplimientos(1); // El siguiente será el 2do
+
+        when(calendarioRepository.findByFechaProgramadaLessThanEqualAndEstado(any(LocalDate.class), eq("PENDIENTE")))
+            .thenReturn(List.of(presentacionVencida));
+        when(expedienteSeguimientoRepository.findById(expedienteId)).thenReturn(Optional.of(expediente));
+
+        // Act
+        calendarioService.procesarPresentacionesVencidas();
+
+        // Assert
+        assertEquals("INCUMPLIDA", presentacionVencida.getEstado());
+        assertEquals(2, expediente.getContadorIncumplimientos());
+        assertNotEquals("alerta_critica", expediente.getEstado());
+
+        verify(calendarioRepository, times(1)).save(presentacionVencida);
+        verify(expedienteSeguimientoRepository, times(1)).save(expediente);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<Alerta>> listCaptor = ArgumentCaptor.forClass(List.class);
+        verify(alertaRepository, times(1)).saveAll(listCaptor.capture());
+        
+        List<Alerta> savedAlertas = listCaptor.getValue();
+        assertEquals(2, savedAlertas.size());
+        
+        Alerta officialAlert = savedAlertas.stream().filter(a -> a.getDestinatario().equals("Oficial Pruebas")).findFirst().orElse(null);
+        Alerta supervisorAlert = savedAlertas.stream().filter(a -> a.getDestinatario().equals("Supervisor")).findFirst().orElse(null);
+        
+        assertNotNull(officialAlert);
+        assertEquals(2, officialAlert.getNivel());
+        assertEquals("activa", officialAlert.getEstado());
+        
+        assertNotNull(supervisorAlert);
+        assertEquals(2, supervisorAlert.getNivel());
+        assertEquals("activa", supervisorAlert.getEstado());
+    }
+
+    @Test
     void testProcesarPresentacionesVencidas_SinPresentacionesVencidas() {
         // Arrange
         when(calendarioRepository.findByFechaProgramadaLessThanEqualAndEstado(any(LocalDate.class), eq("PENDIENTE")))

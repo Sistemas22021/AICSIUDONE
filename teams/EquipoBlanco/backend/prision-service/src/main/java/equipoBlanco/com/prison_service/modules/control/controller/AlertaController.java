@@ -38,6 +38,24 @@ public class AlertaController {
     }
 
     /**
+     * GET /api/v1/alertas/nivel2
+     * Devuelve todas las alertas de Nivel 2 (activas e históricas) para el dashboard.
+     */
+    @GetMapping("/nivel2")
+    public ResponseEntity<List<AlertaDto>> obtenerAlertasNivel2() {
+        return ResponseEntity.ok(alertaService.obtenerAlertasNivel2());
+    }
+
+    /**
+     * GET /api/v1/alertas/nivel3
+     * Devuelve todas las alertas críticas de Nivel 3 para el dashboard.
+     */
+    @GetMapping("/nivel3")
+    public ResponseEntity<List<AlertaDto>> obtenerAlertasNivel3() {
+        return ResponseEntity.ok(alertaService.obtenerAlertasNivel3());
+    }
+
+    /**
      * PUT /api/v1/alertas/{id}/atender
      * Marca la alerta como atendida y registra la observación opcional del oficial.
      */

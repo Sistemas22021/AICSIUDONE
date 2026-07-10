@@ -13,4 +13,5 @@ public interface CalendarioPresentacionRepository extends JpaRepository<Calendar
     List<CalendarioPresentacion> findByExpedienteIdOrderByFechaProgramadaAsc(UUID expedienteId);
     List<CalendarioPresentacion> findByFechaProgramadaAndEstado(LocalDate fechaProgramada, String estado);
     List<CalendarioPresentacion> findByFechaProgramadaLessThanEqualAndEstado(LocalDate fechaProgramada, String estado);
+    List<CalendarioPresentacion> findByEstadoAndFechaProgramadaGreaterThanEqual(String estado, LocalDate fechaProgramada);
 }
