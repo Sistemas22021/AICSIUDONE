@@ -1,457 +1,180 @@
-# Backend — Sistema Integral de Gestión Penitenciaria (SIGP)
+# Prison Service (Backend - Equipo Blanco)
+
+Este es el microservicio principal encargado de la gestión interna penitenciaria, desarrollado con Spring Boot.
+
+## Cómo Levantar el Proyecto
+
+1. **Clonar el repositorio** (si no lo has hecho):
+   ```bash
+   cd .../AICSIUDONE/teams/EquipoBlanco/backend/prision-service
+   ```
+
+2. **Asegúrate de tener configurado el `.env`** con las credenciales de la base de datos (ya incluido en el proyecto).
+
+3. **Ejecutar la aplicación** con Maven Wrapper:
+   ```bash
+   .\mvnw.cmd spring-boot:run
+   ```
+
+   La aplicación se levantará en `http://localhost:8081`.
+
+4. **Verificar** que el servicio está activo accediendo a:
+   - Health check: `http://localhost:8081/actuator/health`
+   - Swagger UI: `http://localhost:8081/swagger-ui.html`
+
+> **Nota:** Requiere Java 21 y una conexión a Internet para descargar dependencias Maven. La base de datos PostgreSQL ya está configurada en Supabase (nube), no requiere instalación local.
+
+---
 
 ## Stack Tecnológico
 
 | Capa | Tecnología |
 |------|-----------|
-| Lenguaje | Java 21 |
 | Framework | Spring Boot 3.2.4 |
-| Base de datos | PostgreSQL (Supabase) |
-| ORM | Spring Data JPA (Hibernate) |
-| Seguridad | Spring Security + Custom Filter (JwtAuthFilter) |
-| Service Discovery | Eureka Client (Spring Cloud 2023.0.1) |
-| Build | Maven (Wrapper) |
-| Gestión de dependencias | Lombok, spring-dotenv |
+| Lenguaje | Java 21 |
+| Build Tool | Maven (Wrapper) |
+| Base de Datos | PostgreSQL (Supabase) |
+| ORM | Spring Data JPA / Hibernate |
+| Seguridad | Spring Security + JWT (cabeceras X-User-Name, X-User-Role) |
+| Documentación API | SpringDoc OpenAPI (Swagger UI) |
+| Validación | Spring Boot Validation |
+| Service Discovery | Spring Cloud Netflix Eureka |
+| Monitoreo | Spring Boot Actuator |
+| Utilidades | Lombok, Spring Dotenv |
+| Tests | JUnit + Mockito |
 
 ---
 
-## CI/CD — Pipeline
-
-### ¿Qué es CI/CD?
-
-**CI (Continuous Integration)**: cada vez que subes código a GitHub, el servidor de GitHub Actions descarga tu repo, compila, ejecuta tests y verifica que todo funciona. Si algo falla, te avisa.
-
-**CD (Continuous Deployment)**: después de pasar los tests, el código se despliega automáticamente a un entorno de producción.
-
-En este proyecto:
-- **Backend**: solo tiene CI (test + build sin deploy)
-- **Frontend**: tiene CI/CD completo (test + build + deploy a Vercel)
-
-### ¿Cómo funciona?
-
-#### 1. Los archivos del pipeline
-
-Los pipelines son archivos YAML dentro de `.github/workflows/`:
-
-| Pipeline | Archivo | Servicio |
-|---|---|---|
-| Backend | `.github/workflows/equipoblanco-prision-service.yml` | `prision-service` |
-| Frontend | `.github/workflows/equipoblanco-prison-web.yml` | `prison-web` |
-
-Cada archivo define:
-- **Cuándo** se activa (eventos + ramas + rutas)
-- **Qué** hacer (jobs con pasos)
-- **Dónde** ejecutarse (ubuntu-latest)
-
-#### 2. ¿Cuándo se activa?
-
-| Evento | Ramas | ¿Cuándo? |
-|---|---|---|
-| `push` (subir código) | `main`, `develop` | Cambios en la carpeta del servicio |
-| `pull_request` | `main`, `develop` | Cambios en la carpeta del servicio |
-| `workflow_dispatch` | Cualquiera | Manual desde GitHub.com |
-
-> **Importante**: si haces push a `main` pero cambias archivos de `main/`, NO se activa el pipeline de EquipoBlanco. Solo reacciona a cambios en `teams/EquipoBlanco/...`.
-
-#### 3. ¿Qué hace exactamente?
-
-**Backend** (solo CI, sin deploy):
-
-```
-Push → GitHub Actions →
-  1. Test: mvn test -B (Java 21, Maven, caché)
-  2. Build: mvn package -DskipTests -B → genera JAR → sube como artifact
-  [Se detiene aquí — NO hay deploy]
-```
-
-**Frontend** (CI/CD completo con deploy):
-
-```
-Push → GitHub Actions →
-  1. Test: npm ci → npm test (Node 20, Vitest)
-  2. Build & Deploy:
-     a. npm ci → npm run build
-     b. Vercel deploy:
-        - Si es develop → deploy preview
-        - Si es main → deploy producción
-```
-
-### Cómo hacer funcionar los pipelines (paso a paso)
-
-#### Requisitos iniciales
-
-1. El repositorio debe estar en GitHub
-2. Los archivos `.yml` deben estar en `.github/workflows/` (ya están creados)
-3. Configurar los Secrets en GitHub
-
-#### Configurar Secrets del Frontend (para deploy a Vercel)
-
-El pipeline del frontend necesita autenticarse en Vercel. Ve a:
-
-```
-GitHub → Settings → Secrets and variables → Actions → New repository secret
-```
-
-Agrega estos 4 secrets:
-
-| Secret | Valor | Dónde obtenerlo |
-|---|---|---|
-| `VERCEL_TOKEN` | `vcp_...` | https://vercel.com/account/tokens → Create token |
-| `VERCEL_ORG_ID` | ID del team | https://vercel.com → Dashboard → Settings → General → Team ID |
-| `VERCEL_PROJECT_ID_PRISON_WEB` | ID del proyecto | https://vercel.com → proyecto → Settings → General → Project ID |
-| `VITE_API_URL` | URL del backend | Ej: `https://e31a2aa6b01992.lhr.life` (túnel) o URL de producción |
-
-#### Probar los pipelines
-
-**Opción A: Automático (al hacer push)**
-
-```bash
-# Desde tu terminal local:
-cd C:\Users\Jeisi Rosales\Documents\SI\AICSIUDONE
-
-# Hacer cambios en backend
-# (ej: modificar un archivo Java)
-git add .
-git commit -m "fix: corregir validación"
-git push origin develop
-
-# Automáticamente GitHub Actions ejecuta el pipeline del backend
-```
-
-**Opción B: Manual (desde GitHub)**
-
-```
-1. Ir a https://github.com/TU_USER/AICSIUDONE/actions
-2. Seleccionar el workflow (ej: "[Equipo Blanco][Backend] Prision Service")
-3. Click "Run workflow"
-4. Seleccionar rama (develop o main)
-5. Click "Run workflow"
-```
-
-#### Ver resultados
-
-1. Ir a GitHub → Actions
-2. Ver el workflow en ejecución
-3. Click en el workflow → ver logs de cada job
-
-- ✅ Verde = pasó
-- ❌ Rojo = falló (click para ver el error)
-
-### Códigos completos para terminal
-
-#### Para activar el pipeline (subir cambios a GitHub)
-
-```bash
-# 1. Ir al repo
-cd C:\Users\Jeisi Rosales\Documents\SI\AICSIUDONE
-
-# 2. Ver qué cambió
-git status
-
-# 3. Agregar cambios
-git add .
-
-# 4. Commit
-git commit -m "descripción del cambio"
-
-# 5. Subir a develop (activa el pipeline)
-git push origin develop
-
-# 6. Cuando todo esté probado, subir a main (activa pipeline + deploy)
-git push origin main
-```
-
-#### Para deploy manual del frontend a Vercel (sin pipeline)
-
-```bash
-# 1. Ir al frontend
-cd C:\Users\Jeisi Rosales\Documents\SI\AICSIUDONE\teams\EquipoBlanco\frontend\prison-web
-
-# 2. Configurar variable de entorno en Vercel (si cambió la URL del túnel)
-vercel env rm VITE_API_GATEWAY_URL production
-vercel env add VITE_API_GATEWAY_URL production
-# Pegar la URL (ej: https://XXXX.lhr.life)
-
-# 3. Construir y desplegar
-vercel build --prod && vercel --prod --prebuilt --yes
-```
-
-#### Para exponeer backend local con túnel (cuando trabajas con Vercel)
-
-```bash
-# Terminal 1 - Iniciar backend
-cd C:\Users\Jeisi Rosales\Documents\SI\AICSIUDONE\teams\EquipoBlanco\backend\prision-service
-.\mvnw.cmd spring-boot:run
-
-# Terminal 2 - Iniciar túnel (después de que el backend esté arriba)
-ssh -R 80:localhost:8081 nokey@localhost.run
-# Te da una URL: https://XXXX.lhr.life
-
-# Terminal 3 (o la misma) - Actualizar Vercel con la nueva URL
-cd C:\Users\Jeisi Rosales\Documents\SI\AICSIUDONE\teams\EquipoBlanco\frontend\prison-web
-vercel env rm VITE_API_GATEWAY_URL production
-vercel env add VITE_API_GATEWAY_URL production
-vercel build --prod && vercel --prod --prebuilt --yes
-```
-
-> **Nota**: Cada vez que reinicias el túnel, la URL cambia. Debes actualizar la variable en Vercel y redeployear.
-
-### Resumen del flujo completo
-
-```
-Desarrollo local:
-  [Backend] .\mvnw.cmd spring-boot:run  →  http://localhost:8081
-  [Frontend] npm run dev                →  http://localhost:5173
-
-Cuando subes cambios a GitHub:
-  git push origin develop
-    → GitHub Actions ejecuta:
-       Backend:  Test → Build (JAR)
-       Frontend: Test → Build → Deploy a Vercel (preview)
-
-Cuando haces merge a main:
-  git push origin main
-    → GitHub Actions ejecuta:
-       Backend:  Test → Build (JAR)
-       Frontend: Test → Build → Deploy a Vercel (producción)
-
-Para que Vercel hable con tu backend local:
-  Terminal 1: .\mvnw.cmd spring-boot:run
-  Terminal 2: ssh -R 80:localhost:8081 nokey@localhost.run
-  Terminal 3: vercel build --prod && vercel --prod --prebuilt --yes
-```
-
----
-
-## Estructura de Carpetas
+## Estructura del Proyecto
 
 ```
 prision-service/
-├── src/main/java/equipoBlanco/com/prison_service/
-│   ├── PrisonServiceApplication.java                  # Entry point
-│   ├── common/
-│   │   ├── GlobalExceptionHandler.java                 # Mapeo de excepciones a HTTP status
-│   │   └── security/
-│   │       ├── SecurityConfig.java                     # Configuración de endpoints por rol
-│   │       └── JwtAuthFilter.java                      # Filtro que lee headers de autenticación
-│   └── modules/
-│       ├── inmates/                                    # Módulo de reclusos
-│       ├── cells/                                      # Módulo de celdas y mapa
-│       ├── postpenal/                                  # Módulo post-penitenciario
-│       └── control/                                    # Módulo de control y alertas
-├── src/main/resources/
-│   ├── application.yml                                 # Configuración general (puerto 8081, BD, JPA, multipart)
-│   └── application-local.yml                           # Override local (credenciales BD hardcodeadas)
-└── src/test/java/equipoBlanco/com/prison_service/
-    └── PrisonServiceApplicationTests.java
+├── pom.xml                          # Configuración Maven (Spring Boot 3.2.4, Java 21)
+├── .env                             # Variables de entorno (credenciales BD PostgreSQL)
+├── mvnw / mvnw.cmd                  # Maven Wrapper (Linux / Windows)
+│
+└── src/
+    ├── main/
+    │   ├── java/equipoBlanco/com/prison_service/
+    │   │   ├── PrisonServiceApplication.java    # Punto de entrada de la aplicación
+    │   │   │
+    │   │   ├── common/                          # Componentes transversales compartidos
+    │   │   │   ├── config/
+    │   │   │   │   └── OpenApiConfig.java       # Configuración de Swagger/OpenAPI
+    │   │   │   ├── security/
+    │   │   │   │   ├── JwtAuthFilter.java       # Filtro JWT (cabeceras X-User-Name, X-User-Role)
+    │   │   │   │   └── SecurityConfig.java      # Configuración de Spring Security
+    │   │   │   ├── GlobalExceptionHandler.java  # Manejador global de excepciones (@ControllerAdvice)
+    │   │   │   └── DatabaseConstraintUpdater.java # Utilidad para actualizar constraints en BD
+    │   │   │
+    │   │   └── modules/
+    │   │       ├── cells/                       # Gestión de celdas y mapa penitenciario
+    │   │       │   ├── controller/              # Endpoints REST (CellController, PrisonMapController)
+    │   │       │   ├── dto/                     # DTOs: CellDto, CellPositionDto, PrisonMapDto, MapWithPositionsDto
+    │   │       │   ├── model/                   # Entidades: Cell, CellAssignment, CellPosition, PrisonMap
+    │   │       │   ├── repository/              # Acceso a datos (JpaRepository)
+    │   │       │   └── service/                 # Lógica de negocio (CellService, CellPositionService, PrisonMapService)
+    │   │       │
+    │   │       ├── control/                     # Monitoreo y sistema de alertas de seguridad
+    │   │       │   ├── model/                   # Entidad: Alerta
+    │   │       │   └── repository/              # Acceso a datos (AlertaRepository)
+    │   │       │
+    │   │       ├── inmates/                     # Registro de reclusos, traslados, incidentes y salidas
+    │   │       │   ├── controller/              # Endpoints: InmateController, DeathReportController, TransferRequestController
+    │   │       │   ├── dto/                     # DTOs: InmateDto, TransferRequestDto, DeathReportDto, TemporaryEgressDto, etc.
+    │   │       │   ├── model/                   # Entidades: Inmate, Belonging, DeathReport, TransferRequest, InternalIncident, etc.
+    │   │       │   ├── repository/              # Acceso a datos (7 repositorios)
+    │   │       │   └── service/                 # Lógica de negocio (InmateService, DeathReportService, TransferRequestService, BelongingService)
+    │   │       │
+    │   │       └── postpenal/                   # Seguimiento post-penal, oficiales de carga y calendarios
+    │   │           ├── controller/              # Endpoints: PostPenalController, CalendarioController
+    │   │           ├── dto/                     # DTOs: ExpedienteDto, OficialCargaDto, CalendarioDto, CumplimientoDto, etc.
+    │   │           ├── model/                   # Entidades: ExpedienteSeguimiento, CalendarioPresentacion
+    │   │           ├── repository/              # Acceso a datos (2 repositorios)
+    │   │           └── service/                 # Lógica de negocio (PostPenalService, CalendarioService)
+    │   │
+    │   └── resources/
+    │       ├── application.yml                  # Configuración principal de Spring Boot
+    │       └── application-local.yml            # Configuración para entorno local
+    │
+    └── test/
+        └── java/equipoBlanco/com/prison_service/
+            └── modules/
+                ├── cells/service/CellServiceTest.java       # Tests de CellService
+                ├── control/model/AlertaModelTest.java       # Tests del modelo Alerta
+                ├── inmates/service/InmateServiceTest.java   # Tests de InmateService
+                └── postpenal/service/PostPenalServiceTest.java # Tests de PostPenalService
 ```
 
-### Reglas de organización de módulos
+## Pipelines Implementados (CI/CD)
 
-1. Cada **módulo funcional** vive en `modules/<nombre>/`
-2. Un módulo **SIEMPRE** tiene: `controller/`, `dto/`, `model/`, `repository/`, `service/`
-3. Solo los módulos completos (con CRUD) tienen todas las capas; módulos incipientes pueden tener solo `model/` y `repository/` (ej: `control/`)
-4. El paquete `common/` contiene código compartido (excepciones, seguridad, configuración)
-5. Todo endpoint debe pertenecer a un módulo — no hay controllers sueltos fuera de `modules/`
+El proyecto cuenta con integración continua configurada a través de GitHub Actions.
 
-### Cómo agregar un endpoint nuevo
+- **Archivo que lo constituye:** `.github/workflows/equipoblanco-prision-service.yml` ubicado en la raíz del repositorio.
+- **Cómo ejecutarlo:** 
+  - Se ejecuta automáticamente ante cada evento `push` o `pull_request` hacia las ramas `main` y `develop` (siempre que existan modificaciones dentro de la carpeta `prision-service`).
+  - También puede lanzarse de manera manual desde la pestaña *Actions* de GitHub seleccionando el flujo y presionando *Run workflow* (`workflow_dispatch`).
+- **Qué hace el pipeline:** Prepara un entorno Linux con Java 21, ejecuta las pruebas unitarias con Maven, compila y empaqueta el código (`mvn package`) y finalmente sube el artefacto resultante (`.jar`) para posteriores despliegues.
 
-1. Ubicar el módulo correspondiente o crear uno nuevo siguiendo la estructura `modules/<nombre>/`
-2. Crear el endpoint en el controller existente o crear un nuevo `@RestController` con `@RequestMapping("/api/v1/...")`
-3. Registrar el permiso en `SecurityConfig.java` con `requestMatchers(HttpMethod.X, "/api/v1/...").hasRole("ROL")`
-4. Si el módulo es nuevo, definir:
-   - `model/Entidad.java` — clase con `@Entity`
-   - `dto/EntidadDto.java` — clase con `@Getter @Setter @Builder`
-   - `repository/EntidadRepository.java` — interfaz que extiende `JpaRepository`
-   - `service/EntidadService.java` — clase con `@Service`
-   - `controller/EntidadController.java` — clase con `@RestController`
+## Tests Implementados
 
----
+Se han desarrollado pruebas unitarias garantizando un **aislamiento total (100%)** utilizando la librería Mockito, evitando que interactúen con la base de datos real y siguiendo rigurosamente el patrón **AAA (Arrange, Act, Assert)**.
 
-## Control de Acceso por Roles
+- **Módulos probados:** 
+  - `cells` (`CellServiceTest`)
+  - `inmates` (`InmateServiceTest`)
+  - `postpenal` (`PostPenalServiceTest`)
+  - `control` (`AlertaModelTest`)
+- **Cómo ejecutarlos:** 
+  Desde la carpeta raíz del servicio (`prision-service`), ejecuta el wrapper de Maven en tu terminal:
+  ```bash
+  .\mvnw.cmd test
+  ```
+  Si necesitas correr un test específico, puedes utilizar el parámetro de clase: 
+  ```bash
+  .\mvnw.cmd test -Dtest=CellServiceTest
+  ```
 
-### Roles del Sistema
+## Regla de Organización de Módulos y Cómo Agregar un Nuevo Endpoint
 
-| Rol | Descripción |
-|-----|-------------|
-| `Administrador del Sistema` | Configura infraestructura (celdas, planos) |
-| `Oficial Penitenciario` | Gestión diaria del penal (ingresos, egresos, mapa) |
-| `Supervisor Penitenciario` | Supervisión del penal (aprobación de traslados) |
-| `Oficial de Seguimiento` | Seguimiento post-penitenciario (presentaciones, calendario) |
-| `Supervisor Policial` | Supervisión post-penitenciaria (asignación de oficiales, alertas) |
+El proyecto separa estrictamente la lógica de negocio por dominios. Para agregar un nuevo endpoint de manera limpia, sigue estas reglas:
+1. **Identifica el Módulo:** Ubícate en el paquete correcto (ej. `inmates/controller`).
+2. **Crea/Modifica el Controlador:** Añade tu clase o método y anótalo correctamente (`@RestController` y `@RequestMapping`, o `@GetMapping`, etc.).
+3. **Inyecta el Servicio:** Usa la anotación `@RequiredArgsConstructor` (Lombok) para inyectar dependencias del servicio. Ningún controlador debe tocar un repositorio.
+4. **Utiliza DTOs:** *Regla de oro:* Nunca expongas ni recibas entidades JPA (`@Entity`) directamente. Realiza mapeos utilizando objetos DTO creados en la carpeta `dto`.
+5. **Documenta:** Incorpora las anotaciones de Swagger (ej. `@Operation(summary = "...", description = "...")`) en el nuevo método.
 
-### Cómo funciona
+## Swagger y Documentación de la API
 
-El frontend envía dos headers HTTP en cada petición:
+La API cuenta con documentación interactiva y estandarizada gracias a **springdoc-openapi**.
+- **Implementación en el código:** Toda la configuración general se encuentra centralizada en la clase `OpenApiConfig.java` (paquete `common/config`). Adicionalmente, nuestro filtro de seguridad (`JwtAuthFilter.java`) y el `SecurityConfig.java` incluyen reglas de exclusión explícitas que permiten el tráfico libre (sin token) a los endpoints de Swagger.
+- **Cómo ver la documentación:** Levanta tu servidor Spring Boot localmente y abre tu navegador web en la siguiente dirección: 
+  `http://localhost:8081/swagger-ui.html`
 
-```
-X-User-Name: "Carlos Méndez"
-X-User-Role: "Oficial Penitenciario"
-```
+## Roles del Sistema y Flujo de Autenticación
 
-**Flujo de autenticación/autorización:**
+El microservicio está diseñado para trabajar bajo una arquitectura basada en API Gateway que resuelve el JWT externamente.
+- **Flujo:** La autenticación y asimilación de roles se realiza a través de la clase `JwtAuthFilter.java` (un `OncePerRequestFilter`).
+- **Funcionamiento:** En cada petición (exceptuando Swagger), el filtro intercepta la llamada y verifica que existan las cabeceras HTTP `X-User-Name` y `X-User-Role`.
+- Si existen, el filtro formatea el rol anteponiendo la palabra clave `ROLE_` y deposita un token de autenticación configurado (`UsernamePasswordAuthenticationToken`) dentro del **SecurityContextHolder**.
+- Gracias a este flujo, los endpoints pueden restringirse nativamente en Spring con anotaciones sencillas como `@PreAuthorize("hasRole('ROLE_DIRECTOR')")`.
 
-1. `JwtAuthFilter` intercepta cada request
-2. Lee los headers `X-User-Name` y `X-User-Role`
-3. Convierte el rol al formato Spring Security (`ROLE_OFICIAL_PENITENCIARIO` — espacios reemplazados por guiones bajos)
-4. Crea un `UsernamePasswordAuthenticationToken` y lo inyecta en `SecurityContextHolder`
-5. `SecurityConfig` verifica que el rol tenga permiso para el endpoint solicitado
-6. Si no tiene permiso → `403 Forbidden`
-7. Si tiene permiso → el request pasa al controller normalmente
+## Implementaciones que siguen el Patrón SOLID
 
-### Mapa de permisos (endpoints vs roles)
+1. **Single Responsibility Principle (SRP - Responsabilidad Única):** Está presente en toda la arquitectura dividida. Los *Controllers* únicamente gestionan entradas y salidas HTTP, los *Services* concentran exclusivamente las lógicas y reglas de negocio complejas, y los *Repositories* solo proveen acceso a los datos de la base de datos.
+2. **Open/Closed Principle (OCP - Abierto/Cerrado):** Al usar interfaces que extienden de `JpaRepository`, permitimos que Spring nos provea la implementación y somos capaces de agregar nuevos métodos de búsqueda customizados sin alterar ni sobrescribir el código nativo subyacente.
+3. **Dependency Inversion Principle (DIP - Inversión de Dependencia):** Nuestros servicios dependen de abstracciones (interfaces Repository) inyectadas por el contenedor de Inversión de Control de Spring (mediante inyección de dependencias en constructores), y no de clases concretas instanciadas con `new`.
 
-| Endpoint | Método | Roles Permitidos |
-|----------|--------|------------------|
-| `/api/v1/cells` | POST | Administrador del Sistema |
-| `/api/v1/cells/**` | PUT | Administrador del Sistema |
-| `/api/v1/cells/**` | DELETE | Administrador del Sistema |
-| `/api/v1/cells/*/position` | DELETE | Administrador del Sistema |
-| `/api/v1/cells/*/assign/**` | POST | Oficial Penitenciario, Administrador del Sistema |
-| `/api/v1/cells/**` | GET | Oficial Penitenciario, Administrador del Sistema, Supervisor Penitenciario |
-| `/api/v1/maps/**` | POST | Administrador del Sistema |
-| `/api/v1/maps/**` | PUT | Administrador del Sistema |
-| `/api/v1/maps/**` | DELETE | Administrador del Sistema |
-| `/api/v1/maps/**` | GET | Oficial Penitenciario, Administrador del Sistema, Supervisor Penitenciario |
-| `/api/v1/inmates` | POST | Oficial Penitenciario, Administrador del Sistema |
-| `/api/v1/inmates/*/discharge` | POST | Oficial Penitenciario, Administrador del Sistema |
-| `/api/v1/inmates/**` | GET | Oficial Penitenciario, Administrador del Sistema, Supervisor Penitenciario |
-| `/api/v1/transfers` | POST | Oficial Penitenciario, Administrador del Sistema |
-| `/api/v1/transfers/*/resolve` | PUT | Supervisor Penitenciario, Administrador del Sistema |
-| `/api/v1/transfers/**` | GET | Oficial Penitenciario, Supervisor Penitenciario, Administrador del Sistema |
-| `/api/v1/post-penal/expedientes/*/assign` | POST | Supervisor Policial, Administrador del Sistema |
-| `/api/v1/post-penal/**` | GET | Oficial de Seguimiento, Supervisor Policial, Administrador del Sistema |
-| `/api/v1/post-penal/**` | POST | Oficial de Seguimiento, Supervisor Policial, Administrador del Sistema |
-| `/api/v1/post-penal/**` | PUT | Oficial de Seguimiento, Supervisor Policial, Administrador del Sistema |
-| `/actuator/**` | GET | Permitido a todos (health, info) |
+## Patrones de Diseño Implementados en Nuestro Código
 
-Los permisos se definen en `common/security/SecurityConfig.java`.
+En nuestro backend hemos implementado:
 
-### Cómo agregar un rol nuevo
+### Patrones Creacionales
+- **Builder (Constructor):** Utilizado de forma intensiva a través de todo el proyecto mediante la etiqueta `@Builder` de Lombok, tanto en Entidades JPA como en los DTOs. Esto nos ha permitido flexibilizar la creación de objetos evitando constructores gigantes y anidados (Ej: `CellDto.builder().identifier("A1").build()`).
+- **Singleton (Instancia única):** Implementado transparente y nativamente por Spring Boot; cada componente anotado con `@Service`, `@RestController` y `@Repository` existe en memoria como una única instancia para toda la aplicación.
 
-1. Agregar el string del rol en `SecurityConfig.java` en los `hasRole(...)` correspondientes
-2. Agregar el rol a la lista `MOCK_USERS` en el frontend (`authContext.tsx` y `AuthGuard.tsx`)
-3. Sincronizar el rol en `ProtectedRoute` y en los filtros de `SidebarLayout`
+### Patrones Estructurales
+- **Facade (Fachada):** Este patrón es visible en las clases de la capa Service (como `PostPenalService.java` o `CellService.java`). Esta capa actúa como una fachada que envuelve interacciones sumamente complejas que involucran llamadas a múltiples repositorios (`InmateRepository`, `AlertaRepository`, etc.), dándole al controlador métodos limpios y fáciles de consumir sin que deba conocer dicha complejidad.
 
----
-
-## Documentación de la API (Swagger/OpenAPI)
-
-El backend utiliza **SpringDoc OpenAPI 2.5.0** para generar documentación interactiva de la API.
-
-### URLs disponibles
-
-| Recurso | URL |
-|---------|-----|
-| Swagger UI (interfaz gráfica) | `http://localhost:8081/swagger-ui.html` |
-| OpenAPI spec (JSON) | `http://localhost:8081/v3/api-docs` |
-| OpenAPI spec (YAML) | `http://localhost:8081/v3/api-docs.yaml` |
-
-### Cómo usar Swagger UI
-
-1. Iniciar el servidor local: `.\mvnw.cmd spring-boot:run`
-2. Abrir `http://localhost:8081/swagger-ui.html` en el navegador
-3. Los endpoints están agrupados por tags:
-   - **Reclusos (Inmates)** — CRUD de reclusos, egresos, salidas temporales
-   - **Celdas (Cells)** — CRUD de celdas, asignación de reclusos
-   - **Mapas (Prison Maps)** — Mapas del penal por piso
-   - **Traslados (Transfers)** — Solicitudes de traslado
-   - **Incidentes y Fallecimientos** — Reportes de muerte, incidentes, pertenencias
-   - **Post-Penitenciario (Expedientes)** — Expedientes de seguimiento
-   - **Calendario (Presentaciones)** — Calendario de presentaciones
-4. Para autenticarse, configurar los headers `X-User-Name` y `X-User-Role` en la sección "Authorize" de Swagger UI
-5. Click en "Try it out" para probar cualquier endpoint directamente
-
-### Roles disponibles para pruebas
-
-| Header | Valor |
-|--------|-------|
-| `X-User-Name` | Nombre del usuario (ej: "Carlos Méndez") |
-| `X-User-Role` | `Administrador del Sistema`, `Oficial Penitenciario`, `Supervisor`, `Oficial de Seguimiento` |
-
-### Configuración actual
-
-Los parámetros de SpringDoc se definen en `application.yml`:
-- `springdoc.api-docs.path=/api-docs`
-- `springdoc.swagger-ui.path=/swagger-ui.html`
-- `springdoc.swagger-ui.tryItOutEnabled=true`
-- `springdoc.swagger-ui.operationsSorter=method`
-
----
-
-## Desarrollo local
-
-```bash
-# Requisitos: Java 21, Maven
-
-# Compilar
-./mvnw clean compile
-
-# Ejecutar tests
-./mvnw test
-
-# Ejecutar servidor local (puerto 8081 por defecto)
-./mvnw spring-boot:run
-```
-
-El archivo `.env` en la raíz contiene las credenciales de base de datos para desarrollo local (no se sube al repo).
-
----
-
-## Buenas Prácticas
-
-- **No exponer IDs secuenciales**: usar `UUID` como PK (ya configurado vía `GenerationType.UUID`)
-- **Auditoría**: todo endpoint que modifique datos debe recibir `X-User-Name` y registrarlo
-- **Manejo de errores**: lanzar `RuntimeException` con mensajes descriptivos → `GlobalExceptionHandler` mapea por contenido del mensaje:
-  - Contiene "Ya existe" → `409 CONFLICT`
-  - Contiene "no encontrado" / "no encontrada" → `404 NOT FOUND`
-  - Contiene "llena" → `400 BAD_REQUEST`
-  - Contiene "ya tiene celda" → `409 CONFLICT`
-  - Otros → `500 INTERNAL_SERVER_ERROR`
-- **DTOs**: nunca exponer entidades JPA directamente en los endpoints, siempre mapear a DTOs
-- **Validación**: usar anotaciones `jakarta.validation` (`@NotBlank`, `@NotNull`, `@Min`, etc.) en los DTOs
-- **Seguridad**: no hardcodear contraseñas — usar variables de entorno (`.env`) o `application-local.yml` en `.gitignore`
-- **CORS**: configuración permisiva (orígenes `*`, métodos estándar, headers expuestos `X-User-Name` y `X-User-Role`)
-- **Multipart**: soporte para subida de archivos de hasta 50MB (imágenes de reclusos, huellas)
-
----
-
-## Patrones de diseño implementados
-
-### 1. **DTO (Data Transfer Object)**
-Cada capa de presentación se comunica con el servicio mediante objetos DTO (`InmateDto`, `CellDto`, `ExpedienteDto`, etc.) para evitar exponer las entidades JPA directamente.
-
-### 2. **Builder Pattern**
-Gracias a Lombok `@Builder`, las entidades y DTOs se construyen con el patrón Builder (ej: `Inmate.builder().firstName(...).build()`).
-
-### 3. **Repository Pattern**
-Spring Data JPA abstrae el acceso a datos mediante interfaces que extienden `JpaRepository<T, UUID>`, encapsulando la lógica de persistencia.
-
-### 4. **Service Layer**
-Cada módulo tiene una capa de servicio (`InmateService`, `CellService`, `PostPenalService`) que contiene la lógica de negocio, separada de los controllers.
-
-### 5. **Dependency Injection (DI)**
-Inyección de dependencias por constructor usando `@RequiredArgsConstructor` de Lombok en todos los servicios y controllers.
-
-### 6. **Filter Chain (Chain of Responsibility)**
-`JwtAuthFilter` extiende `OncePerRequestFilter` y se inserta en la cadena de filtros de Spring Security mediante `addFilterBefore(...)`, interceptando cada request para autenticar.
-
-### 7. **Strategy Pattern (Roles)**
-Spring Security `authorizeHttpRequests` define permisos por endpoint usando `hasRole`/`hasAnyRole`, aplicando una estrategia de autorización según el rol autenticado.
-
-### 8. **Template Method (JPA)**
-`JpaRepository` proporciona métodos CRUD predefinidos (`findAll`, `findById`, `save`, `delete`) que actúan como plantilla, y los repositorios agregan consultas personalizadas.
-
-### 9. **Global Exception Handler (Controller Advice)**
-`GlobalExceptionHandler` con `@ControllerAdvice` centraliza el manejo de excepciones y mapea mensajes de error a códigos HTTP específicos.
-
-### 10. **Modular Architecture**
-Separación del código en módulos funcionales (`inmates`, `cells`, `postpenal`, `control`) con responsabilidades bien delimitadas, facilitando el mantenimiento y escalabilidad.
-
-### 11. **Embedded Value (JPA Embeddables)**
-Uso de relaciones `@OneToMany` y `@ManyToOne` entre entidades para modelar agregaciones (ej: `Inmate` → `InmatePhoto`, `Inmate` → `Belonging`).
-
-### 12. **Enumeration Pattern**
- Estados finitos modelados como enums de Java:
- - `Inmate.InmateStatus`: `ACTIVO_SIN_CELDA`, `ACTIVO_CON_CELDA`, `EGRESADO`
- - `TransferRequest.TransferStatus`: `PENDIENTE`, `APROBADO`, `RECHAZADO`
+### Patrones de Comportamiento
+- **Strategy (Estrategia):** A nivel interno, el ecosistema de Spring Security implementa profundamente el patrón estrategia utilizando interfaces (como para la resolución de roles y `SecurityContext`). De igual forma, las distintas anotaciones y clases de configuración proveen a Spring estrategias dinámicas sobre cómo ejecutar o manejar las políticas de seguridad en cada petición filtrada.
