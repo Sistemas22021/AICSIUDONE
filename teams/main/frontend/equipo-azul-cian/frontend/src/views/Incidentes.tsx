@@ -24,6 +24,12 @@ const Incidentes: React.FC = () => {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Estado para los mensajes de notificación
+  const [message, setMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
 
   const [selectedIncident, setSelectedIncident] =
     useState<Incident | null>(null);
@@ -94,12 +100,38 @@ const Incidentes: React.FC = () => {
         );
       }
 
-      await res.json();
+      // Validación robusta de la respuesta del backend
+      if (!res.ok) {
+        let errorMessage = 'No se puede cerrar un incidente mientras la patrulla sigue en ruta.';
 
-      // Forzar la recarga de los datos en el estado local
+        try {
+          const errorData = await res.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          // Si no es un JSON válido, conserva la cadena por defecto
+        }
+
+        throw new Error(errorMessage);
+      }
+
+      try {
+        await res.json();
+      } catch {
+        // Ignorar si el cuerpo exitoso viene vacío
+      }
+
+      // Sincronizar tabla
       await fetchIncidents();
 
-      // Buscar el objeto actualizado usando una callback funcional para asegurar la lectura del estado más fresco
+      // Notificación exitosa
+      setMessage({
+        type: 'success',
+        text: 'Estado del incidente actualizado correctamente.'
+      });
+      setTimeout(() => {
+        setMessage(null);
+      }, 3000);
+
       setIncidents((currentIncidents) => {
         const updated = currentIncidents.find((incident) => incident.id === id);
         if (updated) {
@@ -109,7 +141,24 @@ const Incidentes: React.FC = () => {
       });
       
     } catch (err) {
+      // Captura el mensaje lanzado (ej: "No se puede cerrar un incidente mientras la patrulla sigue en ruta")
+      if (err instanceof Error) {
+        setMessage({
+          type: 'error',
+          text: err.message
+        });
+      } else {
+        setMessage({
+          type: 'error',
+          text: 'No se pudo actualizar el estado del incidente.'
+        });
+      }
+
       console.error('Error al actualizar el estado:', err);
+
+      setTimeout(() => {
+        setMessage(null);
+      }, 4000);
     }
   };
 
@@ -197,6 +246,33 @@ const Incidentes: React.FC = () => {
           </button>
         ))}
       </div>
+
+      {/* Alerta integrada con prefijo de emoji dinámico */}
+      {message && (
+        <div
+          style={{
+            background:
+              message.type === 'success'
+                ? 'rgba(16,185,129,.15)'
+                : 'rgba(239,68,68,.15)',
+            color:
+              message.type === 'success'
+                ? '#10b981'
+                : '#ef4444',
+            border: `1px solid ${
+              message.type === 'success'
+                ? '#10b981'
+                : '#ef4444'
+            }`,
+            padding: '12px 16px',
+            borderRadius: 8,
+            fontWeight: 600
+          }}
+        >
+          {message.type === 'success' ? '🟢 ' : '🔴 '}
+          {message.text}
+        </div>
+      )}
 
       <div
         style={{

@@ -1,5 +1,9 @@
 package com.azulcian.GestionIncidentesPatrullas.patrol.service;
 
+import com.azulcian.GestionIncidentesPatrullas.assignment.model.Assignment;
+import com.azulcian.GestionIncidentesPatrullas.assignment.repository.AssignmentRepository;
+import com.azulcian.GestionIncidentesPatrullas.incident.model.Incident;
+import com.azulcian.GestionIncidentesPatrullas.incident.model.IncidentStatus;
 import com.azulcian.GestionIncidentesPatrullas.patrol.model.Patrol;
 import com.azulcian.GestionIncidentesPatrullas.patrol.model.PatrolStatus;
 import com.azulcian.GestionIncidentesPatrullas.patrol.repository.PatrolRepository;
@@ -21,6 +25,9 @@ class PatrolServiceTest {
 
     @Mock
     private PatrolRepository patrolRepository;
+
+    @Mock
+    private AssignmentRepository assignmentRepository; // Nuevo mock inyectado
 
     @InjectMocks
     private PatrolService patrolService;
@@ -84,10 +91,10 @@ class PatrolServiceTest {
     }
 
     // =========================================
-    // UPDATE STATUS
+    // UPDATE STATUS (GESTIÓN ADMINISTRATIVA)
     // =========================================
     @Test
-    void updateStatus_shouldChangeStatus() {
+    void updateStatus_shouldChangeToOutOfService() {
 
         when(patrolRepository.findById(1L))
                 .thenReturn(Optional.of(patrol));
@@ -95,9 +102,28 @@ class PatrolServiceTest {
         when(patrolRepository.save(any(Patrol.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        Patrol result = patrolService.updateStatus(1L, PatrolStatus.BUSY);
+        Patrol result = patrolService.updateStatus(1L, PatrolStatus.OUT_OF_SERVICE);
 
-        assertEquals(PatrolStatus.BUSY, result.getStatus());
+        assertEquals(PatrolStatus.OUT_OF_SERVICE, result.getStatus());
+    }
+
+    @Test
+    void updateStatus_shouldNotAllowManualChangeFromBusy() {
+
+        patrol.setStatus(PatrolStatus.BUSY);
+
+        when(patrolRepository.findById(1L))
+                .thenReturn(Optional.of(patrol));
+
+        RuntimeException ex = assertThrows(
+                RuntimeException.class,
+                () -> patrolService.updateStatus(1L, PatrolStatus.AVAILABLE)
+        );
+
+        assertEquals(
+                "Las patrullas EN_ROUTE o BUSY no pueden cambiar su estado manualmente.",
+                ex.getMessage()
+        );
     }
 
     // =========================================
@@ -119,6 +145,39 @@ class PatrolServiceTest {
     }
 
     // =========================================
+    // MARK PATROL AS ARRIVED
+    // =========================================
+    @Test
+    void markAsArrived_shouldChangePatrolToBusy() {
+
+        patrol.setStatus(PatrolStatus.EN_ROUTE);
+
+        Incident incident = new Incident();
+        incident.setLatitude(10.0);
+        incident.setLongitude(-60.0);
+        incident.setStatus(IncidentStatus.IN_PROGRESS);
+
+        Assignment assignment = new Assignment();
+        assignment.setPatrol(patrol);
+        assignment.setIncident(incident);
+
+        when(patrolRepository.findById(1L))
+                .thenReturn(Optional.of(patrol));
+
+        when(assignmentRepository.findByPatrolAndFinishedAtIsNull(patrol))
+                .thenReturn(Optional.of(assignment));
+
+        when(patrolRepository.save(any(Patrol.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        Patrol result = patrolService.markAsArrived(1L);
+
+        assertEquals(PatrolStatus.BUSY, result.getStatus());
+        assertEquals(10.0, result.getLatitude());
+        assertEquals(-60.0, result.getLongitude());
+    }
+
+    // =========================================
     // TEST ERROR: PATROL NOT FOUND
     // =========================================
     @Test
@@ -130,6 +189,7 @@ class PatrolServiceTest {
         RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> patrolService.getPatrolById(99L));
 
-        assertEquals("Patrol not found with id: 99", ex.getMessage());
+        // Corregido para coincidir con el mensaje real en español del servicio
+        assertEquals("No se encontró la patrulla con el ID: 99", ex.getMessage());
     }
 }

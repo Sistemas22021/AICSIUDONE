@@ -55,8 +55,11 @@ const Patrullas: React.FC = () => {
     void fetchPatrols();
   }, []);
 
-  // Actualizar el estado de una patrulla
-  const handleStatusChange = async (id: number, newStatus: string): Promise<void> => {
+  // Actualizar el estado de una patrulla con tipado estricto
+  const handleStatusChange = async (
+    id: number,
+    newStatus: PatrolStatus
+  ): Promise<void> => {
     try {
       const response = await fetch(`http://localhost:8080/api/patrols/${id}/status`, {
         method: 'PATCH',
@@ -77,6 +80,69 @@ const Patrullas: React.FC = () => {
     } catch (err: any) {
       alert(`Error: ${err.message}`);
     }
+  };
+
+  // Decidir las acciones operativas según el estado de la patrulla
+  const renderPatrolAction = (patrol: Patrol): React.ReactNode => {
+    if (patrol.status === 'AVAILABLE') {
+      return (
+        <button
+          className="btn btn-secondary"
+          onClick={() =>
+            void handleStatusChange(
+              patrol.id,
+              'OUT_OF_SERVICE'
+            )
+          }
+        >
+          Poner fuera de servicio
+        </button>
+      );
+    }
+
+    if (patrol.status === 'OUT_OF_SERVICE') {
+      return (
+        <button
+          className="btn btn-primary"
+          onClick={() =>
+            void handleStatusChange(
+              patrol.id,
+              'AVAILABLE'
+            )
+          }
+        >
+          Activar patrulla
+        </button>
+      );
+    }
+
+    if (patrol.status === 'EN_ROUTE') {
+      return (
+        <span
+          style={{
+            color: '#60a5fa',
+            fontSize: '0.85rem'
+          }}
+        >
+          En camino al incidente
+        </span>
+      );
+    }
+
+    if (patrol.status === 'BUSY') {
+      return (
+        <span
+          style={{
+            color: '#f59e0b',
+            fontSize: '0.85rem'
+          }}
+        >
+          Atendiendo incidente
+        </span>
+      );
+    }
+
+    return null;
   };
 
   // Seleccionar posición en el mapa
@@ -277,7 +343,7 @@ const Patrullas: React.FC = () => {
                 <th>Coordenadas</th>
                 <th>Estado Actual</th>
                 <th>Último Reporte</th>
-                <th style={{ textAlign: 'right' }}>Cambiar Estado</th>
+                <th style={{ textAlign: 'right' }}>Acción Operativa</th>
               </tr>
             </thead>
             <tbody>
@@ -297,22 +363,7 @@ const Patrullas: React.FC = () => {
                     {patrol.lastUpdated ? new Date(patrol.lastUpdated).toLocaleString() : 'Sin registro'}
                   </td>
                   <td style={{ textAlign: 'right' }}>
-                    <select
-                      value={patrol.status}
-                      onChange={(e) => void handleStatusChange(patrol.id, e.target.value)}
-                      style={{
-                        ...styles.tableSelect,
-                        borderColor:
-                          patrol.status === 'AVAILABLE' ? 'var(--color-green)' :
-                            patrol.status === 'EN_ROUTE' ? 'var(--color-blue)' :
-                              patrol.status === 'BUSY' ? 'var(--color-orange)' : 'var(--color-red)'
-                      }}
-                    >
-                      <option value="AVAILABLE">Disponible</option>
-                      <option value="EN_ROUTE">En Ruta</option>
-                      <option value="BUSY">Ocupada</option>
-                      <option value="OUT_OF_SERVICE">Fuera de Servicio</option>
-                    </select>
+                    {renderPatrolAction(patrol)}
                   </td>
                 </tr>
               ))}
@@ -544,18 +595,6 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '12px',
     overflow: 'hidden',
     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-  },
-  tableSelect: {
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    border: '1px solid var(--border)',
-    borderLeftWidth: '3px',
-    borderRadius: '6px',
-    padding: '6px 10px',
-    color: '#ffffff',
-    outline: 'none',
-    cursor: 'pointer',
-    fontSize: '0.88rem',
-    fontWeight: '500',
   },
   loadingContainer: {
     display: 'flex',

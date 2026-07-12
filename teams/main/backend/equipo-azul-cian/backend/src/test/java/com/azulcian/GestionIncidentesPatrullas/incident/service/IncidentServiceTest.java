@@ -91,9 +91,10 @@ class IncidentServiceTest {
         when(incidentRepository.save(any(Incident.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        Incident result = incidentService.updateStatus(1L, IncidentStatus.CLOSED);
+        // Se cambia a IN_PROGRESS porque CLOSED ahora lanza excepción en este método
+        Incident result = incidentService.updateStatus(1L, IncidentStatus.IN_PROGRESS);
 
-        assertEquals(IncidentStatus.CLOSED, result.getStatus());
+        assertEquals(IncidentStatus.IN_PROGRESS, result.getStatus());
     }
 
     // =========================================
@@ -156,5 +157,33 @@ class IncidentServiceTest {
         assertEquals(IncidentStatus.CLOSED, result.getStatus());
         assertEquals(PatrolStatus.AVAILABLE, patrol.getStatus());
         assertNotNull(assignment.getFinishedAt());
+    }
+
+    @Test
+    void closeIncident_shouldFailWhenPatrolIsNotBusy() {
+
+        incident.setStatus(IncidentStatus.IN_PROGRESS);
+
+        Patrol patrol = new Patrol();
+        patrol.setStatus(PatrolStatus.EN_ROUTE);
+
+        Assignment assignment = new Assignment();
+        assignment.setPatrol(patrol);
+
+        when(incidentRepository.findById(1L))
+                .thenReturn(Optional.of(incident));
+
+        when(assignmentRepository.findByIncident(incident))
+                .thenReturn(Optional.of(assignment));
+
+        RuntimeException exception = assertThrows(
+                RuntimeException.class,
+                () -> incidentService.closeIncident(1L)
+        );
+
+        assertEquals(
+                "Incident can only be closed when patrol is BUSY",
+                exception.getMessage()
+        );
     }
 }

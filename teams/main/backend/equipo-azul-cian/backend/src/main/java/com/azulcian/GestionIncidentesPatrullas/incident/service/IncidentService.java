@@ -129,12 +129,14 @@ public class IncidentService {
     // =========================================
     public Incident updateStatus(Long id, IncidentStatus newStatus) {
         Incident incident = getIncidentById(id);
-        incident.setStatus(newStatus);
 
         if (newStatus == IncidentStatus.CLOSED) {
-            incident.setClosedAt(java.time.LocalDateTime.now());
+            throw new RuntimeException(
+                    "Use close endpoint to close incidents"
+            );
         }
 
+        incident.setStatus(newStatus);
         return incidentRepository.save(incident);
     }
 
@@ -145,7 +147,7 @@ public class IncidentService {
         // 1. Buscar incidente
         Incident incident = getIncidentById(id);
 
-        // 2. Validar estado
+        // 2. Validar estado del incidente
         if (incident.getStatus() != IncidentStatus.IN_PROGRESS) {
             throw new RuntimeException(
                     "Only IN_PROGRESS incidents can be closed"
@@ -162,17 +164,24 @@ public class IncidentService {
         // 4. Obtener patrulla
         Patrol patrol = assignment.getPatrol();
 
-        // 5. Liberar patrulla
+        // 5. Validar que la patrulla esté atendiendo
+        if (patrol.getStatus() != PatrolStatus.BUSY) {
+            throw new RuntimeException(
+                    "Incident can only be closed when patrol is BUSY"
+            );
+        }
+
+        // 6. Liberar patrulla
         patrol.setStatus(PatrolStatus.AVAILABLE);
 
-        // 6. Cerrar incidente
+        // 7. Cerrar incidente
         incident.setStatus(IncidentStatus.CLOSED);
         incident.setClosedAt(java.time.LocalDateTime.now());
 
-        // 7. Marcar asignación como finalizada
+        // 8. Finalizar asignación
         assignment.setFinishedAt(java.time.LocalDateTime.now());
 
-        // 8. Guardar cambios
+        // 9. Guardar cambios
         patrolRepository.save(patrol);
         assignmentRepository.save(assignment);
 

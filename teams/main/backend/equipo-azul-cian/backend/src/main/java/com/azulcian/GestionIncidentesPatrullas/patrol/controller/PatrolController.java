@@ -91,7 +91,11 @@ public class PatrolController {
     // =========================================
     @Operation(
             summary = "Actualizar estado de patrulla",
-            description = "Permite cambiar el estado de una patrulla (AVAILABLE, EN_ROUTE, BUSY)"
+            description = """
+                    Permite gestionar estados administrativos de una patrulla.
+                    Solo permite cambiar entre AVAILABLE y OUT_OF_SERVICE.
+                    Los estados EN_ROUTE y BUSY son gestionados automáticamente por el flujo operativo.
+                    """
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Estado actualizado correctamente"),

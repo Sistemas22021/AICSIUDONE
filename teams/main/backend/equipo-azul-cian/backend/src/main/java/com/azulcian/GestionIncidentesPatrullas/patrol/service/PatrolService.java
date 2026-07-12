@@ -3,6 +3,7 @@ package com.azulcian.GestionIncidentesPatrullas.patrol.service;
 import com.azulcian.GestionIncidentesPatrullas.assignment.model.Assignment;
 import com.azulcian.GestionIncidentesPatrullas.assignment.repository.AssignmentRepository;
 import com.azulcian.GestionIncidentesPatrullas.incident.model.Incident;
+import com.azulcian.GestionIncidentesPatrullas.incident.model.IncidentStatus;
 import com.azulcian.GestionIncidentesPatrullas.patrol.model.Patrol;
 import com.azulcian.GestionIncidentesPatrullas.patrol.model.PatrolStatus;
 import com.azulcian.GestionIncidentesPatrullas.patrol.repository.PatrolRepository;
@@ -53,11 +54,26 @@ public class PatrolService {
     }
 
     // =========================================
-    // UPDATE PATROL STATUS
+    // UPDATE PATROL STATUS (ADMINISTRATIVE)
     // =========================================
     public Patrol updateStatus(Long id, PatrolStatus newStatus) {
 
         Patrol patrol = getPatrolById(id);
+        PatrolStatus currentStatus = patrol.getStatus();
+
+        // Estados operativos automáticos NO deben cambiarse manualmente
+        if (currentStatus == PatrolStatus.EN_ROUTE || currentStatus == PatrolStatus.BUSY) {
+            throw new RuntimeException(
+                    "Las patrullas EN_ROUTE o BUSY no pueden cambiar su estado manualmente."
+            );
+        }
+
+        // Solo permitir gestión administrativa
+        if (newStatus != PatrolStatus.AVAILABLE && newStatus != PatrolStatus.OUT_OF_SERVICE) {
+            throw new RuntimeException(
+                    "El cambio manual solo permite AVAILABLE u OUT_OF_SERVICE."
+            );
+        }
 
         patrol.setStatus(newStatus);
 
@@ -93,6 +109,13 @@ public class PatrolService {
                 );
 
         Incident incident = assignment.getIncident();
+
+        // Cambio 2: Validar que el incidente esté en progreso antes de atenderse
+        if (incident.getStatus() != IncidentStatus.IN_PROGRESS) {
+            throw new RuntimeException(
+                    "El incidente debe estar IN_PROGRESS antes de atenderse."
+            );
+        }
 
         // Simular llegada al lugar del incidente
         patrol.setLatitude(incident.getLatitude());

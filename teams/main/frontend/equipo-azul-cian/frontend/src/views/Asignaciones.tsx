@@ -49,8 +49,19 @@ const Asignaciones: React.FC = () => {
       const dataPatrols: Patrol[] = await resPatrols.json();
       const dataAssignments: Assignment[] = await resAssignments.json();
 
-      const activeIncidents = dataIncidents.filter(i => i.status !== 'CLOSED');
-      const availablePatrols = dataPatrols.filter(p => p.status === 'AVAILABLE');
+      // Filtrar incidentes que solo estén en estado ACTIVE y que no hayan sido asignados previamente
+      const assignedIncidentIds = new Set(
+        dataAssignments.map(a => a.incident.id)
+      );
+      
+      const activeIncidents = dataIncidents.filter(i =>
+        i.status === 'ACTIVE' &&
+        !assignedIncidentIds.has(i.id)
+      );
+      
+      const availablePatrols = dataPatrols.filter(
+        p => p.status === 'AVAILABLE'
+      );
 
       setIncidents(activeIncidents);
       setPatrols(availablePatrols);
@@ -60,12 +71,14 @@ const Asignaciones: React.FC = () => {
       const firstIncident = activeIncidents.at(0);
       const firstPatrol = availablePatrols.at(0);
 
-      if (firstIncident) {
-        setSelectedIncident(firstIncident.id.toString());
-      }
-      if (firstPatrol) {
-        setSelectedPatrol(firstPatrol.id.toString());
-      }
+      // Mejora para limpiar la selección si las listas quedan vacías
+      setSelectedIncident(
+        firstIncident ? firstIncident.id.toString() : ''
+      );
+      
+      setSelectedPatrol(
+        firstPatrol ? firstPatrol.id.toString() : ''
+      );
 
       setError(null);
     } catch (err) {

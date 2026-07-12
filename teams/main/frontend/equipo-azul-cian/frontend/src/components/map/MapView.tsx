@@ -68,7 +68,7 @@ const MapView: React.FC<Props> = ({
   // Estado local para almacenar las posiciones animadas/simuladas de las patrullas
   const [animatedPatrols, setAnimatedPatrols] = React.useState<Patrol[]>(patrols);
 
-  // ✅ Problema 1: Sincronizar sin reiniciar la posición simulada
+  // Sincronizar sin reiniciar la posición simulada
   React.useEffect(() => {
     setAnimatedPatrols(prev => {
       if (prev.length === 0) {
@@ -86,6 +86,15 @@ const MapView: React.FC<Props> = ({
           const status = patrol.status
             ? String(patrol.status).toLowerCase().trim()
             : '';
+
+          // Pequeña mejora: Ignorar cálculos de animación si está fuera de servicio
+          if (
+            status === 'out_of_service' ||
+            status === 'fuera de servicio' ||
+            status === 'fuera_servicio'
+          ) {
+            return patrol;
+          }
 
           if (
             status !== 'en_route' &&
@@ -118,7 +127,7 @@ const MapView: React.FC<Props> = ({
             lng += targetLng > lng ? step : -step;
           }
 
-          // ✅ Problema 2: Detectar llegada exacta para detenerse
+          // Detectar llegada exacta para detenerse
           const arrived =
             Math.abs(targetLat - lat) < step &&
             Math.abs(targetLng - lng) < step;
@@ -151,13 +160,16 @@ const MapView: React.FC<Props> = ({
     return status === 'in_progress' || status === 'en proceso' || status === 'en progreso' || status === 'progreso';
   }).length;
 
-  // Filtrar las patrullas reales que vienen por props
+  // Filtrar las patrullas reales alineado al comportamiento del mapa
   const patrullasActivas = patrols.filter(p => {
     const status = p.status ? String(p.status).toLowerCase().trim() : '';
-    return status !== 'out_of_service' 
-      && status !== 'fuera de servicio' 
-      && status !== 'fuera' 
-      && status !== 'inactiva';
+    return (
+      status !== 'out_of_service' &&
+      status !== 'fuera de servicio' &&
+      status !== 'fuera_servicio' &&
+      status !== 'fuera' &&
+      status !== 'inactiva'
+    );
   });
 
   const patrullasCount = patrullasActivas.length;
@@ -192,7 +204,7 @@ const MapView: React.FC<Props> = ({
         }
       `}</style>
 
-      {/* MODIFICACIÓN 3: envolver únicamente la leyenda con showCounters */}
+      {/* Envolver únicamente la leyenda con showCounters */}
       {showCounters && (
         <>
           {/* BARRA SUPERIOR DE CONTADORES */}
@@ -328,22 +340,51 @@ const MapView: React.FC<Props> = ({
           {animatedPatrols.map((patrol) => {
             const patrolStatus = patrol.status ? String(patrol.status).toLowerCase().trim() : '';
             
-            const isMoving =
+            const isOutOfService =
+              patrolStatus === 'out_of_service' ||
+              patrolStatus === 'fuera de servicio' ||
+              patrolStatus === 'fuera_servicio';
+
+            // No mostrar patrullas fuera de servicio en el mapa
+            if (isOutOfService) {
+              return null;
+            }
+            
+            const isAvailable =
+              patrolStatus === 'available' ||
+              patrolStatus === 'disponible';
+            
+            const isEnRoute =
               patrolStatus === 'en_route' ||
               patrolStatus === 'en ruta' ||
               patrolStatus === 'en_ruta';
+            
+            const isBusy =
+              patrolStatus === 'busy' ||
+              patrolStatus === 'ocupada' ||
+              patrolStatus === 'en_proceso' ||
+              patrolStatus === 'in_progress';
 
-            // ✅ Problema 3: Desplazamiento visual estratégico al llegar / estar ocupada
+            let patrolStatusColor = '#10b981';
+            let patrolStatusLabel = 'Disponible';
+
+            if (isEnRoute) {
+              patrolStatusColor = '#3b82f6';
+              patrolStatusLabel = 'En Ruta';
+            } else if (isBusy) {
+              patrolStatusColor = '#f59e0b';
+              patrolStatusLabel = 'Ocupada';
+            } else if (!isAvailable && patrol.status) {
+              patrolStatusLabel = String(patrol.status);
+            }
+
+            const isMoving = isEnRoute;
+
+            // Desplazamiento visual estratégico al llegar / estar ocupada
             const patrolPosition: [number, number] = [
               Number(patrol.latitude),
               Number(patrol.longitude)
             ];
-
-            const isBusy =
-              patrolStatus === 'busy' ||
-              patrolStatus === 'ocupada' ||
-              patrolStatus === 'en_proceso' || 
-              patrolStatus === 'in_progress';
 
             const visualPosition: [number, number] = isBusy
               ? [
@@ -366,7 +407,17 @@ const MapView: React.FC<Props> = ({
                     </div>
                     <div style={{ fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <div><span style={{ color: '#9ca3af' }}>Oficial:</span> {patrol.officerName}</div>
-                      <div><span style={{ color: '#9ca3af' }}>Estado:</span> <span style={{ color: '#3b82f6', fontWeight: 600 }}>{patrol.status || 'Activa'}</span></div>
+                      <div>
+                        <span style={{ color: '#9ca3af' }}>Estado:</span>{' '}
+                        <span
+                          style={{
+                            color: patrolStatusColor,
+                            fontWeight: 600
+                          }}
+                        >
+                          {patrolStatusLabel}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </Popup>
