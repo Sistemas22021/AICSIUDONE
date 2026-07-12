@@ -5,7 +5,7 @@ import { TabNavigation } from './components/TabNavigation'
 import { RegistroDelHecho } from './components/sections/RegistroDelHecho'
 import { ExpedientesPanel } from './components/ExpedientesPanel'
 import { EscenaDelCrimen } from './components/sections/EscenaDelCrimen'
-import { NeonPanel } from './components/ui/NeonPanel'
+import { ModusOperandiIA } from './components/sections/ModusOperandi/ModusOperandiIA'
 import type { ExpedienteActivo } from './types/api.types'
 
 type ActiveTab = 'registro' | 'escena' | 'inteligencia'
@@ -42,27 +42,7 @@ export default function App() {
                         </div>
                     )}
 
-                    {activeTab === 'inteligencia' && (
-                        <div className="pb-6">
-                            <NeonPanel className="py-16">
-                                <div className="text-center space-y-3 max-w-lg mx-auto">
-                                    <div
-                                        className="text-xs uppercase tracking-[0.2em] text-cyan-500"
-                                        style={{ fontFamily: 'Orbitron, monospace' }}
-                                    >
-                                        C — INTELIGENCIA IA / MODUS OPERANDI
-                                    </div>
-                                    <div className="flex items-center justify-center gap-3 mt-4">
-                                        <div className="h-px flex-1 bg-cyan-400/20" />
-                                        <span className="text-[10px] uppercase tracking-[0.15em] text-cyan-400/50">
-                                            Módulo en desarrollo
-                                        </span>
-                                        <div className="h-px flex-1 bg-cyan-400/20" />
-                                    </div>
-                                </div>
-                            </NeonPanel>
-                        </div>
-                    )}
+                    {activeTab === 'inteligencia' && <ModusOperandiIA />}
                 </div>
 
                 <ExpedientesPanel

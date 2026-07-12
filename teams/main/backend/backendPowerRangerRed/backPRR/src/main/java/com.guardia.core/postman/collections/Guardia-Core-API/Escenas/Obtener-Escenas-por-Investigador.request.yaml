@@ -1,4 +1,0 @@
-$kind: http-request
-name: Obtener Escenas por Investigador
-method: GET
-url: '{{baseUrl}}/api/v1/escenas/por-investigador/{{usuarioId}}'

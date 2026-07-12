@@ -1,4 +1,0 @@
-$kind: http-request
-name: Validar Integridad de Evidencia
-method: GET
-url: '{{baseUrl}}/api/v1/evidencias/{{evidenciaId}}/validar-integridad'

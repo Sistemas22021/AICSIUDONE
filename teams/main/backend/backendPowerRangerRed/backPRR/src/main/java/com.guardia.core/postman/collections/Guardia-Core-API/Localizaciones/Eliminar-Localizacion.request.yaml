@@ -1,4 +1,0 @@
-$kind: http-request
-name: "Eliminar Localización"
-method: DELETE
-url: '{{baseUrl}}/api/v1/localizaciones/{{localizacionId}}'

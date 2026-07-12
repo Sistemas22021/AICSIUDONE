@@ -1,9 +1,0 @@
-$kind: http-request
-name: Comparar Expedientes por Modus Operandi
-method: GET
-url: '{{baseUrl}}/api/v1/modus-operandi/{{modusId}}/comparar'
-queryParams:
-  - key: expedienteAId
-    value: '{{expedienteAId}}'
-  - key: expedienteBId
-    value: '{{expedienteBId}}'

@@ -1,4 +1,0 @@
-$kind: http-request
-name: Validar Secuencia
-method: GET
-url: '{{baseUrl}}/api/v1/escenas/{{escenaId}}/validar-secuencia'

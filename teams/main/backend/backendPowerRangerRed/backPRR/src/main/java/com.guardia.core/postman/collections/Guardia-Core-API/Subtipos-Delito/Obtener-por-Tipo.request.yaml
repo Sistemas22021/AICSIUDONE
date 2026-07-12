@@ -1,4 +1,0 @@
-$kind: http-request
-name: Obtener Subtipos de Delito por Tipo
-method: GET
-url: '{{baseUrl}}/api/v1/subtipos-delito/por-tipo/{{tipoDelitoId}}'

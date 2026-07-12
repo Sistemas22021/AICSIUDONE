@@ -1,4 +1,0 @@
-$kind: http-request
-name: Obtener Todas las Evidencias
-method: GET
-url: '{{baseUrl}}/api/v1/evidencias'

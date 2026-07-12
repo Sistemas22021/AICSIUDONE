@@ -1,4 +1,0 @@
-$kind: http-request
-name: Vincular Expediente a Modus Operandi
-method: POST
-url: '{{baseUrl}}/api/v1/modus-operandi/{{modusId}}/expedientes/{{expedienteId}}'

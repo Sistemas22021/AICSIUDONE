@@ -1,4 +1,0 @@
-$kind: http-request
-name: "Obtener Usuario por Identificación"
-method: GET
-url: '{{baseUrl}}/api/v1/usuarios/identificacion/{{identificacion}}'

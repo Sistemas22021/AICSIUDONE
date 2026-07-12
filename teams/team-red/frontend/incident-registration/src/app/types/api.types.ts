@@ -123,3 +123,38 @@ export interface IncidentePayload {
   reporte:          ReportePayload
   fotos:            FotoPayload[]
 }
+
+export interface UsuarioDTO {
+  id: number
+  nombre: string
+  identificacion: string
+  correo: string
+}
+
+export interface ExpedienteResumenDTO {
+  id: number
+  folio: string
+  tipoDelito: string | null
+  subtipoDelito: string | null
+  estatus: EstatusExpediente
+  fechaHecho: string | null
+  investigadorAsignado: string
+  municipio: string | null
+}
+
+export interface CasoRequestDTO {
+  creadoPorIdentificacion: number
+  expedienteIds: number[]
+  motivo: string
+  alertaOrigenId?: number | null
+}
+
+export interface CasoResponseDTO {
+  id: number
+  codigoCaso: string
+  motivo: string
+  creadoPor: UsuarioDTO
+  fechaCreacion: string
+  alertaOrigenId: number | null
+  expedientes: ExpedienteResumenDTO[]
+}

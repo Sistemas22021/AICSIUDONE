@@ -1,4 +1,0 @@
-$kind: http-request
-name: Verificar Integridad del Expediente
-method: GET
-url: '{{baseUrl}}/api/expedientes/{{expedienteId}}/verificar-integridad'

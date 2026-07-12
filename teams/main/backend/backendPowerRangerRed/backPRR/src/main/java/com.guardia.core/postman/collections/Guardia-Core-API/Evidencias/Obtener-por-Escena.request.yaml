@@ -1,4 +1,0 @@
-$kind: http-request
-name: Obtener Evidencias por Escena
-method: GET
-url: '{{baseUrl}}/api/v1/evidencias/por-escena/{{escenaId}}'

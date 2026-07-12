@@ -1,4 +1,0 @@
-$kind: http-request
-name: Obtener Todos los Modus Operandi
-method: GET
-url: '{{baseUrl}}/api/v1/modus-operandi'

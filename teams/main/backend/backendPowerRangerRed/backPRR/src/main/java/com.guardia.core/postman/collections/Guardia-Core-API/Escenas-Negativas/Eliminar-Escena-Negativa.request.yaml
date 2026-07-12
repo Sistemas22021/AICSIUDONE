@@ -1,4 +1,0 @@
-$kind: http-request
-name: Eliminar Escena Negativa
-method: DELETE
-url: '{{baseUrl}}/api/v1/escenas-negativas/{{escenaNegativaId}}'

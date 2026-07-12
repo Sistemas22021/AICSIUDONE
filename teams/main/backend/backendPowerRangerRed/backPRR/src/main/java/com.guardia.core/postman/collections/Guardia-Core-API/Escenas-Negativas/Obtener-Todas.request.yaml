@@ -1,4 +1,0 @@
-$kind: http-request
-name: Obtener Todas las Escenas Negativas
-method: GET
-url: '{{baseUrl}}/api/v1/escenas-negativas'

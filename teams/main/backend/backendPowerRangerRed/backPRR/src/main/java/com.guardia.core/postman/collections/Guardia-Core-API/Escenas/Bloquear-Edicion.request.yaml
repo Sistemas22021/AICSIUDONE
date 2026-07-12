@@ -1,4 +1,0 @@
-$kind: http-request
-name: "Bloquear Edición"
-method: PATCH
-url: '{{baseUrl}}/api/v1/escenas/{{escenaId}}/bloquear'

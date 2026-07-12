@@ -1,4 +1,0 @@
-$kind: http-request
-name: Obtener Involucrados por Expediente
-method: GET
-url: '{{baseUrl}}/api/v1/involucrados/expediente/{{expedienteId}}'
