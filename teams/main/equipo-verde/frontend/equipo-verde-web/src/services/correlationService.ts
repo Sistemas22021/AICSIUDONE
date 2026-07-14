@@ -62,13 +62,15 @@ export class CorrelationService {
     database: EvidenceRecord[],
     page = 0,
     size = 50
-  ): Promise<CorrelationResult[]> {
+  ): Promise<{ results: CorrelationResult[]; totalElements: number }> {
     const res = await fetch(`/api/v1/correlate/${sourceId}?page=${page}&size=${size}`, { method: 'POST' });
     if (!res.ok) throw new Error(`Error en correlación del backend: ${res.status}`);
     
     const data: CorrelationPageResponse = await res.json();
     const results: CorrelationResult[] = [];
     
+    // Retrieve source evidence to use correct sourceValues in details
+    const sourceEvidence = database.find(e => e.id === String(sourceId));
     for (const item of data.content) {
       // Evitamos compararlo contra sí mismo si viniera en la respuesta
       if (item.idBullet === sourceId) continue;
@@ -106,7 +108,7 @@ export class CorrelationService {
 
       details.push({
         field: 'Dirección de Giro (Twist)',
-        sourceValue: target.twist, // Simplified source info
+        sourceValue: sourceEvidence?.twist ?? 'N/A',
         targetValue: target.twist,
         isMatch: item.breakdown.twistMatched,
         scoreContribution: item.breakdown.twistMatched ? 30 : 0,
@@ -115,7 +117,7 @@ export class CorrelationService {
 
       details.push({
         field: 'Tipo de Percusión',
-        sourceValue: target.percussion,
+        sourceValue: sourceEvidence?.percussion ?? 'N/A',
         targetValue: target.percussion,
         isMatch: item.breakdown.percussionMatched,
         scoreContribution: item.breakdown.percussionMatched ? 20 : 0,
@@ -124,7 +126,7 @@ export class CorrelationService {
 
       details.push({
         field: 'Marca / Fabricante',
-        sourceValue: target.marca,
+        sourceValue: sourceEvidence?.marca ?? 'N/A',
         targetValue: target.marca,
         isMatch: item.breakdown.brandMatched,
         scoreContribution: item.breakdown.brandMatched ? 10 : 0,
@@ -137,12 +139,13 @@ export class CorrelationService {
           isViable: true,
           score: Math.round(item.matchScore),
           confidence,
-          details
+          details,
+          comparisonImageBase64: item.breakdown.comparisonImageBase64
         } as any // Forzamos el tipo por si TypeScript se queja del tipo local
       });
     }
     
     results.sort((a, b) => b.matchInfo.score - a.matchInfo.score);
-    return results;
+    return { results, totalElements: data.totalElements };
   }
 }

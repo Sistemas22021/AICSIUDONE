@@ -59,55 +59,73 @@ export const ComparisonViewerModal = ({ open, onClose, result, sourceEvidence }:
         
         {/* Visor de Cotejo Directo (Imágenes) */}
         <Box className="mb-6 bg-slate-900 rounded-xl border border-slate-800 shadow-inner overflow-hidden">
-          <Box className="grid grid-cols-2 divide-x divide-slate-800 relative">
-            
-            {/* Lente Central (Decoración) */}
-            <Box className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-slate-900 rounded-full border-4 border-slate-800 z-10 flex items-center justify-center shadow-2xl">
-              <Crosshair size={20} className="text-emerald-500" />
-            </Box>
-
-            {/* Imagen Origen */}
-            <Box className="relative aspect-square bg-slate-800 group">
+          { (matchInfo as any).comparisonImageBase64 ? (
+            <Box className="relative w-full bg-slate-800 text-center">
               <Box className="absolute top-3 left-3 z-10">
                 <Chip 
-                  label="Origen" 
+                  label="Cotejo Visual OpenCV (ORB Keypoints)" 
                   size="small" 
                   className="bg-indigo-500 text-white font-bold tracking-wider shadow-lg" 
                 />
               </Box>
               <img 
-                src="/bullet-1.png" 
-                alt="Evidencia Origen" 
-                className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                src={(matchInfo as any).comparisonImageBase64.startsWith('data:') 
+                  ? (matchInfo as any).comparisonImageBase64 
+                  : `data:image/png;base64,${(matchInfo as any).comparisonImageBase64}`}
+                alt="Cotejo OpenCV" 
+                className="w-full max-h-[400px] object-contain mx-auto"
               />
-              <Box className="absolute bottom-3 left-3 right-3">
-                <Typography variant="caption" className="text-white bg-black/60 px-2 py-1 rounded backdrop-blur-sm font-mono text-[10px]">
-                  FMT: PNG LOSSLESS | RES: 1080x1080
-                </Typography>
-              </Box>
             </Box>
+          ) : (
+            <Box className="grid grid-cols-2 divide-x divide-slate-800 relative">
+              {/* Lente Central (Decoración) */}
+              <Box className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-slate-900 rounded-full border-4 border-slate-800 z-10 flex items-center justify-center shadow-2xl">
+                <Crosshair size={20} className="text-emerald-500" />
+              </Box>
 
-            {/* Imagen Hallazgo */}
-            <Box className="relative aspect-square bg-slate-800 group">
-              <Box className="absolute top-3 right-3 z-10">
-                <Chip 
-                  label="Hallazgo" 
-                  size="small" 
-                  className="bg-slate-700 text-slate-100 font-bold tracking-wider shadow-lg" 
+              {/* Imagen Origen */}
+              <Box className="relative aspect-square bg-slate-800 group">
+                <Box className="absolute top-3 left-3 z-10">
+                  <Chip 
+                    label="Origen" 
+                    size="small" 
+                    className="bg-indigo-500 text-white font-bold tracking-wider shadow-lg" 
+                  />
+                </Box>
+                <img 
+                  src={sourceEvidence.previewUrl || "/bullet-1.png"} 
+                  alt="Evidencia Origen" 
+                  className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
                 />
+                <Box className="absolute bottom-3 left-3 right-3">
+                  <Typography variant="caption" className="text-white bg-black/60 px-2 py-1 rounded backdrop-blur-sm font-mono text-[10px]">
+                    FMT: PNG LOSSLESS | RES: 1080x1080
+                  </Typography>
+                </Box>
               </Box>
-              <img 
-                src="/bullet-2.png" 
-                alt="Evidencia Hallazgo" 
-                className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
-              />
-              <Box className="absolute bottom-3 left-3 right-3 text-right">
-                <Typography variant="caption" className="text-white bg-black/60 px-2 py-1 rounded backdrop-blur-sm font-mono text-[10px]">
-                  FMT: PNG LOSSLESS | RES: 1080x1080
-                </Typography>
+
+              {/* Imagen Hallazgo */}
+              <Box className="relative aspect-square bg-slate-800 group">
+                <Box className="absolute top-3 right-3 z-10">
+                  <Chip 
+                    label="Hallazgo" 
+                    size="small" 
+                    className="bg-slate-700 text-slate-100 font-bold tracking-wider shadow-lg" 
+                  />
+                </Box>
+                <img 
+                  src={targetEvidence.previewUrl || "/bullet-2.png"} 
+                  alt="Evidencia Hallazgo" 
+                  className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                />
+                <Box className="absolute bottom-3 left-3 right-3 text-right">
+                  <Typography variant="caption" className="text-white bg-black/60 px-2 py-1 rounded backdrop-blur-sm font-mono text-[10px]">
+                    FMT: PNG LOSSLESS | RES: 1080x1080
+                  </Typography>
+                </Box>
               </Box>
             </Box>
-          </Box>
+          )}
           <Box className="bg-slate-900 px-4 py-2 border-t border-slate-800 text-center">
             <Typography variant="caption" className="text-slate-400 font-bold tracking-widest uppercase text-[10px]">
               Visualización microscópica normalizada (1:1 Aspect Ratio)

@@ -1,112 +1,41 @@
-import { AuditActionType, AuditEntry } from '../types/audit';
+// types/audit interface alignments with Backend and Frontend
 
-// Base de datos simulada para la demostración
-let MOCK_AUDIT_LOGS: AuditEntry[] = [
-  {
-    id: 'a1',
-    timestamp: '2026-05-21T08:30:00Z',
-    userId: 'u101',
-    userName: 'Perito A. Córdoba',
-    userRole: 'Perito Balístico',
-    actionType: AuditActionType.LOGIN,
-    targetEntity: 'Sistema Central',
-    description: 'Inicio de sesión exitoso mediante biometría',
-    ipAddress: '192.168.1.45',
-    changes: []
-  },
-  {
-    id: 'a2',
-    timestamp: '2026-05-21T09:15:22Z',
-    userId: 'u101',
-    userName: 'Perito A. Córdoba',
-    userRole: 'Perito Balístico',
-    actionType: AuditActionType.RECORD_CREATED,
-    targetEntity: 'EXP-2026-089',
-    description: 'Creación de nuevo expediente balístico',
-    ipAddress: '192.168.1.45',
-    changes: []
-  },
-  {
-    id: 'a3',
-    timestamp: '2026-05-21T09:16:05Z',
-    userId: 'u101',
-    userName: 'Perito A. Córdoba',
-    userRole: 'Perito Balístico',
-    actionType: AuditActionType.IMAGE_UPLOAD,
-    targetEntity: 'EXP-2026-089',
-    description: 'Carga de documentación fotográfica adjunta',
-    ipAddress: '192.168.1.45',
-    changes: []
-  },
-  {
-    id: 'a4',
-    timestamp: '2026-05-21T11:42:10Z',
-    userId: 'u205',
-    userName: 'Analista J. Pérez',
-    userRole: 'Analista Forense',
-    actionType: AuditActionType.COMPARISON_RUN,
-    targetEntity: 'EXP-2026-089',
-    description: 'Ejecución de algoritmo de cotejo contra base de datos nacional',
-    ipAddress: '192.168.1.12',
-    changes: []
-  },
-  {
-    id: 'a5',
-    timestamp: '2026-05-21T14:22:00Z',
-    userId: 'u300',
-    userName: 'Juez Tribunal 2',
-    userRole: 'Magistrado',
-    actionType: AuditActionType.STATE_CHANGE,
-    targetEntity: 'EV-410',
-    description: 'Cambio de estado de EN BÓVEDA a EN TRIBUNAL',
-    ipAddress: '10.0.4.55',
-    changes: []
-  },
-  {
-    id: 'a6',
-    timestamp: '2026-05-21T16:05:33Z',
-    userId: 'u101',
-    userName: 'Perito A. Córdoba',
-    userRole: 'Perito Balístico',
-    actionType: AuditActionType.RECORD_UPDATED,
-    targetEntity: 'EXP-2026-089',
-    description: 'Modificación de características técnicas',
-    ipAddress: '192.168.1.45',
-    changes: [
-      { field: 'calibre', oldValue: '9mm', newValue: '9mm Parabellum' },
-      { field: 'marca', oldValue: 'Desconocida', newValue: 'Glock' }
-    ]
-  },
-  {
-    id: 'a7',
-    timestamp: '2026-05-21T17:30:45Z',
-    userId: 'u404',
-    userName: 'Admin Sistema',
-    userRole: 'Administrador',
-    actionType: AuditActionType.RECORD_DELETED,
-    targetEntity: 'EXP-2024-001',
-    description: 'Eliminación por orden judicial (Expurgo)',
-    ipAddress: '192.168.0.10',
-    changes: []
-  }
-];
+export interface AuditLogBackendEntry {
+  id: string;
+  rev: number;
+  revTimestamp: number;
+  revType: number; // 0 = ADD, 1 = MOD, 2 = DEL
+  entityType: string; // "BULLET", "IMAGES"
+  entityId: string;
+  operator: string;
+}
 
-// Ordenar por defecto desde el más reciente
-MOCK_AUDIT_LOGS.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+export interface AuditLogBackendPageResponse {
+  content: AuditLogBackendEntry[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+}
 
 class AuditService {
-  getEntries(): AuditEntry[] {
-    return [...MOCK_AUDIT_LOGS];
+  /**
+   * Obtiene los logs de auditoría reales del backend
+   */
+  public async getAuditLogs(page = 0, size = 10): Promise<AuditLogBackendPageResponse> {
+    const res = await fetch(`/api/v1/audit-log?page=${page}&size=${size}`);
+    if (!res.ok) throw new Error(`Error al obtener logs de auditoría: ${res.status}`);
+    return res.json();
   }
 
-  logAction(entry: Omit<AuditEntry, 'id' | 'timestamp'>): AuditEntry {
-    const newEntry: AuditEntry = {
-      ...entry,
-      id: Math.random().toString(36).substr(2, 9),
-      timestamp: new Date().toISOString()
-    };
-    MOCK_AUDIT_LOGS = [newEntry, ...MOCK_AUDIT_LOGS];
-    return newEntry;
+  /**
+   * Acción legacy/simulación. Dado que Hibernate Envers registra de manera
+   * automática en el backend las acciones sobre el modelo de datos,
+   * este método actúa como no-op para evitar errores de compilación.
+   */
+  public logAction(entry: any): any {
+    console.log("Acción registrada localmente (Envers lo registrará en BD):", entry);
+    return entry;
   }
 }
 

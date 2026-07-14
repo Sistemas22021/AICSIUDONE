@@ -11,7 +11,10 @@ import {
   Paper,
   IconButton,
   Tooltip,
-  Button
+  Button,
+  TextField,
+  MenuItem,
+  TablePagination
 } from '@mui/material';
 import { Check, X } from 'lucide-react';
 
@@ -37,7 +40,13 @@ interface UIRankingResult extends CorrelationResult {
 export const CorrelacionPage = () => {
   const [results, setResults] = useState<UIRankingResult[]>([]);
   const [sourceEvidence, setSourceEvidence] = useState<EvidenceRecord | null>(null);
+  const [allEvidences, setAllEvidences] = useState<EvidenceRecord[]>([]);
   
+  // Pagination State
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalElements, setTotalElements] = useState(0);
+
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedResult, setSelectedResult] = useState<CorrelationResult | null>(null);
@@ -49,13 +58,11 @@ export const CorrelacionPage = () => {
     confidenceFilter: 'all'
   });
 
-  // Simular la llegada de una nueva evidencia y ejecutar el motor
+  // Load all bullets on mount to populate the selector
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchAllEvidences = async () => {
       try {
-        const data = await getBullets(0, 50);
-        if (data.content.length === 0) return;
-        
+        const data = await getBullets(0, 100); // Load up to 100 for selection
         const mappedRecords: EvidenceRecord[] = data.content.map(b => {
           const cal = CALIBERS.find(c => c.id === b.caliber);
           return {
@@ -71,28 +78,47 @@ export const CorrelacionPage = () => {
           };
         });
 
-        // Tomamos la primera de la BD como "Origen" para la demo
-        const nuevaEvidencia = mappedRecords[0];
-        setSourceEvidence(nuevaEvidencia);
+        setAllEvidences(mappedRecords);
+        if (mappedRecords.length > 0) {
+          setSourceEvidence(mappedRecords[0]);
+        }
+      } catch (err) {
+        console.error("Error al cargar evidencias para selector:", err);
+      }
+    };
 
-        // Corremos el análisis usando el motor de OpenCV del backend
-        const rawResults = await CorrelationService.runBackendAnalysis(Number(nuevaEvidencia.id), mappedRecords);
-        
-        // Mapeamos al estado de UI
+    fetchAllEvidences();
+  }, []);
+
+  // Perform backend correlation when sourceEvidence, page, or pageSize changes
+  useEffect(() => {
+    const runCorrelation = async () => {
+      if (!sourceEvidence) return;
+      try {
+        const { results: rawResults, totalElements: total } = await CorrelationService.runBackendAnalysis(
+          Number(sourceEvidence.id),
+          allEvidences,
+          page,
+          pageSize
+        );
+
         const uiResults: UIRankingResult[] = rawResults.map((res, idx) => ({
           ...res,
-          id: `MATCH-${idx}`,
+          id: `MATCH-${page * pageSize + idx}`,
           verificationStatus: 'Pendiente'
         }));
 
         setResults(uiResults);
+        setTotalElements(total);
       } catch (err) {
-        console.error("Error al cargar datos para correlación:", err);
+        console.error("Error al correr análisis de correlación paginado:", err);
       }
     };
-    
-    fetchData();
-  }, []);
+
+    if (allEvidences.length > 0) {
+      runCorrelation();
+    }
+  }, [sourceEvidence, allEvidences, page, pageSize]);
 
   const handleVerify = (result: UIRankingResult, isConfirmed: boolean) => {
     setResults(prev => prev.map(r => 
@@ -156,11 +182,38 @@ export const CorrelacionPage = () => {
   return (
     <Box className="animate-fade-in max-w-6xl mx-auto px-4 py-6">
       <SectionTitle>Motor de cotejo</SectionTitle>
+
+      {/* Selector de Evidencia Origen */}
+      <Box className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm mb-6">
+        <Typography variant="subtitle1" className="font-bold text-slate-800 mb-3">
+          Seleccionar Evidencia Origen para Cotejo
+        </Typography>
+        <TextField
+          select
+          fullWidth
+          label="Proyectil / Evidencia Origen"
+          value={sourceEvidence ? sourceEvidence.id : ''}
+          onChange={(e) => {
+            const selected = allEvidences.find(ev => ev.id === e.target.value);
+            if (selected) {
+              setSourceEvidence(selected);
+              setPage(0);
+            }
+          }}
+          slotProps={{ input: { className: "bg-slate-50 rounded-xl" } }}
+        >
+          {allEvidences.map((ev) => (
+            <MenuItem key={ev.id} value={ev.id}>
+              {ev.expediente} — Calibre: {ev.calibre} | Fabricante: {ev.marca}
+            </MenuItem>
+          ))}
+        </TextField>
+      </Box>
       
       {sourceEvidence && (
         <Box className="mb-6 p-4 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center gap-4">
           <Box className="w-12 h-12 bg-indigo-500 text-white rounded-full flex items-center justify-center font-black shadow-inner">
-            E-1
+            E-ACT
           </Box>
           <Box>
             <Typography variant="subtitle2" className="text-indigo-900 font-bold">
@@ -202,7 +255,7 @@ export const CorrelacionPage = () => {
                   <TableCell className="text-center py-3">
                     <Box className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center mx-auto border border-slate-200 shadow-sm">
                       <Typography variant="body2" className="font-black text-slate-700">
-                        {index + 1}
+                        {page * pageSize + index + 1}
                       </Typography>
                     </Box>
                   </TableCell>
@@ -276,6 +329,19 @@ export const CorrelacionPage = () => {
             )}
           </TableBody>
         </Table>
+        <TablePagination
+          rowsPerPageOptions={[5, 10, 20, 50]}
+          component="div"
+          count={totalElements}
+          rowsPerPage={pageSize}
+          page={page}
+          onPageChange={(_, newPage) => setPage(newPage)}
+          onRowsPerPageChange={(e) => {
+            setPageSize(parseInt(e.target.value, 10));
+            setPage(0);
+          }}
+          labelRowsPerPage="Filas por página"
+        />
       </TableContainer>
 
       {/* Modal Visor Comparativo */}
