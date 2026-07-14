@@ -6,6 +6,9 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.*;
 import com.guardia.core.model.enums.EstadoExpediente;
+import org.hibernate.annotations.Array;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "expedientes")
@@ -44,6 +47,11 @@ public class Expediente {
 
     @Column(columnDefinition = "TEXT")
     private String descripcionHecho;
+
+    @Column(name = "embedding")
+    @JdbcTypeCode(SqlTypes.VECTOR)
+    @Array(length = 768)
+    private float[] embedding;
 
     private LocalDateTime fechaHecho;
 
@@ -94,6 +102,7 @@ public class Expediente {
     // Delitos embebidos (legacy)
     @ElementCollection
     @CollectionTable(name = "expediente_delitos", joinColumns = @JoinColumn(name = "expediente_id"))
+    @Builder.Default
     private List<DelitoEnExpediente> delitos = new ArrayList<>();
 
     // Methods demanded by service implementation

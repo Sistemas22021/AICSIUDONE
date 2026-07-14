@@ -31,6 +31,7 @@ public class EscenaChecklist {
     private Integer orden;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean completado = false;
 
     private LocalDateTime fechaInicio;

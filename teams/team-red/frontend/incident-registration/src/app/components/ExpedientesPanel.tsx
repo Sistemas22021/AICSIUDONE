@@ -7,8 +7,10 @@ import { NeonInput }  from './ui/NeonInput'
 import { NeonSelect } from './ui/NeonSelect'
 import { useExpedientesActivos }  from '../hooks/useExpedientesActivos'
 import { useExpedientesFiltros }  from '../hooks/useExpedientesFiltros'
+import { ModusOperandiPanel } from './sections/ModusOperandi/ModusOperandiPanel'
 import type { ExpedienteActivo, EstatusExpediente } from '../types/api.types'
 import type { SortCol } from '../hooks/useExpedientesFiltros'
+
 
 
 const ESTATUS_STYLES: Record<EstatusExpediente, { badge: string; dot: string; label: string }> = {
@@ -76,6 +78,8 @@ export const ExpedientesPanel = ({
 
 
   const [, setTick] = useState(0)
+  const [expedienteMO, setExpedienteMO] = useState<ExpedienteActivo | null>(null)
+  const analistaIdActual = 1
   useEffect(() => {
     if (!isOpen) return
     const t = setInterval(() => setTick(n => n + 1), 5000)

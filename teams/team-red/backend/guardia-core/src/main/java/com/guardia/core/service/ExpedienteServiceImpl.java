@@ -12,6 +12,7 @@ import com.guardia.core.dto.response.EscenaResponse;
 import com.guardia.core.dto.response.VerificacionHashResponse;
 import com.guardia.core.dto.response.ExpedienteActivoResponse;
 import com.guardia.core.SelloExpedienteEvent;
+import com.guardia.core.ExpedienteRegistradoEvent;
 import com.guardia.core.exception.BusinessException;
 import com.guardia.core.exception.ResourceNotFoundException;
 import com.guardia.core.model.Expediente;
@@ -210,7 +211,18 @@ public class ExpedienteServiceImpl implements ExpedienteService {
             });
         }
 
-        return toResponse(expedienteRepository.save(expediente));
+        Expediente guardado = expedienteRepository.save(expediente);
+
+        System.out.println("========================================");
+        System.out.println("🔥 EXPEDIENTE GUARDADO CON ID: " + guardado.getId());
+        System.out.println("========================================");
+
+
+        eventPublisher.publishEvent(new ExpedienteRegistradoEvent(this, guardado.getId()));
+
+        System.out.println("🔥 EVENTO PUBLICADO PARA EXPEDIENTE: " + guardado.getId());
+
+        return toResponse(guardado);
     }
 
     @Override
@@ -352,17 +364,17 @@ public class ExpedienteServiceImpl implements ExpedienteService {
                 e.getInvolucrados() == null
                         ? List.of()
                         : e.getInvolucrados().stream()
-                        .map(i -> new InvolucradoResponse(
-                                i.getId(),
-                                i.getNombre(),
-                                i.getIdentificacion(),
-                                i.getNumeroTelefono(),
-                                i.getNacionalidad(),
-                                i.getDireccion(),
-                                i.getRol(),
-                                i.getRelacionConHecho()
-                        ))
-                        .toList();
+                          .map(i -> new InvolucradoResponse(
+                                  i.getId(),
+                                  i.getNombre(),
+                                  i.getIdentificacion(),
+                                  i.getNumeroTelefono(),
+                                  i.getNacionalidad(),
+                                  i.getDireccion(),
+                                  i.getRol(),
+                                  i.getRelacionConHecho()
+                          ))
+                          .toList();
 
         LocalizacionResponse localizacion = e.getLocalizacion() == null ? null :
                 new LocalizacionResponse(e.getLocalizacion().getId(), e.getLocalizacion().getMunicipio(),
@@ -427,10 +439,10 @@ public class ExpedienteServiceImpl implements ExpedienteService {
 
         if (estatus != null && !estatus.isBlank()) {
             if ("ACTIVO".equalsIgnoreCase(estatus)) {
-                    expedientes = expedienteRepository.findAll().stream()
-                            .filter(e -> e.getEstadoExpediente() != null
-                                    && !ESTADOS_INACTIVOS.contains(e.getEstadoExpediente()))
-                            .toList();
+                expedientes = expedienteRepository.findAll().stream()
+                        .filter(e -> e.getEstadoExpediente() != null
+                                && !ESTADOS_INACTIVOS.contains(e.getEstadoExpediente()))
+                        .toList();
             } else {
                 EstadoExpediente estado = EstadoExpediente.valueOf(estatus.toUpperCase());
                 expedientes = expedienteRepository.findByEstadoExpediente(estado);
