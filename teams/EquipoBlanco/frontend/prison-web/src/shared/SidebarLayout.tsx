@@ -1,7 +1,8 @@
-import { useState } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { getMockUser } from './mockUser'
 import { useAuth, type UserRole } from './authContext'
+import api from './api'
 
 type MenuItem = {
   label: string
@@ -81,7 +82,8 @@ const ALL_MENU_ITEMS: (MenuItem & { roles?: UserRole[] })[] = [
     to: '/control', 
     roles: [
       'Oficial de Seguimiento', 
-      'Supervisor'
+      'Supervisor',
+      'Oficial Penitenciario'
     ] 
   },
   { 
@@ -98,6 +100,67 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
   const mockUser = getMockUser()
   const auth = useAuth()
   const { pathname } = useLocation()
+  const navigate = useNavigate()
+
+  // ── Campana de notificaciones ─────────────────────────────────────────────
+  type AlertaNotif = {
+    id: string
+    nivel: number
+    nombreEgresado: string | null
+    cedulaEgresado: string | null
+    fechaEmision: string
+    accionRequerida: string
+    expedienteId: string | null
+    estado: string
+    observacionAtencion: string | null
+  }
+
+  const [alertas, setAlertas] = useState<AlertaNotif[]>([])
+  const [campanAbierta, setCampanaAbierta] = useState(false)
+  const [atenderModal, setAtenderModal] = useState<AlertaNotif | null>(null)
+  const [obsAtencion, setObsAtencion] = useState('')
+  const campanRef = useRef<HTMLDivElement>(null)
+
+  const fetchAlertas = async () => {
+    try {
+      const res = await api.get<AlertaNotif[]>('/alertas', {
+        params: { destinatario: auth.username }
+      })
+      setAlertas(res.data || [])
+    } catch {
+      // silencioso — el backend puede no estar disponible en dev
+    }
+  }
+
+  useEffect(() => {
+    fetchAlertas()
+    const interval = setInterval(fetchAlertas, 30000)
+    return () => clearInterval(interval)
+  }, [auth.username])
+
+  // Cerrar dropdown al hacer clic fuera
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (campanRef.current && !campanRef.current.contains(e.target as Node)) {
+        setCampanaAbierta(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const handleAtender = async () => {
+    if (!atenderModal) return
+    try {
+      await api.put(`/alertas/${atenderModal.id}/atender`, { observacion: obsAtencion })
+      setAtenderModal(null)
+      setObsAtencion('')
+      fetchAlertas()
+    } catch {
+      alert('Error al atender la alerta')
+    }
+  }
+  // ─────────────────────────────────────────────────────────────────────────
 
   const MENU_ITEMS = ALL_MENU_ITEMS.filter(item => {
     if (!item.roles) return true
@@ -253,11 +316,86 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
             <span>Gestión Penitenciaria</span>
           </div>
           <div className="flex items-center gap-3">
-            <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
-            </button>
+            {/* ── Campana de notificaciones ── */}
+            <div className="relative" ref={campanRef}>
+              <button
+                id="btn-campana-alertas"
+                onClick={() => setCampanaAbierta(prev => !prev)}
+                className="relative p-2 text-gray-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors"
+                title="Notificaciones de alertas"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                {alertas.length > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {alertas.length > 9 ? '9+' : alertas.length}
+                  </span>
+                )}
+              </button>
+
+              {/* Dropdown de alertas */}
+              {campanAbierta && (
+                <div className="absolute right-0 top-full mt-2 w-96 bg-white rounded-2xl shadow-xl border border-gray-200 z-50 overflow-hidden">
+                  <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                    <span className="font-bold text-gray-900 text-sm">Alertas activas</span>
+                    <span className="text-xs text-gray-400">{auth.username}</span>
+                  </div>
+                  <div className="max-h-80 overflow-y-auto divide-y divide-gray-100">
+                    {alertas.length === 0 ? (
+                      <div className="px-4 py-6 text-center text-sm text-gray-400">
+                        Sin alertas activas ✓
+                      </div>
+                    ) : (
+                      alertas.map(a => (
+                        <div key={a.id} className="px-4 py-3 hover:bg-gray-50 space-y-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold mb-1 ${
+                                a.nivel === 1 ? 'bg-yellow-100 text-yellow-800' :
+                                a.nivel === 2 ? 'bg-orange-100 text-orange-800' :
+                                'bg-red-100 text-red-800'
+                              }`}>
+                                Nivel {a.nivel}
+                              </span>
+                              <p className="text-sm font-semibold text-gray-900 truncate">
+                                {a.nombreEgresado ?? 'Egresado desconocido'}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                Cédula: {a.cedulaEgresado ?? '—'} · {new Date(a.fechaEmision).toLocaleDateString('es-VE')}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 pt-1">
+                            {a.expedienteId && (
+                              <button
+                                id={`btn-ver-expediente-${a.id}`}
+                                onClick={() => {
+                                  setCampanaAbierta(false)
+                                  navigate(`/post/expediente/${a.expedienteId}/calendario`)
+                                }}
+                                className="text-xs text-indigo-600 hover:text-indigo-800 font-medium hover:underline"
+                              >
+                                Ver expediente →
+                              </button>
+                            )}
+                            <button
+                              id={`btn-atender-alerta-${a.id}`}
+                              onClick={() => { setAtenderModal(a); setCampanaAbierta(false) }}
+                              className="text-xs text-emerald-600 hover:text-emerald-800 font-medium hover:underline ml-auto"
+                            >
+                              Marcar atendida
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+            {/* ── Fin campana ── */}
+
             <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -271,6 +409,59 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
           {children}
         </main>
       </div>
+
+      {/* ── Modal: Marcar alerta atendida ── */}
+      {atenderModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="p-5 bg-emerald-50 text-emerald-900 flex justify-between items-center">
+              <h3 className="font-bold text-lg flex items-center gap-2">
+                <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Marcar alerta como atendida
+              </h3>
+              <button onClick={() => { setAtenderModal(null); setObsAtencion('') }} className="text-gray-500 hover:text-gray-900">✕</button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800 space-y-1">
+                <p><strong>Egresado:</strong> {atenderModal.nombreEgresado ?? '—'}</p>
+                <p><strong>Cédula:</strong> {atenderModal.cedulaEgresado ?? '—'}</p>
+                <p><strong>Fecha:</strong> {new Date(atenderModal.fechaEmision).toLocaleString('es-VE')}</p>
+                <p><strong>Nivel:</strong> {atenderModal.nivel}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-1">
+                  Observación <span className="font-normal text-gray-400">(opcional)</span>
+                </label>
+                <textarea
+                  id="textarea-obs-atencion"
+                  value={obsAtencion}
+                  onChange={e => setObsAtencion(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  rows={3}
+                  placeholder="Ej: Se realizó llamada de seguimiento, el egresado presentó justificación..."
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  onClick={() => { setAtenderModal(null); setObsAtencion('') }}
+                  className="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  id="btn-confirmar-atencion"
+                  onClick={handleAtender}
+                  className="px-4 py-2 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-sm"
+                >
+                  Confirmar atención
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

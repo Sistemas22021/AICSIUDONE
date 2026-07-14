@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
-import { ShieldAlert, CalendarClock, AlertTriangle, UserCheck, CheckCircle, XCircle } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { ShieldAlert, CalendarClock, AlertTriangle, UserCheck, CheckCircle, XCircle, Bell } from 'lucide-react'
 import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
 import { useAuth } from '../../shared/authContext'
 
 export default function ControlDashboardPage() {
     const { username, hasRole } = useAuth()
+    const navigate = useNavigate()
     
     const [stats, setStats] = useState({
         totalActivos: 0,
@@ -20,23 +22,60 @@ export default function ControlDashboardPage() {
     const [actionModal, setActionModal] = useState<{ type: 'cumplida' | 'incumplida', p: any } | null>(null)
     const [observaciones, setObservaciones] = useState('')
 
+    // ── Alertas de Nivel 1 y 2 ───────────────────────────────────────────────
+    type AlertaDto = {
+        id: string
+        nivel: number
+        fechaEmision: string
+        destinatario: string
+        estado: string
+        accionRequerida: string
+        expedienteId: string | null
+        nombreEgresado: string | null
+        cedulaEgresado: string | null
+        observacionAtencion: string | null
+    }
+    const [alertasN1, setAlertasN1] = useState<AlertaDto[]>([])
+    const [alertasN2, setAlertasN2] = useState<AlertaDto[]>([])
+    const [alertasN3, setAlertasN3] = useState<AlertaDto[]>([])
+    const [atenderN1Modal, setAtenderN1Modal] = useState<AlertaDto | null>(null)
+    const [obsN1, setObsN1] = useState('')
+    // ─────────────────────────────────────────────────────────────────────────
+
+    const fetchAlertasN1 = async () => {
+        try {
+            const [res1, res2, res3] = await Promise.all([
+                api.get<AlertaDto[]>('/alertas/nivel1'),
+                api.get<AlertaDto[]>('/alertas/nivel2'),
+                api.get<AlertaDto[]>('/alertas/nivel3')
+            ])
+            setAlertasN1(res1.data || [])
+            setAlertasN2(res2.data || [])
+            setAlertasN3(res3.data || [])
+        } catch {
+            // silencioso
+        }
+    }
+
     const fetchDashboard = async () => {
         try {
-            const [expRes, pendRes] = await Promise.all([
+            const [expRes, pendRes, incRes] = await Promise.all([
                 api.get('/post-penal/expedientes'),
-                api.get('/calendario/pendientes/hoy', { params: { oficialCedula: hasRole('Oficial de Seguimiento') ? username : '' } })
+                api.get('/calendario/pendientes/hoy', { params: { oficialCedula: hasRole('Oficial de Seguimiento') ? username : '' } }),
+                api.get('/calendario/incumplimientos/30-dias', { params: { oficialCedula: hasRole('Oficial de Seguimiento') ? username : '' } })
             ])
             
             const expedientes = expRes.data || []
             const pendientesData = pendRes.data || []
+            const incumplimientosData = incRes.data || []
             
             let activos = expedientes.length
             if (hasRole('Oficial de Seguimiento')) {
                 activos = expedientes.filter((e: any) => e.oficialAsignadoNombre === username).length
             }
             
-            const incumplimientos = expedientes.reduce((acc: number, e: any) => acc + (e.contadorIncumplimientos || 0), 0)
-            const alertas = expedientes.filter((e: any) => e.estado === 'alerta_critica').length
+            const incumplimientos = incumplimientosData.length
+            const alertas = expedientes.filter((e: any) => e.estado === 'Alerta Crítica Activa').length
             
             setStats({
                 totalActivos: activos,
@@ -53,9 +92,27 @@ export default function ControlDashboardPage() {
         }
     }
 
+    const handleAtenderN1 = async () => {
+        if (!atenderN1Modal) return
+        if (atenderN1Modal.nivel === 3 && !obsN1.trim()) {
+            alert('Para atender una alerta crítica de Nivel 3, es obligatorio registrar la acción tomada.')
+            return
+        }
+        try {
+            await api.put(`/alertas/${atenderN1Modal.id}/atender`, { observacion: obsN1 })
+            setAtenderN1Modal(null)
+            setObsN1('')
+            fetchAlertasN1()
+            fetchDashboard()
+        } catch {
+            alert('Error al atender la alerta')
+        }
+    }
+
     useEffect(() => {
         fetchDashboard()
-        const interval = setInterval(fetchDashboard, 10000)
+        fetchAlertasN1()
+        const interval = setInterval(() => { fetchDashboard(); fetchAlertasN1() }, 10000)
         return () => clearInterval(interval)
     }, [username])
 
@@ -81,6 +138,24 @@ export default function ControlDashboardPage() {
         }
     }
 
+    const isOficialPenitenciarioOnly = hasRole('Oficial Penitenciario') && !hasRole('Supervisor') && !hasRole('Oficial de Seguimiento')
+    const showPersonalStats = hasRole('Oficial de Seguimiento') && !hasRole('Supervisor')
+    
+    const countN1Activas = alertasN1.filter(a => a.estado === 'activa' && (!showPersonalStats || a.destinatario === username)).length
+    const countN2Activas = alertasN2.filter(a => a.estado === 'activa' && (!showPersonalStats || a.destinatario === username)).length
+
+    const combinadas = [...alertasN1, ...alertasN2, ...alertasN3]
+    const filteredAlertas = combinadas.filter(a => {
+        if (hasRole('Supervisor')) {
+            // El supervisor solo debe ver la alerta Nivel 2 dirigida a él para evitar duplicados en la tabla
+            if (a.nivel === 2 && a.destinatario !== 'Supervisor') return false;
+            return true;
+        }
+        if (hasRole('Oficial de Seguimiento')) return a.destinatario === username
+        return false
+    })
+    filteredAlertas.sort((a, b) => new Date(b.fechaEmision).getTime() - new Date(a.fechaEmision).getTime())
+
     return (
         <SidebarLayout>
             <div className="max-w-6xl mx-auto space-y-6">
@@ -97,8 +172,11 @@ export default function ControlDashboardPage() {
                 {loading ? (
                     <div className="text-center py-10">Cargando...</div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-between">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div 
+                            onClick={() => navigate('/dashboard/post-penal/expedientes')}
+                            className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-between cursor-pointer hover:bg-gray-50 transition-colors"
+                        >
                             <div className="flex justify-between items-start">
                                 <div>
                                     <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Egresados Activos</p>
@@ -110,7 +188,10 @@ export default function ControlDashboardPage() {
                             </div>
                         </div>
                         
-                        <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-between">
+                        <div 
+                            onClick={() => document.getElementById('agenda-presentaciones')?.scrollIntoView({ behavior: 'smooth' })}
+                            className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-between cursor-pointer hover:bg-gray-50 transition-colors"
+                        >
                             <div className="flex justify-between items-start">
                                 <div>
                                     <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Presentaciones Hoy</p>
@@ -122,7 +203,10 @@ export default function ControlDashboardPage() {
                             </div>
                         </div>
 
-                        <div className="bg-white p-5 rounded-2xl border border-orange-200 shadow-sm flex flex-col justify-between">
+                        <div 
+                            onClick={() => document.getElementById('agenda-presentaciones')?.scrollIntoView({ behavior: 'smooth' })}
+                            className="bg-white p-5 rounded-2xl border border-orange-200 shadow-sm flex flex-col justify-between cursor-pointer hover:bg-orange-50/50 transition-colors"
+                        >
                             <div className="flex justify-between items-start">
                                 <div>
                                     <p className="text-xs font-bold text-orange-600 uppercase tracking-wider mb-1">Incumplimientos</p>
@@ -134,7 +218,10 @@ export default function ControlDashboardPage() {
                             </div>
                         </div>
 
-                        <div className="bg-white p-5 rounded-2xl border border-red-200 shadow-sm flex flex-col justify-between">
+                        <div 
+                            onClick={() => document.getElementById('panel-alertas')?.scrollIntoView({ behavior: 'smooth' })}
+                            className="bg-white p-5 rounded-2xl border border-red-200 shadow-sm flex flex-col justify-between cursor-pointer hover:bg-red-50/50 transition-colors"
+                        >
                             <div className="flex justify-between items-start">
                                 <div>
                                     <p className="text-xs font-bold text-red-600 uppercase tracking-wider mb-1">Alertas N3 (Críticas)</p>
@@ -145,72 +232,188 @@ export default function ControlDashboardPage() {
                                 </div>
                             </div>
                         </div>
+
+                        <div 
+                            onClick={() => document.getElementById('panel-alertas')?.scrollIntoView({ behavior: 'smooth' })}
+                            className="bg-white p-5 rounded-2xl border border-yellow-200 shadow-sm flex flex-col justify-between cursor-pointer hover:bg-yellow-50/50 transition-colors"
+                        >
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <p className="text-xs font-bold text-yellow-700 uppercase tracking-wider mb-1">Alertas N1 Activas</p>
+                                    <h3 className="text-3xl font-black text-yellow-700">{countN1Activas}</h3>
+                                </div>
+                                <div className="p-2 bg-yellow-50 rounded-xl">
+                                    <Bell className="w-5 h-5 text-yellow-600" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div 
+                            onClick={() => document.getElementById('panel-alertas')?.scrollIntoView({ behavior: 'smooth' })}
+                            className="bg-white p-5 rounded-2xl border border-orange-200 shadow-sm flex flex-col justify-between cursor-pointer hover:bg-orange-50/50 transition-colors"
+                        >
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <p className="text-xs font-bold text-orange-700 uppercase tracking-wider mb-1">Alertas N2 Activas</p>
+                                    <h3 className="text-3xl font-black text-orange-700">{countN2Activas}</h3>
+                                </div>
+                                <div className="p-2 bg-orange-50 rounded-xl">
+                                    <Bell className="w-5 h-5 text-orange-600" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 )}
 
-                {/* Tabla de presentaciones pendientes */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-                    <div className="px-6 py-4 border-b border-gray-100">
-                        <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                            <CalendarClock className="w-5 h-5 text-blue-600" />
-                            Presentaciones Pendientes de Hoy
-                        </h2>
+                {isOficialPenitenciarioOnly && (
+                    <div className="p-6 bg-blue-50 border border-blue-200 rounded-2xl flex items-start gap-4">
+                        <ShieldAlert className="w-6 h-6 text-blue-600 shrink-0 mt-0.5" />
+                        <div>
+                            <h3 className="font-bold text-blue-900">Vista restringida por rol</h3>
+                            <p className="text-sm text-blue-700 mt-1">
+                                Como Oficial Penitenciario, tiene acceso únicamente a los indicadores generales en tiempo real. 
+                                Los detalles de las presentaciones de hoy y el panel de alertas individuales están restringidos para su rol.
+                            </p>
+                        </div>
                     </div>
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200 text-sm text-left">
-                            <thead className="bg-gray-50 text-gray-500 font-medium">
-                                <tr>
-                                    <th className="px-6 py-4">ID Expediente</th>
-                                    <th className="px-6 py-4">Recluso</th>
-                                    <th className="px-6 py-4">Cédula</th>
-                                    <th className="px-6 py-4">Fecha Programada</th>
-                                    <th className="px-6 py-4">Estado</th>
-                                    <th className="px-6 py-4">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-200">
-                                {loadingPendientes ? (
-                                    <tr><td colSpan={6} className="px-6 py-4 text-center">Cargando...</td></tr>
-                                ) : pendientes.length === 0 ? (
-                                    <tr><td colSpan={6} className="px-6 py-4 text-center text-gray-500">No hay presentaciones pendientes para hoy.</td></tr>
-                                ) : (
-                                    pendientes.map((p: any) => (
-                                        <tr key={p.id} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 font-mono text-xs text-gray-500">{p.expedienteId}</td>
-                                            <td className="px-6 py-4 font-medium text-gray-900">{p.reclusoNombre || '—'}</td>
-                                            <td className="px-6 py-4 text-gray-600 font-mono text-xs">{p.reclusoCedula || '—'}</td>
-                                            <td className="px-6 py-4">{p.fechaProgramada}</td>
-                                            <td className="px-6 py-4">
-                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-yellow-50 text-yellow-700">
-                                                    PENDIENTE
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-2">
-                                                    <button 
-                                                        onClick={() => setActionModal({ type: 'cumplida', p })}
-                                                        className="text-emerald-600 hover:bg-emerald-50 p-2 rounded-lg transition-colors flex items-center gap-1"
-                                                        title="Registrar Cumplimiento"
-                                                    >
-                                                        <CheckCircle className="w-5 h-5" />
-                                                    </button>
-                                                    <button 
-                                                        onClick={() => setActionModal({ type: 'incumplida', p })}
-                                                        className="text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors flex items-center gap-1"
-                                                        title="Registrar Incumplimiento"
-                                                    >
-                                                        <XCircle className="w-5 h-5" />
-                                                    </button>
-                                                </div>
-                                            </td>
+                )}
+
+                {!isOficialPenitenciarioOnly && (
+                    <>
+                        {/* Tabla de presentaciones pendientes */}
+                        <div id="agenda-presentaciones" className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                            <div className="px-6 py-4 border-b border-gray-100">
+                                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                                    <CalendarClock className="w-5 h-5 text-blue-600" />
+                                    Presentaciones Pendientes de Hoy
+                                </h2>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="min-w-full divide-y divide-gray-200 text-sm text-left">
+                                    <thead className="bg-gray-50 text-gray-500 font-medium">
+                                        <tr>
+                                            <th className="px-6 py-4">ID Expediente</th>
+                                            <th className="px-6 py-4">Recluso</th>
+                                            <th className="px-6 py-4">Cédula</th>
+                                            <th className="px-6 py-4">Fecha Programada</th>
+                                            <th className="px-6 py-4">Estado</th>
+                                            <th className="px-6 py-4">Acciones</th>
                                         </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-200">
+                                        {loadingPendientes ? (
+                                            <tr><td colSpan={6} className="px-6 py-4 text-center">Cargando...</td></tr>
+                                        ) : pendientes.length === 0 ? (
+                                            <tr><td colSpan={6} className="px-6 py-4 text-center text-gray-500">No hay presentaciones pendientes para hoy.</td></tr>
+                                        ) : (
+                                            pendientes.map((p: any) => (
+                                                <tr key={p.id} className="hover:bg-gray-50">
+                                                    <td className="px-6 py-4 font-mono text-xs text-gray-500">{p.expedienteId}</td>
+                                                    <td className="px-6 py-4 font-medium text-gray-900">{p.reclusoNombre || '—'}</td>
+                                                    <td className="px-6 py-4 text-gray-600 font-mono text-xs">{p.reclusoCedula || '—'}</td>
+                                                    <td className="px-6 py-4">{p.fechaProgramada}</td>
+                                                    <td className="px-6 py-4">
+                                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-yellow-50 text-yellow-700">
+                                                            PENDIENTE
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center gap-2">
+                                                            <button 
+                                                                onClick={() => setActionModal({ type: 'cumplida', p })}
+                                                                className="text-emerald-600 hover:bg-emerald-50 p-2 rounded-lg transition-colors flex items-center gap-1"
+                                                                title="Registrar Cumplimiento"
+                                                            >
+                                                                <CheckCircle className="w-5 h-5" />
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => setActionModal({ type: 'incumplida', p })}
+                                                                className="text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors flex items-center gap-1"
+                                                                title="Registrar Incumplimiento"
+                                                            >
+                                                                <XCircle className="w-5 h-5" />
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        {/* Panel de Alertas */}
+                        <div id="panel-alertas" className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                                    <Bell className="w-5 h-5 text-indigo-600" />
+                                    Panel de Alertas (Todos los Niveles)
+                                </h2>
+                                <span className="text-xs text-gray-400">Historial de incumplimientos detectados</span>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="min-w-full divide-y divide-gray-200 text-sm text-left">
+                                    <thead className="bg-gray-50 text-gray-500 font-medium">
+                                        <tr>
+                                            <th className="px-6 py-4">Nivel</th>
+                                            <th className="px-6 py-4">Egresado</th>
+                                            <th className="px-6 py-4">Cédula</th>
+                                            <th className="px-6 py-4">Fecha Emisión</th>
+                                            <th className="px-6 py-4">Destinatario</th>
+                                            <th className="px-6 py-4">Estado</th>
+                                            <th className="px-6 py-4">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-200">
+                                        {filteredAlertas.length === 0 ? (
+                                            <tr><td colSpan={7} className="px-6 py-4 text-center text-gray-400">No hay alertas registradas.</td></tr>
+                                        ) : (
+                                            filteredAlertas.map(a => (
+                                                <tr key={a.id} className={a.nivel === 3 ? 'hover:bg-red-50/30' : a.nivel === 2 ? 'hover:bg-orange-50/30' : 'hover:bg-yellow-50/30'}>
+                                                    <td className="px-6 py-4">
+                                                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${
+                                                            a.nivel === 3 ? 'bg-red-100 text-red-800 border border-red-200' :
+                                                            a.nivel === 2 ? 'bg-orange-100 text-orange-800 border border-orange-200' : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                                                        }`}>
+                                                            Nivel {a.nivel}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 font-medium text-gray-900">{a.nombreEgresado ?? '—'}</td>
+                                                    <td className="px-6 py-4 text-gray-600 font-mono text-xs">{a.cedulaEgresado ?? '—'}</td>
+                                                    <td className="px-6 py-4 text-gray-600">{new Date(a.fechaEmision).toLocaleString('es-VE')}</td>
+                                                    <td className="px-6 py-4 text-gray-700">{a.destinatario ?? '—'}</td>
+                                                    <td className="px-6 py-4">
+                                                        <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold ${
+                                                            a.estado === 'activa' ? 
+                                                            (a.nivel === 3 ? 'bg-red-100 text-red-900' : a.nivel === 2 ? 'bg-orange-100 text-orange-950' : 'bg-yellow-100 text-yellow-800') : 
+                                                            'bg-emerald-50 text-emerald-700'
+                                                        }`}>
+                                                            {a.estado === 'activa' ? 'ACTIVA' : 'ATENDIDA'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        {a.estado === 'activa' ? (
+                                                            <button
+                                                                id={`btn-atender-n1-${a.id}`}
+                                                                onClick={() => setAtenderN1Modal(a)}
+                                                                className="text-emerald-600 hover:bg-emerald-50 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-semibold border border-emerald-200"
+                                                            >
+                                                                <CheckCircle className="w-4 h-4" /> Atender
+                                                            </button>
+                                                        ) : (
+                                                            <span className="text-xs text-gray-400 italic">{a.observacionAtencion ?? 'Sin observación'}</span>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </>
+                )}
 
             {/* Modal de Acción */}
             {actionModal && (
@@ -254,6 +457,57 @@ export default function ControlDashboardPage() {
                     </div>
                 </div>
             )}
+
+            {/* ── Modal: Atender Alerta N1 desde dashboard ── */}
+            {atenderN1Modal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+                        <div className="p-5 bg-emerald-50 text-emerald-900 flex justify-between items-center">
+                            <h3 className="font-bold text-lg flex items-center gap-2">
+                                <CheckCircle className="w-6 h-6 text-emerald-600" />
+                                Atender Alerta — {atenderN1Modal.nombreEgresado}
+                            </h3>
+                            <button onClick={() => { setAtenderN1Modal(null); setObsN1('') }} className="text-gray-500 hover:text-gray-900">✕</button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800 space-y-1">
+                                <p><strong>Egresado:</strong> {atenderN1Modal.nombreEgresado ?? '—'}</p>
+                                <p><strong>Cédula:</strong> {atenderN1Modal.cedulaEgresado ?? '—'}</p>
+                                <p><strong>Fecha emisión:</strong> {new Date(atenderN1Modal.fechaEmision).toLocaleString('es-VE')}</p>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-900 mb-1">
+                                    Observación {atenderN1Modal.nivel !== 3 && <span className="font-normal text-gray-400">(opcional)</span>}
+                                </label>
+                                <textarea
+                                    id="textarea-obs-n1"
+                                    value={obsN1}
+                                    onChange={e => setObsN1(e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                    rows={3}
+                                    placeholder="Acción tomada por el oficial..."
+                                />
+                            </div>
+                            <div className="flex justify-end gap-3 pt-2">
+                                <button
+                                    onClick={() => { setAtenderN1Modal(null); setObsN1('') }}
+                                    className="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    id="btn-confirmar-n1"
+                                    onClick={handleAtenderN1}
+                                    className="px-4 py-2 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-sm"
+                                >
+                                    Confirmar atención
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+            </div>
         </SidebarLayout>
     )
 }

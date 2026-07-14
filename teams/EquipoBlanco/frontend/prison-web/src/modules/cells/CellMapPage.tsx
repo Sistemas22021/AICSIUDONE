@@ -173,7 +173,7 @@ export default function CellMapPage() {
       setCeldas(mappedCeldas)
       setLoading(false)
     } catch {
-      setErrorMsg('Error al conectar con los servicios. Verifique que los microservicios est\u00e9n corriendo.')
+      setErrorMsg('Error al conectar con los servicios. Verifique que los microservicios estén corriendo.')
       setLoading(false)
     }
   }
@@ -300,7 +300,7 @@ export default function CellMapPage() {
         setImagenesFondo(prev => ({ ...prev, [pisoActivo]: imageUrl as string }))
         setMostrarSelectorImagen(false)
         try {
-          await api.put(`/maps/${pisoActivo}`, { backgroundImage: imageUrl }, { 
+          await api.put(`/maps/${pisoActivo}`, { backgroundImage: imageUrl }, {
             timeout: 60000,
             headers: { 'Content-Type': 'application/json' }
           })
@@ -314,7 +314,7 @@ export default function CellMapPage() {
   }
 
   const eliminarImagenFondo = async () => {
-    if (confirm(`\u00bfEliminar el plano de fondo del Piso ${pisoActivo}?`)) {
+    if (confirm(`¿Eliminar el plano de fondo del Piso ${pisoActivo}?`)) {
       setImagenesFondo(prev => ({ ...prev, [pisoActivo]: null }))
       try {
         await api.delete(`/maps/${pisoActivo}`)
@@ -481,11 +481,11 @@ export default function CellMapPage() {
         >
           <div className="flex items-center justify-center w-full h-full">
             {celda.bloqueada ? (
-              <div 
+              <div
                 className="flex items-center justify-center rounded-full border bg-gray-600 text-white font-bold"
-                style={{ 
-                  width: `${radioBase * 2}px`, 
-                  height: `${radioBase * 2}px`, 
+                style={{
+                  width: `${radioBase * 2}px`,
+                  height: `${radioBase * 2}px`,
                   borderColor: '#1f2937',
                   backgroundColor: '#4B5563',
                   fontSize: `${Math.round(11 * escala)}px`
@@ -545,18 +545,18 @@ export default function CellMapPage() {
       }))
       const failed = results.filter(r => r.status === 'rejected')
       if (failed.length > 0) {
-        alert('Algunas posiciones no se guardaron. Verifique la conexi\u00f3n e intente de nuevo.')
+        alert('Algunas posiciones no se guardaron. Verifique la conexión e intente de nuevo.')
         return
       }
       setModoEditor(false)
-      alert('Ubicaci\u00f3n de celdas guardada con \u00e9xito.')
+      alert('Ubicación de celdas guardada con éxito.')
     } catch {
       alert('Error al guardar las posiciones. Intente de nuevo.')
     }
   }
 
   const quitarCeldaDelPlano = async (celdaId: string, identificador: string) => {
-    if (confirm(`\u00bfEst\u00e1 seguro de quitar la Celda ${identificador} del plano? Volver\u00e1 a la lista de celdas sin colocar.`)) {
+    if (confirm(`¿Está seguro de quitar la Celda ${identificador} del plano? Volverá a la lista de celdas sin colocar.`)) {
       try {
         await api.delete(`/cells/${celdaId}/position`)
       } catch {
@@ -596,7 +596,7 @@ export default function CellMapPage() {
           <div>
             <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2">
               <MapPin className="w-8 h-8 text-blue-600" />
-              Mapa de Distribuci\u00f3n 2D
+              Mapa de Distribución 2D
             </h1>
             <p className="text-sm text-gray-500 mt-1">
               Visualice las celdas en el penal. Haga clic en una celda para ver internos o gestionar asignaciones.
@@ -661,10 +661,10 @@ export default function CellMapPage() {
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: 'Total de celdas', valor: totalCeldas, sub: `${celdasPosicionadas.filter(c => getEstado(c) === 'llena').length} al l\u00edmite/llenas`, icon: Users },
+            { label: 'Total de celdas', valor: totalCeldas, sub: `${celdasPosicionadas.filter(c => getEstado(c) === 'llena').length} al límite/llenas`, icon: Users },
             { label: 'Reclusos activos', valor: totalReclusos, sub: `De ${capacidadTotal} plazas totales`, icon: User },
             { label: 'Capacidad disponible', valor: capacidadDisponible, sub: 'Plazas libres', icon: CheckCircle },
-            { label: 'Ocupaci\u00f3n general', valor: `${porcentajeOcupacion}%`, sub: parseFloat(porcentajeOcupacion) >= 80 ? 'Nivel cr\u00edtico' : 'Nivel normal', icon: Info, color: parseFloat(porcentajeOcupacion) >= 80 ? 'text-amber-600' : 'text-gray-900' },
+            { label: 'Ocupación general', valor: `${porcentajeOcupacion}%`, sub: parseFloat(porcentajeOcupacion) >= 80 ? 'Nivel crítico' : 'Nivel normal', icon: Info, color: parseFloat(porcentajeOcupacion) >= 80 ? 'text-amber-600' : 'text-gray-900' },
           ].map((card, i) => {
             const CardIcon = card.icon
             return (
@@ -701,7 +701,7 @@ export default function CellMapPage() {
                 </button>
               </div>
               <p className="text-xs text-gray-500 mb-4 leading-relaxed">
-                Seleccione una imagen esquem\u00e1tica de la infraestructura del penal.
+                Seleccione una imagen esquemática de la infraestructura del penal.
               </p>
               <div className="border-2 border-dashed border-gray-200 hover:border-blue-400 rounded-xl p-6 transition-colors text-center cursor-pointer relative">
                 <input type="file" accept="image/*" onChange={handleImageUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
@@ -724,7 +724,7 @@ export default function CellMapPage() {
                 <div className="flex gap-4 flex-wrap">
                   {[
                     { dot: 'bg-emerald-500', label: 'Disponible (<80%)' },
-                    { dot: 'bg-yellow-500', label: 'Al L\u00edmite (\u226580%)' },
+                    { dot: 'bg-yellow-500', label: 'Al Límite (\u226580%)' },
                     { dot: 'bg-red-500', label: 'Llena (100%)' },
                     { dot: 'bg-gray-600', label: 'Bloqueada por Investigación' },
                   ].map((l, i) => (
@@ -773,7 +773,7 @@ export default function CellMapPage() {
                           No se ha cargado el plano del penal
                         </text>
                         <text x={CANVAS_W / 2} y={CANVAS_H / 2 + 10} textAnchor="middle" fontSize={12} fill="#94a3b8" fontFamily="sans-serif">
-                          Haga clic en &quot;Cargar mapa&quot; para subir la imagen de distribuci\u00f3n f\u00edsica.
+                          Haga clic en &quot;Cargar mapa&quot; para subir la imagen de distribución física.
                         </text>
                       </g>
                     )}
@@ -807,7 +807,7 @@ export default function CellMapPage() {
                       <div className="space-y-3.5 text-xs text-gray-700">
                         <div className="space-y-1">
                           <div className="flex justify-between items-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                            <span>Tama\u00f1o del Punto</span>
+                            <span>Tamaño del Punto</span>
                             <span className="text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded font-mono font-bold">{pos.r || PUNTO_RADIO}px</span>
                           </div>
                           <input type="range" min="12" max="36" value={pos.r || PUNTO_RADIO}
@@ -838,7 +838,7 @@ export default function CellMapPage() {
                           </div>
                         )}
                         <div className="flex justify-between border-b pb-1 border-gray-100"><span className="text-gray-500">Capacidad:</span><span className="font-bold">{celdaConTooltip.capacidad} internos</span></div>
-                        <div className="flex justify-between border-b pb-1 border-gray-100"><span className="text-gray-500">Ocupaci\u00f3n:</span><span className="font-bold">{celdaConTooltip.reclusosAsignados.length} ({calculatePct(celdaConTooltip)}%)</span></div>
+                        <div className="flex justify-between border-b pb-1 border-gray-100"><span className="text-gray-500">Ocupación:</span><span className="font-bold">{celdaConTooltip.reclusosAsignados.length} ({calculatePct(celdaConTooltip)}%)</span></div>
                         {celdaConTooltip.reclusosAsignados.length > 0 && (
                           <div className="pt-1.5 space-y-1">
                             <span className="text-gray-400 block text-[10px] font-bold uppercase">Internos:</span>
@@ -893,7 +893,7 @@ export default function CellMapPage() {
                           <Move className="w-4 h-4" style={{ color: col.stroke }} />
                         </div>
                         <div className="text-xs space-y-1" style={{ color: col.text }}>
-                          <div className="font-semibold">Ocupaci\u00f3n: {celda.reclusosAsignados.length} / {celda.capacidad}</div>
+                          <div className="font-semibold">Ocupación: {celda.reclusosAsignados.length} / {celda.capacidad}</div>
                           <div>Nivel Conducta: <strong className="font-bold">{celda.nivelConducta}</strong></div>
                         </div>
                       </div>
@@ -902,9 +902,9 @@ export default function CellMapPage() {
                 </div>
               )}
               <div className="mt-4 p-3 bg-blue-50 border border-blue-150 rounded-xl text-xs text-blue-800 leading-relaxed">
-                <span className="font-bold block mb-1">Tips de Edici\u00f3n:</span>
-                {'\u2022'} Haga clic sobre cualquier celda en esta lista y arr\u00e1strela al centro del plano.<br />
-                {'\u2022'} Arrastre los puntos en el plano para colocarlos en su posici\u00f3n real.<br />
+                <span className="font-bold block mb-1">Tips de Edición:</span>
+                {'\u2022'} Haga clic sobre cualquier celda en esta lista y arrástrela al centro del plano.<br />
+                {'\u2022'} Arrastre los puntos en el plano para colocarlos en su posición real.<br />
                 {'\u2022'} Haga clic en &quot;Guardar plano&quot; al concluir.
               </div>
             </div>
@@ -917,7 +917,7 @@ export default function CellMapPage() {
               <div className="flex items-center justify-between px-6 py-4.5 bg-gray-900 text-white">
                 <div>
                   <h3 className="text-lg font-bold">Celda {modalAsignacion.identificador}</h3>
-                  <p className="text-xs text-gray-300 mt-0.5">Gesti\u00f3n de internos y plazas disponibles</p>
+                  <p className="text-xs text-gray-300 mt-0.5">Gestión de internos y plazas disponibles</p>
                 </div>
                 <button onClick={() => { setModalAsignacion(null); setReclusoSeleccionado('') }} className="p-1.5 hover:bg-gray-800 rounded-lg transition-colors text-white">
                   <X className="w-5 h-5" />
@@ -925,11 +925,11 @@ export default function CellMapPage() {
               </div>
               <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
                 <div className="grid grid-cols-3 gap-3 p-3.5 bg-gray-50 rounded-xl border border-gray-200 text-sm">
-                  <div><span className="text-gray-500 block text-xs font-semibold">Ocupaci\u00f3n</span><span className="font-extrabold text-gray-800 text-base">{modalAsignacion.reclusosAsignados.length} / {modalAsignacion.capacidad}</span></div>
+                  <div><span className="text-gray-500 block text-xs font-semibold">Ocupación</span><span className="font-extrabold text-gray-800 text-base">{modalAsignacion.reclusosAsignados.length} / {modalAsignacion.capacidad}</span></div>
                   <div><span className="text-gray-500 block text-xs font-semibold">Nivel Conducta</span>
                     <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold mt-1 ${modalAsignacion.nivelConducta === 'ALTO' ? 'bg-red-100 text-red-700' : modalAsignacion.nivelConducta === 'MEDIO' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-700'}`}>{modalAsignacion.nivelConducta}</span>
                   </div>
-                  <div><span className="text-gray-500 block text-xs font-semibold">Dimensiones</span><span className="font-extrabold text-gray-800 block mt-0.5">{modalAsignacion.largo && modalAsignacion.ancho ? `${modalAsignacion.largo}m \u00d7 ${modalAsignacion.ancho}m` : '\u2014'}</span></div>
+                  <div><span className="text-gray-500 block text-xs font-semibold">Dimensiones</span><span className="font-extrabold text-gray-800 block mt-0.5">{modalAsignacion.largo && modalAsignacion.ancho ? `${modalAsignacion.largo}m x ${modalAsignacion.ancho}m` : '\u2014'}</span></div>
                 </div>
                 <div>
                   <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
@@ -1040,7 +1040,7 @@ export default function CellMapPage() {
               <div className="flex items-center justify-between p-6 border-b border-gray-150 bg-gray-55/30">
                 <div className="flex items-center gap-3.5">
                   {reclusoExpediente.photoUrl ? (
-                    <img src={reclusoExpediente.photoUrl} alt="Fotograf\u00eda" className="w-14 h-14 rounded-full object-cover border border-gray-200" />
+                    <img src={reclusoExpediente.photoUrl} alt="Fotografía" className="w-14 h-14 rounded-full object-cover border border-gray-200" />
                   ) : (
                     <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center border border-gray-200 shadow-inner">
                       <User className="w-7 h-7 text-gray-500" />
@@ -1050,7 +1050,7 @@ export default function CellMapPage() {
                     <h3 className="text-xl font-bold text-gray-900 leading-tight">
                       {reclusoExpediente.firstName} {reclusoExpediente.secondName || ''} {reclusoExpediente.firstLastname} {reclusoExpediente.secondLastname || ''}
                     </h3>
-                    <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider mt-0.5">C\u00e9dula: {reclusoExpediente.cedula}</p>
+                    <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider mt-0.5">Cédula: {reclusoExpediente.cedula}</p>
                   </div>
                 </div>
                 <button onClick={() => setReclusoExpediente(null)} className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-400 hover:text-gray-600 border border-transparent hover:border-gray-200">
@@ -1059,14 +1059,13 @@ export default function CellMapPage() {
               </div>
               <div className="p-6 space-y-5">
                 <div className="flex items-center gap-3">
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                    reclusoExpediente.status === 'ACTIVO_CON_CELDA' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' :
-                    reclusoExpediente.status === 'ACTIVO_SALIDA_TEMPORAL' ? 'bg-amber-100 text-amber-800 border border-amber-200' :
-                    'bg-gray-100 text-gray-800 border border-gray-200'
-                  }`}>
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${reclusoExpediente.status === 'ACTIVO_CON_CELDA' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' :
+                      reclusoExpediente.status === 'ACTIVO_SALIDA_TEMPORAL' ? 'bg-amber-100 text-amber-800 border border-amber-200' :
+                        'bg-gray-100 text-gray-800 border border-gray-200'
+                    }`}>
                     {reclusoExpediente.status === 'ACTIVO_CON_CELDA' ? 'Activo - Asignado' :
-                     reclusoExpediente.status === 'ACTIVO_SALIDA_TEMPORAL' ? 'Salida Temporal' :
-                     'Pendiente Asignación'}
+                      reclusoExpediente.status === 'ACTIVO_SALIDA_TEMPORAL' ? 'Salida Temporal' :
+                        'Pendiente Asignación'}
                   </span>
                   {reclusoExpediente.cellIdentifier && (
                     <span className="text-sm font-medium text-gray-550">Celda asignada: <strong className="text-gray-800">Celda {reclusoExpediente.cellIdentifier}</strong></span>
@@ -1077,24 +1076,24 @@ export default function CellMapPage() {
                     <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-200/60 pb-1.5">Datos personales</h4>
                     <div className="space-y-2 text-xs">
                       <div className="flex justify-between border-b border-gray-100 pb-1"><span className="text-gray-500">Fecha de nacimiento:</span><span className="font-semibold text-gray-800">{reclusoExpediente.birthDate || '\u2014'}</span></div>
-                      <div className="flex justify-between border-b border-gray-100 pb-1"><span className="text-gray-500">Edad:</span><span className="font-semibold text-gray-800">{calculateAge(reclusoExpediente.birthDate)} a\u00f1os</span></div>
-                      <div className="flex justify-between border-b border-gray-100 pb-1"><span className="text-gray-500">Complexi\u00f3n:</span><span className="font-semibold text-gray-800">{reclusoExpediente.bodyBuild || '\u2014'}</span></div>
+                      <div className="flex justify-between border-b border-gray-100 pb-1"><span className="text-gray-500">Edad:</span><span className="font-semibold text-gray-800">{calculateAge(reclusoExpediente.birthDate)} años</span></div>
+                      <div className="flex justify-between border-b border-gray-100 pb-1"><span className="text-gray-500">Complexión:</span><span className="font-semibold text-gray-800">{reclusoExpediente.bodyBuild || '\u2014'}</span></div>
                       <div className="flex justify-between"><span className="text-gray-500">Estatura / Peso:</span><span className="font-semibold text-gray-800">{reclusoExpediente.heightCm ? `${reclusoExpediente.heightCm} cm` : '\u2014'} / {reclusoExpediente.weightKg ? `${reclusoExpediente.weightKg} kg` : '\u2014'}</span></div>
                     </div>
                   </div>
                   <div className="bg-gray-50 rounded-xl p-4.5 border border-gray-150 shadow-sm space-y-3">
-                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-200/60 pb-1.5">Informaci\u00f3n judicial</h4>
+                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-200/60 pb-1.5">Información judicial</h4>
                     <div className="space-y-2 text-xs">
                       <div className="flex justify-between border-b border-gray-100 pb-1"><span className="text-gray-500">Delito:</span><span className="font-semibold text-gray-800 truncate max-w-[160px]" title={reclusoExpediente.crime || ''}>{reclusoExpediente.crime || '\u2014'}</span></div>
-                      <div className="flex justify-between border-b border-gray-100 pb-1"><span className="text-gray-500">N\u00b0 de expediente:</span><span className="font-semibold text-gray-800">{reclusoExpediente.caseNumber || '\u2014'}</span></div>
+                      <div className="flex justify-between border-b border-gray-100 pb-1"><span className="text-gray-500">N° de expediente:</span><span className="font-semibold text-gray-800">{reclusoExpediente.caseNumber || '\u2014'}</span></div>
                       <div className="flex justify-between border-b border-gray-100 pb-1"><span className="text-gray-500">Fecha de ingreso:</span><span className="font-semibold text-gray-800">{reclusoExpediente.admissionDate || '\u2014'}</span></div>
-                      <div className="flex justify-between"><span className="text-gray-500">Condena total:</span><span className="font-semibold text-gray-800">{reclusoExpediente.sentenceYears || 0} a\u00f1os, {reclusoExpediente.sentenceMonths || 0} meses</span></div>
+                      <div className="flex justify-between"><span className="text-gray-500">Condena total:</span><span className="font-semibold text-gray-800">{reclusoExpediente.sentenceYears || 0} años, {reclusoExpediente.sentenceMonths || 0} meses</span></div>
                     </div>
                   </div>
                 </div>
                 {reclusoExpediente.distinguishingMarks && (
                   <div className="bg-gray-50 rounded-xl p-4 border border-gray-150">
-                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Se\u00f1as particulares</h4>
+                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Señas particulares</h4>
                     <p className="text-xs text-gray-700 leading-relaxed font-semibold">{reclusoExpediente.distinguishingMarks}</p>
                   </div>
                 )}
@@ -1112,9 +1111,9 @@ export default function CellMapPage() {
                   </div>
                 )}
                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-150 space-y-4">
-                  <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-200/50 pb-1.5">Biometr\u00eda Completa</h4>
+                  <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-200/50 pb-1.5">Biometría Completa</h4>
                   <div>
-                    <h5 className="text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-wide">Fotograf\u00edas del Recluso</h5>
+                    <h5 className="text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-wide">Fotografías del Recluso</h5>
                     <div className="grid grid-cols-3 gap-2">
                       {[
                         { src: reclusoExpediente.photoUrl, label: 'Foto Frontal' },
