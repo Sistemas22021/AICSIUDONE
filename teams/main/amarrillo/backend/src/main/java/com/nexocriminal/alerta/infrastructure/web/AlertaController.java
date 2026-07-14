@@ -6,11 +6,14 @@ import com.nexocriminal.alerta.application.ListAlertasPendientes;
 import com.nexocriminal.alerta.infrastructure.web.dto.AlertaResponse;
 import com.nexocriminal.domain.alerta.EstadoAlerta;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 import java.util.List;
 import java.util.Map;
 
 /** Adapter de entrada REST para alerta (solo lectura + cambio de estado). */
+@Tag(name = "Alertas", description = "Consulta y cambio de estado de las alertas generadas por el motor")
 @RestController
 @RequestMapping("/api/v1/alertas")
 @CrossOrigin(origins = "*")
