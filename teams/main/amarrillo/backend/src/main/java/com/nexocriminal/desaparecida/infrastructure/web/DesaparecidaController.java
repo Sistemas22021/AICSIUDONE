@@ -14,6 +14,8 @@ import com.nexocriminal.files.FileStorageService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 import java.util.List;
 import java.util.Map;
@@ -23,6 +25,7 @@ import java.util.Map;
  * el manejo de fotos y estadisticas se delega al PersonaDesaparecidaService viejo
  * (las fotos son archivos = infraestructura pura, no logica de dominio).
  */
+@Tag(name = "Desaparecidas", description = "Gestión de casos de personas desaparecidas, sus fotos y estadísticas")
 @RestController
 @RequestMapping("/api/v1/desaparecidas")
 @CrossOrigin(origins = "*")
@@ -70,6 +73,7 @@ public class DesaparecidaController {
         return new DesaparecidaResponse(d, fotos, ubicacionNodo(d.getUltimaUbicacionId()));
     }
 
+    @Operation(summary = "Listar desapariciones", description = "Devuelve todos los casos, opcionalmente filtrados por estado y prioridad")
     @GetMapping
     public List<DesaparecidaResponse> listar(
             @RequestParam(required = false) EstadoDesaparicion estado,
@@ -77,11 +81,13 @@ public class DesaparecidaController {
         return listDesaparecidas.execute(estado, prioridad).stream().map(this::toResponse).toList();
     }
 
+    @Operation(summary = "Obtener caso", description = "Devuelve un caso de desaparición por su identificador")
     @GetMapping("/{id}")
     public DesaparecidaResponse obtener(@PathVariable Long id) {
         return toResponse(getDesaparecida.execute(id));
     }
 
+    @Operation(summary = "Reportar desaparición", description = "Registra un nuevo caso de persona desaparecida")
     @PostMapping
     public ResponseEntity<DesaparecidaResponse> crear(@RequestBody DesaparecidaRequest req) {
         Desaparecida nueva = Desaparecida.crear(
@@ -94,6 +100,7 @@ public class DesaparecidaController {
         return ResponseEntity.ok(toResponse(createDesaparecida.execute(nueva)));
     }
 
+    @Operation(summary = "Actualizar caso", description = "Modifica los datos de un caso de desaparición existente")
     @PutMapping("/{id}")
     public DesaparecidaResponse actualizar(@PathVariable Long id, @RequestBody DesaparecidaRequest req) {
         Desaparecida d = updateDesaparecida.execute(
@@ -106,12 +113,14 @@ public class DesaparecidaController {
         return toResponse(d);
     }
 
+    @Operation(summary = "Cambiar estado del caso", description = "Cambia el estado del caso (buscada, encontrada con vida, encontrada fallecida, archivada)")
     @PatchMapping("/{id}/estado")
     public DesaparecidaResponse cambiarEstado(@PathVariable Long id, @RequestBody Map<String, String> body) {
         EstadoDesaparicion estado = EstadoDesaparicion.valueOf(body.get("estado"));
         return toResponse(changeEstado.execute(id, estado));
     }
 
+    @Operation(summary = "Buscar casos cercanos", description = "Devuelve los casos cuya última ubicación está dentro de un radio dado")
     @GetMapping("/cercanas")
     public List<DesaparecidaResponse> cercanas(
             @RequestParam double lat, @RequestParam double lng,
@@ -119,6 +128,7 @@ public class DesaparecidaController {
         return buscarCercanas.execute(lat, lng, radioMetros).stream().map(this::toResponse).toList();
     }
 
+    @Operation(summary = "Estadísticas de desapariciones", description = "Devuelve conteos por estado y prioridad para el dashboard")
     @GetMapping("/estadisticas")
     public Map<String, Object> estadisticas() {
         List<Desaparecida> todas = listDesaparecidas.execute(null, null);
@@ -138,6 +148,7 @@ public class DesaparecidaController {
         );
     }
 
+    @Operation(summary = "Eliminar caso", description = "Elimina un caso de desaparición y su foto principal")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         // Borrar foto principal del disco si existe (via service viejo)
@@ -153,6 +164,7 @@ public class DesaparecidaController {
 
     // ===== Fotos: delegadas al service viejo (infraestructura de archivos) =====
 
+    @Operation(summary = "Subir foto principal", description = "Sube o reemplaza la foto principal del caso")
     @PostMapping("/{id}/foto")
     public ResponseEntity<Map<String, String>> subirFoto(@PathVariable Long id,
                                                          @RequestParam("archivo") MultipartFile archivo) {
@@ -171,22 +183,26 @@ public class DesaparecidaController {
         }
     }
 
+    @Operation(summary = "Agregar foto a la galería", description = "Agrega una foto adicional a la galería del caso")
     @PostMapping("/{id}/fotos")
     public FotoDesaparecida agregarFoto(@PathVariable Long id, @RequestParam("archivo") MultipartFile archivo) {
         return fotoService.agregarFoto(id, archivo);
     }
 
+    @Operation(summary = "Listar fotos", description = "Devuelve todas las fotos de un caso, ordenadas")
     @GetMapping("/{id}/fotos")
     public List<FotoDesaparecida> listarFotos(@PathVariable Long id) {
         return fotoService.listarFotos(id);
     }
 
+    @Operation(summary = "Eliminar foto", description = "Elimina una foto específica de la galería del caso")
     @DeleteMapping("/{id}/fotos/{fotoId}")
     public Map<String, Boolean> eliminarFoto(@PathVariable Long id, @PathVariable Long fotoId) {
         fotoService.eliminarFoto(id, fotoId);
         return Map.of("eliminada", true);
     }
 
+    @Operation(summary = "Marcar foto como principal", description = "Designa una foto de la galería como la foto principal del caso")
     @PatchMapping("/{id}/fotos/{fotoId}/principal")
     public Map<String, Boolean> marcarPrincipal(@PathVariable Long id, @PathVariable Long fotoId) {
         fotoService.marcarPrincipal(id, fotoId);
