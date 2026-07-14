@@ -35,6 +35,9 @@ public class BulletImpl implements BulletService {
     com.ccc.sistema_balistico.core.application.services.FileStorageService fileStorageService;
 
 
+    @Autowired
+    com.ccc.sistema_balistico.core.infrastructure.out.persistence.jpa.BulletImageRepository bulletImageRepository;
+
     @Transactional(readOnly = true)
     @Override
     public Page<BulletDTO> getAll(Pageable pageable) {
@@ -84,6 +87,8 @@ public class BulletImpl implements BulletService {
             for (com.ccc.sistema_balistico.core.infrastructure.out.persistence.entity.BulletImagesEntity img : bulletEntity.getImagePaths()) {
                 fileStorageService.deleteImage(img.getPathImage());
             }
+            bulletImageRepository.deleteAll(bulletEntity.getImagePaths());
+            bulletEntity.getImagePaths().clear();
         }
         
         bulletEntity.setIsDelete(true);
