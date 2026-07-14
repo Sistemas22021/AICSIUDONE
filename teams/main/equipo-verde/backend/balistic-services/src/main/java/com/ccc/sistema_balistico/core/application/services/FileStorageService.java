@@ -7,5 +7,5 @@ public interface FileStorageService {
     String saveImageFile(MultipartFile file,String name);
     Resource loadImageFile(String img);
     String getContentType(String path);
-    void deleteImage();
+    void deleteImage(String path);
 }

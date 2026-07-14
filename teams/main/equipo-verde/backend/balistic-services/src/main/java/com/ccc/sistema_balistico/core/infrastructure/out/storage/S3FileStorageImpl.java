@@ -92,8 +92,13 @@ public class S3FileStorageImpl implements FileStorageService {
     }
 
     @Override
-    public void deleteImage() {
-        // Placeholder as per interface definition
+    public void deleteImage(String path) {
+        if (path == null || path.trim().isEmpty()) return;
+        try {
+            s3Client.deleteObject(builder -> builder.bucket(bucketName).key(path));
+        } catch (Exception e) {
+            throw new RuntimeException("Error deleting file from S3: " + e.getMessage(), e);
+        }
     }
 
     private static @NonNull String getNewFileName(MultipartFile file, String name) throws FileUploadException {

@@ -49,7 +49,7 @@ VALUES ('EXP-2024-150', 8, 'CENTRAL', 'DEXTRORSUM', 1, 'Hornady', CURRENT_TIMEST
 -- =============================================================================
 -- 3. VISTA DE AUDITORÍA (v_audit_logs)
 -- =============================================================================
-DROP TABLE IF EXISTS v_audit_logs CASCADE;
+DROP VIEW IF EXISTS v_audit_logs CASCADE;
 CREATE OR REPLACE VIEW v_audit_logs AS
 SELECT
     CONCAT(CAST(b.rev AS VARCHAR), '_BULLET_', CAST(b.id_bullet AS VARCHAR)) AS id,

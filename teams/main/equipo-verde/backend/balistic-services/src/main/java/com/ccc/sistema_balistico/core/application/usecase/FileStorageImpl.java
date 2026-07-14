@@ -113,7 +113,15 @@ public class FileStorageImpl implements FileStorageService {
     }
 
     @Override
-    public void deleteImage() {
-
+    public void deleteImage(String path) {
+        if (path == null || path.trim().isEmpty()) return;
+        try {
+            Path file = rootLocation.resolve(path).normalize().toAbsolutePath();
+            if (Files.exists(file)) {
+                Files.delete(file);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Error deleting file: " + e.getMessage(), e);
+        }
     }
 }

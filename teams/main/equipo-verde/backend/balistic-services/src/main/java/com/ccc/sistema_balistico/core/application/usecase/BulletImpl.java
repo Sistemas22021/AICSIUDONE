@@ -31,6 +31,8 @@ public class BulletImpl implements BulletService {
     CaliberRepository caliberRepository;
     @Autowired
     BulletImagesService bulletImagesService;
+    @Autowired
+    com.ccc.sistema_balistico.core.application.services.FileStorageService fileStorageService;
 
 
     @Transactional(readOnly = true)
@@ -77,6 +79,13 @@ public class BulletImpl implements BulletService {
     @Override
     public void deleteBullet(Long idBullet) {
         BulletEntity bulletEntity = bulletRepository.findById(idBullet).orElseThrow(()-> new BulletNotFound("Bullet Not Found"));
+        
+        if (bulletEntity.getImagePaths() != null) {
+            for (com.ccc.sistema_balistico.core.infrastructure.out.persistence.entity.BulletImagesEntity img : bulletEntity.getImagePaths()) {
+                fileStorageService.deleteImage(img.getPathImage());
+            }
+        }
+        
         bulletEntity.setIsDelete(true);
         bulletRepository.save(bulletEntity);
     }
