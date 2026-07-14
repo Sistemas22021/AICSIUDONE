@@ -65,10 +65,6 @@ public class DeteccionModusOperandiServiceImpl implements DeteccionModusOperandi
     @Override
     @Async
     public void analizarPatrones(Long expedienteId) {
-
-        System.out.println("========================================");
-        System.out.println("🔥🔥🔥 ANALIZANDO PATRONES - Expediente: " + expedienteId);
-        System.out.println("========================================");
         log.info("[MO] Iniciando análisis para expediente {}", expedienteId);
 
         try {
@@ -165,8 +161,6 @@ public class DeteccionModusOperandiServiceImpl implements DeteccionModusOperandi
             // alcance de esta entrega (HU2/HU3).
 
         } catch (Exception ex) {
-            System.err.println("🔥 ERROR EN ANALISIS MO: " + ex.getMessage());
-
             log.error("[MO] Error analizando Modus Operandi para expediente id={}", expedienteId, ex);
         }
     }
@@ -186,23 +180,46 @@ public class DeteccionModusOperandiServiceImpl implements DeteccionModusOperandi
                 .collect(java.util.stream.Collectors.joining("\n"));
 
         String prompt = """
-                Eres un analista criminal experto en identificación de patrones de Modus Operandi (MO).
+            Eres un analista criminal experto en identificación de patrones de Modus Operandi (MO).
 
-                Caso nuevo (folio %s):
-                %s
+            Caso nuevo (folio %s):
+            %s
 
-                Casos previos recuperados por búsqueda semántica, por nivel de similitud:
-                %s
+            Casos previos recuperados por búsqueda semántica, por nivel de similitud:
+            %s
 
-                Analiza qué características tienen en común estos casos: forma de actuar, posible firma
-                del perpetrador, y consistencia de horario o zona geográfica. Estima un nivel de confianza
-                de 0 a 100 sobre qué tan sólido es el patrón encontrado.
-                """.formatted(expediente.getFolio(), expediente.getDescripcionHecho(), contextoCasosSimilares);
+            Analiza qué características tienen en común estos casos: forma de actuar, posible firma
+            del perpetrador, y consistencia de horario o zona geográfica. Estima un nivel de confianza
+            de 0 a 100 sobre qué tan sólido es el patrón encontrado.
 
-        return chatClient.prompt()
-                .user(prompt)
-                .call()
-                .entity(AnalisisMoIA.class);
+            ⚠️ IMPORTANTE: Responde ÚNICAMENTE con un objeto JSON válido y completo. NO agregues texto adicional.
+            El JSON debe tener esta estructura exacta:
+            {
+              "caracteristicasComunes": "texto",
+              "posibleFirma": "texto",
+              "consistenciaHorarioZona": "texto",
+              "resumen": "texto",
+              "nivelConfianza": 75.0
+            }
+            Asegúrate de cerrar todas las llaves y comillas correctamente.
+            """.formatted(expediente.getFolio(), expediente.getDescripcionHecho(), contextoCasosSimilares);
+
+        try {
+            return chatClient.prompt()
+                    .user(prompt)
+                    .call()
+                    .entity(AnalisisMoIA.class);
+        } catch (Exception e) {
+            log.error("[MO] Error al llamar a Ollama: {}", e.getMessage());
+            // Retornar un análisis por defecto
+            return new AnalisisMoIA(
+                    "No se pudo generar el análisis automáticamente",
+                    "No determinado",
+                    "No determinado",
+                    "Error en la generación del análisis",
+                    0.0
+            );
+        }
     }
 
     /** Convierte distancia coseno pgvector (0=idénticos, 2=opuestos) a similitud % acotada [0,100]. */

@@ -213,14 +213,7 @@ public class ExpedienteServiceImpl implements ExpedienteService {
 
         Expediente guardado = expedienteRepository.save(expediente);
 
-        System.out.println("========================================");
-        System.out.println("🔥 EXPEDIENTE GUARDADO CON ID: " + guardado.getId());
-        System.out.println("========================================");
-
-
         eventPublisher.publishEvent(new ExpedienteRegistradoEvent(this, guardado.getId()));
-
-        System.out.println("🔥 EVENTO PUBLICADO PARA EXPEDIENTE: " + guardado.getId());
 
         return toResponse(guardado);
     }
