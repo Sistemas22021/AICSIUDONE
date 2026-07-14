@@ -49,19 +49,29 @@ VALUES ('EXP-2024-150', 8, 'CENTRAL', 'DEXTRORSUM', 1, 'Hornady', CURRENT_TIMEST
 -- =============================================================================
 -- 3. VISTA DE AUDITORÍA (v_audit_logs)
 -- =============================================================================
--- NOTA: Esta vista se debe crear manualmente en la base de datos después del
--- primer arranque de la aplicación, una vez que Hibernate Envers haya creado
--- las tablas de auditoría (bullet_entity_aud, bullet_images_entity_aud).
--- Ejecutar directamente en la BD:
---
--- CREATE OR REPLACE VIEW v_audit_logs AS
--- SELECT CONCAT(CAST(b.rev AS VARCHAR), '_BULLET_', CAST(b.id_bullet AS VARCHAR)) AS id,
---        b.rev, r.revtstmp AS rev_timestamp, b.revtype AS rev_type,
---        'BULLET' AS entity_type, CAST(b.id_bullet AS VARCHAR) AS entity_id, r.operator
--- FROM bullet_entity_aud b JOIN custom_rev_info r ON b.rev = r.rev
--- UNION ALL
--- SELECT CONCAT(CAST(bi.rev AS VARCHAR), '_IMAGES_', CAST(bi.uuid_bullet_images AS VARCHAR)) AS id,
---        bi.rev, r.revtstmp AS rev_timestamp, bi.revtype AS rev_type,
---        'IMAGES' AS entity_type, CAST(bi.uuid_bullet_images AS VARCHAR) AS entity_id, r.operator
--- FROM bullet_images_entity_aud bi JOIN custom_rev_info r ON bi.rev = r.rev;
+DROP TABLE IF EXISTS v_audit_logs CASCADE;
+CREATE OR REPLACE VIEW v_audit_logs AS
+SELECT
+    CONCAT(CAST(b.rev AS VARCHAR), '_BULLET_', CAST(b.id_bullet AS VARCHAR)) AS id,
+    b.rev AS rev,
+    r.revtstmp AS rev_timestamp,
+    b.revtype AS rev_type,
+    'BULLET' AS entity_type,
+    CAST(b.id_bullet AS VARCHAR) AS entity_id,
+    r.operator AS operator
+FROM bullet_entity_aud b
+         JOIN custom_rev_info r ON b.rev = r.rev
+
+UNION ALL
+
+SELECT
+    CONCAT(CAST(bi.rev AS VARCHAR), '_IMAGES_', CAST(bi.uuid_bullet_images AS VARCHAR)) AS id,
+    bi.rev AS rev,
+    r.revtstmp AS rev_timestamp,
+    bi.revtype AS rev_type,
+    'IMAGES' AS entity_type,
+    CAST(bi.uuid_bullet_images AS VARCHAR) AS entity_id,
+    r.operator AS operator
+FROM bullet_images_entity_aud bi
+         JOIN custom_rev_info r ON bi.rev = r.rev;
 
