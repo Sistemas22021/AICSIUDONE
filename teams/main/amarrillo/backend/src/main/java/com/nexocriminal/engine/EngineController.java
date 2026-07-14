@@ -2,10 +2,13 @@ package com.nexocriminal.engine;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 import java.util.List;
 import java.util.Map;
 
+@Tag(name = "Motor Red Thread", description = "Ejecución de las reglas heurísticas de detección de vínculos ocultos")
 @RestController
 @RequestMapping("/api/v1/engine")
 @RequiredArgsConstructor
