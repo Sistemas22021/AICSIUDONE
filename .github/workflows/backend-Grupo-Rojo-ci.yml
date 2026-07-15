@@ -3,12 +3,12 @@ name: Power Ranger Red - Backend CI
 on:
   push:
     paths:
-      - 'teams/main/backend/backenPowerRangerRed/backPRR/**' # Monitorea solo tu carpeta
+      - 'teams/team-red/backend/guardia-core/**'
     branches-ignore:
       - main
   pull_request:
     paths:
-      - 'teams/main/backend/backenPowerRangerRed/backPRR/**'
+      - 'teams/team-red/backend/guardia-core/**'
     branches:
       - main
 
@@ -16,14 +16,14 @@ jobs:
   pruebas-backend:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Configurar Java 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '21'
           distribution: 'temurin'
 
       - name: Compilar y Probar Módulo Ranger Red
-        run: ./mvnw clean package
-        working-directory: ./teams/main/backend/backenPowerRangerRed/backPRR # Entra exacto a tu carpeta
+        run: mvn clean package
+        working-directory: ./teams/team-red/backend/guardia-core

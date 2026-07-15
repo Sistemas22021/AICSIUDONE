@@ -5,14 +5,14 @@ on:
     branches: [main]
     tags: ['v*.*.*']
     paths:
-      - 'teams/main/frontend/equipo rojo/src/**'
-      - 'teams/main/frontend/equipo rojo/package.json'
-      - 'teams/main/frontend/equipo rojo/Dockerfile'
+      - 'teams/team-red/frontend/incident-registration/src/**'
+      - 'teams/team-red/frontend/incident-registration/package.json'
+      - 'teams/team-red/frontend/incident-registration/Dockerfile'
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}/incident-registration
-  FRONTEND_DIR: teams/main/frontend/equipo rojo
+  FRONTEND_DIR: teams/team-red/frontend/incident-registration
 
 jobs:
   verify-before-release:
@@ -22,11 +22,11 @@ jobs:
       run:
         working-directory: ${{ env.FRONTEND_DIR }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
           cache-dependency-path: '${{ env.FRONTEND_DIR }}/package-lock.json'
 
@@ -44,7 +44,7 @@ jobs:
 
     steps:
       - name: Descargar codigo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Autenticarse en GHCR
         uses: docker/login-action@v3

@@ -4,19 +4,19 @@ on:
   push:
     branches: [main, develop]
     paths:
-      - 'teams/main/frontend/equipo rojo/src/**'
-      - 'teams/main/frontend/equipo rojo/package.json'
-      - 'teams/main/frontend/equipo rojo/package-lock.json'
+      - 'teams/team-red/frontend/incident-registration/src/**'
+      - 'teams/team-red/frontend/incident-registration/package.json'
+      - 'teams/team-red/frontend/incident-registration/package-lock.json'
       - '.github/workflows/ci-frontend-equiporojo.yml'
   pull_request:
     branches: [main, develop]
     paths:
-      - 'teams/main/frontend/equipo rojo/src/**'
-      - 'teams/main/frontend/equipo rojo/package.json'
-      - 'teams/main/frontend/equipo rojo/package-lock.json'
+      - 'teams/team-red/frontend/incident-registration/src/**'
+      - 'teams/team-red/frontend/incident-registration/package.json'
+      - 'teams/team-red/frontend/incident-registration/package-lock.json'
 
 env:
-  FRONTEND_DIR: teams/main/frontend/equipo rojo
+  FRONTEND_DIR: teams/team-red/frontend/incident-registration
 
 jobs:
   lint-typecheck-build:
@@ -28,12 +28,12 @@ jobs:
 
     steps:
       - name: Descargar codigo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
-      - name: Configurar Node.js 20
-        uses: actions/setup-node@v4
+      - name: Configurar Node.js 24
+        uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
           cache-dependency-path: '${{ env.FRONTEND_DIR }}/package-lock.json'
 
@@ -54,7 +54,7 @@ jobs:
           VITE_API_URL: http://localhost:8080
 
       - name: Publicar build como artefacto de verificacion
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dist-preview
           path: ${{ env.FRONTEND_DIR }}/dist/
