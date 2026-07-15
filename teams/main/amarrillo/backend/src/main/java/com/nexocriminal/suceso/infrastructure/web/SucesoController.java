@@ -20,6 +20,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
+import com.nexocriminal.integracion.CianClient;
+import com.nexocriminal.ia.IAService;
+import java.util.Map;
+import com.nexocriminal.domain.ubicacion.Ubicacion;
 
 import java.util.List;
 
@@ -38,11 +42,14 @@ public class SucesoController {
     private final VehiculoReaderPort vehiculoReader;
     private final PersonaReaderPort personaReader;
     private final UbicacionReaderPort ubicacionReader;
+    private final CianClient cianClient;
+    private final IAService iaService;
 
     public SucesoController(CreateSuceso createSuceso, ListSucesos listSucesos,
                             GetSuceso getSuceso, UpdateSuceso updateSuceso, DeleteSuceso deleteSuceso,
                             VehiculoReaderPort vehiculoReader, PersonaReaderPort personaReader,
-                            UbicacionReaderPort ubicacionReader) {
+                            UbicacionReaderPort ubicacionReader,
+                            CianClient cianClient, IAService iaService) {
         this.createSuceso = createSuceso;
         this.listSucesos = listSucesos;
         this.getSuceso = getSuceso;
@@ -51,6 +58,8 @@ public class SucesoController {
         this.vehiculoReader = vehiculoReader;
         this.personaReader = personaReader;
         this.ubicacionReader = ubicacionReader;
+        this.cianClient = cianClient;
+        this.iaService = iaService;
     }
 
     private VehiculoNodo vehiculoNodo(Long id) {
@@ -119,5 +128,42 @@ public class SucesoController {
                 id, req.getTipo(), req.getFechaHora(),
                 req.getModusOperandi(), req.getDescripcion());
         return toResponse(actualizado);
+    }
+
+    @Operation(summary = "Enviar suceso a patrullas (Cian)",
+               description = "Calcula la prioridad con IA y envía el suceso como incidente al sistema de patrullaje del Equipo Cian")
+    @PostMapping("/{id}/enviar-cian")
+    public ResponseEntity<?> enviarACian(@PathVariable Long id) {
+        Suceso s = getSuceso.execute(id);
+
+        // Resolver la ubicación del hecho vía el reader (el dominio solo tiene el id)
+        Long ubicacionId = s.getUbicacionId();
+        if (ubicacionId == null) {
+            return ResponseEntity.badRequest().body(
+                Map.of("error", "El suceso no tiene ubicación; no se puede enviar a patrullas."));
+        }
+        var ubiOpt = ubicacionReader.findById(ubicacionId);
+        if (ubiOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body(
+                Map.of("error", "La ubicación del suceso no tiene coordenadas; no se puede enviar a patrullas."));
+        }
+        var ubi = ubiOpt.get();
+
+        try {
+            String priority = iaService.calcularPrioridadIncidente(id);
+            String type = s.getTipo() != null ? s.getTipo().name() : "OTRO";
+            String description = s.getDescripcion() != null ? s.getDescripcion() : s.getModusOperandi();
+
+            Map<String, Object> respuestaCian = cianClient.enviarIncidente(
+                    type, description, ubi.latitud(), ubi.longitud(), priority);
+
+            return ResponseEntity.ok(Map.of("prioridad", priority, "incidenteCian", respuestaCian));
+        } catch (org.springframework.web.client.ResourceAccessException e) {
+            return ResponseEntity.status(503).body(
+                Map.of("error", "No se pudo conectar con el sistema de patrullas (Cian). ¿Está corriendo?"));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(
+                Map.of("error", "Error al enviar el incidente: " + e.getMessage()));
+        }
     }
 }
