@@ -2,9 +2,11 @@ package com.nexocriminal.fuentes;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.Map;
 
+@Tag(name = "Fuentes externas", description = "Consulta de datos de personas desde fuentes externas (CNE / API)")
 @RestController
 @RequestMapping("/api/v1/fuentes")
 @RequiredArgsConstructor

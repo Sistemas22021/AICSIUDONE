@@ -12,6 +12,8 @@ import com.nexocriminal.domain.vinculo.Vinculo;
 import com.nexocriminal.domain.vinculo.VinculoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 import java.util.*;
 
@@ -19,6 +21,7 @@ import java.util.*;
  * Entrega el grafo completo en formato listo para Cytoscape.js:
  * { nodes: [...], edges: [...] }
  */
+@Tag(name = "Grafo", description = "Grafo completo de la red de entidades y vínculos para visualización")
 @RestController
 @RequestMapping("/api/v1/grafo")
 @RequiredArgsConstructor

@@ -11,6 +11,8 @@ import com.nexocriminal.ubicacion.infrastructure.web.dto.UbicacionResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 import java.util.List;
 
@@ -18,6 +20,7 @@ import java.util.List;
  * Adapter de entrada (REST). Recibe DTOs, invoca casos de uso y devuelve DTOs.
  * No conoce JPA ni la entidad de persistencia.
  */
+@Tag(name = "Ubicaciones", description = "Gestión de ubicaciones geográficas del sistema")
 @RestController
 @RequestMapping("/api/v1/ubicaciones")
 @CrossOrigin(origins = "*")

@@ -7,9 +7,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.Map;
 
+@Tag(name = "Autenticación", description = "Login, registro de usuarios y cambio de contraseña con JWT")
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor

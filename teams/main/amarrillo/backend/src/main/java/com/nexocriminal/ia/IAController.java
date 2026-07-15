@@ -6,11 +6,14 @@ import com.nexocriminal.ia.dto.RespuestaIA;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+@Tag(name = "Inteligencia Artificial", description = "Chat, análisis de zonas de búsqueda, reportes y clasificación de modus con IA")
 @RestController
 @RequestMapping("/api/v1/ia")
 @RequiredArgsConstructor
