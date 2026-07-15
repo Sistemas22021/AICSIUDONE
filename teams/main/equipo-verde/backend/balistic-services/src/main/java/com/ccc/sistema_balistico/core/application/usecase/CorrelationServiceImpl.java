@@ -80,11 +80,11 @@ public class CorrelationServiceImpl implements CorrelationService {
         // Evaluate mechanical metadata
         boolean twistMatched = source.getTwistDirection() != null 
                 && candidate.getTwistDirection() != null 
-                && source.getTwistDirection() == candidate.getTwistDirection();
+                && source.getTwistDirection().equals(candidate.getTwistDirection());
 
         boolean percussionMatched = source.getPercussionType() != null 
                 && candidate.getPercussionType() != null 
-                && source.getPercussionType() == candidate.getPercussionType();
+                && source.getPercussionType().equals(candidate.getPercussionType());
 
         boolean brandMatched = source.getManufacturer() != null 
                 && candidate.getManufacturer() != null 
@@ -116,9 +116,9 @@ public class CorrelationServiceImpl implements CorrelationService {
         boolean striaeMatched = maxInliers >= MIN_INLIERS_FOR_STRIAE_MATCH;
 
         double score = 0.0;
-        if (striaeMatched) score += 40.0;
-        if (twistMatched) score += 30.0;
-        if (percussionMatched) score += 20.0;
+        if (striaeMatched) score += 70.0;
+        if (twistMatched) score += 10.0;
+        if (percussionMatched) score += 10.0;
         if (brandMatched) score += 10.0;
 
         return new CandidateEvaluation(
