@@ -1,0 +1,45 @@
+name: Naranja - Frontend Deploy Dev
+
+on:
+  push:
+    branches: [ naranja-dev/main, main ]
+    paths:
+      - 'teams/naranja/Frontend/**'
+      
+  pull_request:
+    branches: [ naranja-dev/main, main ]
+    paths:
+      - 'teams/naranja/Frontend/**'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: teams/naranja/Frontend
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v6
+
+      - name: Configurar entorno de Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: teams/naranja/Frontend/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Construir aplicación (Build)
+        run: npm run build
+      
+      - name: Deploy a Vercel (Preview)
+        run: |
+          npm install -g vercel
+          vercel --token=${{ secrets.NARANJA_VERCEL_TOKEN }} --yes
+        env:
+          VERCEL_ORG_ID: ${{ secrets.NARANJA_VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.NARANJA_VERCEL_PROJECT_ID }}

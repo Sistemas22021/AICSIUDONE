@@ -1,0 +1,46 @@
+name: Naranja - Backend Build Dev
+
+on:
+  push:
+    branches: [ naranja-dev/main, main ]
+    paths:
+      - 'teams/naranja/Backend/**'
+  pull_request:
+    branches: [ naranja-dev/main, main ]
+    paths:
+      - 'teams/naranja/Backend/**'
+
+jobs:
+  build:
+    name: "Build"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: teams/naranja/Backend
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v6
+
+      - name: Configurar JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Compilar y Ejecutar Pruebas
+        run: mvn clean verify
+        env:
+          DB_URL: ${{ secrets.NARANJA_DB_URL }}
+          DB_USER: ${{ secrets.NARANJA_DB_USER }}
+          DB_PASSWD: ${{ secrets.NARANJA_DB_PASSWD }}
+          SPRINGDOC_API_DOCS_ENABLED: ${{ github.ref_name != 'main' }}
+          SPRINGDOC_SWAGGER_UI_ENABLED: ${{ github.ref_name != 'main' }}
+
+      - name: Guardar el archivo .JAR generado
+        uses: actions/upload-artifact@v4
+        with:
+          name: custodia-360-backend-jar
+          path: teams/naranja/Backend/target/*.jar
+          retention-days: 7
