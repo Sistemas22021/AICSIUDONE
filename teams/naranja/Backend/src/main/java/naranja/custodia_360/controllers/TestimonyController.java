@@ -34,7 +34,6 @@ public class TestimonyController {
             @RequestParam("caseNumber") String caseNumber
     ) throws IOException {
 
-        // Validaciones de cliente con su excepción semántica correcta (400 Bad Request)
         if (audio == null || audio.isEmpty()) {
             throw new BadRequestException("El archivo de audio no puede estar vacío y es requerido.");
         }

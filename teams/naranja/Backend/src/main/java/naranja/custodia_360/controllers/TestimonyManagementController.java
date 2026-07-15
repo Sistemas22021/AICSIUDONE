@@ -60,17 +60,14 @@ public class TestimonyManagementController {
             @PathVariable String sessionId,
             @RequestHeader HttpHeaders headers) {
 
-        // Cargamos el recurso usando tu servicio actual asegurando que sea el AUDIO
         Resource resource = managementService.loadTestimonyResource(sessionId, ResourceType.AUDIO);
 
-        // Forzamos el tipo de medio correcto para el reproductor de audio webm
         MediaType mediaType = MediaType.parseMediaType("audio/webm");
 
         try {
             long contentLength = resource.contentLength();
             List<HttpRange> ranges = headers.getRange();
 
-            // Si el navegador pide un rango (comportamiento por defecto de la etiqueta <audio>)
             if (!ranges.isEmpty()) {
                 ResourceRegion region = getResourceRegion(ranges, contentLength, resource);
 
@@ -78,7 +75,6 @@ public class TestimonyManagementController {
                         .contentType(mediaType)
                         .body(region);
             } else {
-                // Si no hay rangos (petición inicial rara), enviamos el primer chunk completo por defecto
                 long rangeLength = Math.min(1024 * 1024L, contentLength);
                 ResourceRegion region = new ResourceRegion(resource, 0, rangeLength);
                 return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)
@@ -96,7 +92,6 @@ public class TestimonyManagementController {
         long start = range.getRangeStart(contentLength);
         long end = range.getRangeEnd(contentLength);
 
-        // Definimos un tamaño de chunk prudente (ej. 1 MB) para no saturar la red
         long chunkSize = Math.min(1024 * 1024L, contentLength);
         if (end == -1 || (end - start + 1) > chunkSize) {
             end = Math.min(start + chunkSize - 1, contentLength - 1);

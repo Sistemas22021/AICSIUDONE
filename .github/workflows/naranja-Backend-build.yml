@@ -11,7 +11,8 @@ on:
       - 'teams/naranja/Backend/**'
 
 jobs:
-  build-and-test:
+  build:
+    name: "Build"
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -40,6 +41,6 @@ jobs:
       - name: Guardar el archivo .JAR generado
         uses: actions/upload-artifact@v4
         with:
-          name: custodia-360-backend-jar # El nombre que tendrá el archivo descargable
-          path: teams/naranja/Backend/target/*.jar     # La ruta donde Maven escupe el binario
+          name: custodia-360-backend-jar
+          path: teams/naranja/Backend/target/*.jar
           retention-days: 7

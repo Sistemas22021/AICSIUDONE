@@ -89,10 +89,8 @@ public class TestimonyManagementService {
         List<String> pathsToZip = getStrings(testimony);
 
         try {
-            // 1. Creamos el archivo temporal primero
             Path zipPath = Files.createTempFile("testimony-" + testimony.getSessionId() + "-", ".zip");
 
-            // 2. Abrimos el ZipOutputStream para empaquetar la lista de archivos obtenida
             try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipPath.toFile()))) {
                 for (String stringPath : pathsToZip) {
                     Path file = Paths.get(stringPath).normalize();

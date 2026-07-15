@@ -2,29 +2,35 @@ name: Naranja - Frontend Deploy Dev
 
 on:
   push:
-    branches: [ naranja-dev/main ]
+    branches:
+      - naranja-dev/main
+      - main
     paths:
       - 'teams/naranja/Frontend/**'
-      
+
   pull_request:
-    branches: [ naranja-dev/main ]
+    branches:
+      - naranja-dev/main
+      - main
     paths:
       - 'teams/naranja/Frontend/**'
 
 jobs:
-  build-and-deploy:
+  # ==========================================
+  # 1. Pipeline de Compilación (Build)
+  # ==========================================
+  build:
     runs-on: ubuntu-latest
-
     defaults:
       run:
         working-directory: teams/naranja/Frontend
 
     steps:
       - name: Checkout del código
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Configurar entorno de Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: '24'
           cache: 'npm'
@@ -35,7 +41,35 @@ jobs:
 
       - name: Construir aplicación (Build)
         run: npm run build
-      
+
+      # Guardamos el resultado del build para que el job de deploy pueda usarlo
+      - name: Subir artefacto de construcción
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: teams/naranja/Frontend/.next # O la carpeta de salida de tu build (ej: dist, build, .next)
+          retention-days: 1
+
+  # ==========================================
+  # 2. Pipeline de Despliegue (Deploy)
+  # ==========================================
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build # Este job solo corre si 'build' termina con éxito
+    defaults:
+      run:
+        working-directory: teams/naranja/Frontend
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Descargar artefacto de construcción
+        uses: actions/artifact-download-action@v4
+        with:
+          name: build-output
+          path: teams/naranja/Frontend/.next
+
       - name: Deploy a Vercel (Preview)
         run: |
           npm install -g vercel

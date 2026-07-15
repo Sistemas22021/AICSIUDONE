@@ -16,7 +16,6 @@ public class AudioStreamExceptionStrategy implements ExceptionMappingStrategy {
 
     @Override
     public boolean canHandle(Throwable throwable) {
-        // Esta estrategia se activa si la excepción es porque el cliente canceló el stream
         return throwable instanceof ClientAbortException || throwable instanceof AsyncRequestNotUsableException;
     }
 
