@@ -3,11 +3,10 @@ import { NeonPanel } from '../../ui/NeonPanel'
 import { InteligenciaSubTabs } from './InteligenciaSubTabs'
 import { AnalisisMOTab } from './AnalisisMOTab'
 import { ValidarMOTab } from './ValidarMOTab'
+import { CasosPanel } from './CasosPanel'
 
+type SubTab = 'analisis' | 'validar' | 'buscar' | 'casos'
 
-type SubTab = 'analisis' | 'validar' | 'buscar' | 'futuras'
-
-/** Contenido de la Pestaña C ("INTELIGENCIA IA / MODUS OPERANDI"), con sub-pestañas por HU. */
 export const InteligenciaMOTab = () => {
     const [subTab, setSubTab] = useState<SubTab>('analisis')
 
@@ -16,6 +15,7 @@ export const InteligenciaMOTab = () => {
             <InteligenciaSubTabs activo={subTab} onChange={setSubTab} />
             {subTab === 'analisis' && <AnalisisMOTab />}
             {subTab === 'validar' && <ValidarMOTab />}
+            {subTab === 'casos' && <CasosPanel />}
         </NeonPanel>
     )
 }

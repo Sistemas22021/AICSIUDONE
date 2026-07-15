@@ -46,7 +46,7 @@ export const CasosPanel = () => {
 
     return (
         <div className="space-y-6">
-            <NeonPanel title="Nuevo caso" subtitle="Agrupa dos o más expedientes relacionados (HU1)">
+            <NeonPanel title="Nuevo caso" subtitle="Agrupa dos o más expedientes relacionados">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <NeonInput
                         label="Identificación  del usuario que agrupa"
