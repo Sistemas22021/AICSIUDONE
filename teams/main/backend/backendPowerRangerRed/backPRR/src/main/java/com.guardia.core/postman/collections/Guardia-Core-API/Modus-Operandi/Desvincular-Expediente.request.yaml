@@ -1,0 +1,4 @@
+$kind: http-request
+name: Desvincular Expediente de Modus Operandi
+method: DELETE
+url: '{{baseUrl}}/api/v1/modus-operandi/{{modusId}}/expedientes/{{expedienteId}}'

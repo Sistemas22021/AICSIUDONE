@@ -1,0 +1,15 @@
+$kind: http-request
+name: Crear Modus Operandi
+method: POST
+url: '{{baseUrl}}/api/v1/modus-operandi'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "nombre": "Nombre del modus operandi",
+      "descripcion": "Descripción detallada del modus operandi",
+      "patron": "Patrón de comportamiento"
+    }

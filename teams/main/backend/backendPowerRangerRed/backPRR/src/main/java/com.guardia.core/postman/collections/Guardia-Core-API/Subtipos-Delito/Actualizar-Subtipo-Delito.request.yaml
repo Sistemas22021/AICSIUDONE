@@ -1,0 +1,15 @@
+$kind: http-request
+name: Actualizar Subtipo de Delito
+method: PUT
+url: '{{baseUrl}}/api/v1/subtipos-delito/{{subtipoDelitoId}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "nombre": "Nombre actualizado del subtipo de delito",
+      "descripcion": "Descripción actualizada",
+      "tipoDelitoId": 1
+    }

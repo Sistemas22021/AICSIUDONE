@@ -1,0 +1,4 @@
+$kind: http-request
+name: Validar Correspondencia de Subtipo con Tipo
+method: GET
+url: '{{baseUrl}}/api/v1/subtipos-delito/{{subtipoDelitoId}}/validar-tipo/{{tipoDelitoId}}'

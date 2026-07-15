@@ -1,0 +1,14 @@
+$kind: http-request
+name: Actualizar Escena Negativa
+method: PUT
+url: '{{baseUrl}}/api/v1/escenas-negativas/{{escenaNegativaId}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "escenaId": 1,
+      "registradaPorId": 1
+    }

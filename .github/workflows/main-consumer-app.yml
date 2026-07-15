@@ -49,40 +49,40 @@ jobs:
           VITE_LOGIN_MFE_URL: ${{ secrets.LOGIN_MFE_URL }}
 
       # ── Deploy a S3 ──────────────────────────────────────────────────────
-      # - name: Deploy a S3 (DEV)
-      #   if: github.ref == 'refs/heads/main' && secrets.DEPLOY_TARGET == 's3'
-      #   env:
-      #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      #     AWS_DEFAULT_REGION: us-east-1
-      #   run: |
-      #     aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_CONSUMER_APP_DEV }} --delete
-      #     aws s3 cp dist/index.html s3://${{ secrets.S3_BUCKET_CONSUMER_APP_DEV }}/index.html \
-      #       --cache-control "no-cache,no-store,must-revalidate"
+      - name: Deploy a S3 (DEV)
+        if: github.ref == 'refs/heads/main' && secrets.DEPLOY_TARGET == 's3'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+        run: |
+          aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_CONSUMER_APP_DEV }} --delete
+          aws s3 cp dist/index.html s3://${{ secrets.S3_BUCKET_CONSUMER_APP_DEV }}/index.html \
+            --cache-control "no-cache,no-store,must-revalidate"
 
-      # - name: Deploy a S3 (PROD)
-      #   if: startsWith(github.ref, 'refs/tags/v') && secrets.DEPLOY_TARGET == 's3'
-      #   env:
-      #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      #     AWS_DEFAULT_REGION: us-east-1
-      #   run: aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_CONSUMER_APP_PROD }} --delete
+      - name: Deploy a S3 (PROD)
+        if: startsWith(github.ref, 'refs/tags/v') && secrets.DEPLOY_TARGET == 's3'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+        run: aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_CONSUMER_APP_PROD }} --delete
 
       # ── Deploy a Vercel ──────────────────────────────────────────────────
-      # - name: Deploy a Vercel (DEV)
-      #   if: github.ref == 'refs/heads/main' && secrets.DEPLOY_TARGET == 'vercel'
-      #   run: |
-      #     npm install -g vercel
-      #     vercel --token=${{ secrets.VERCEL_TOKEN }} --yes
-      #   env:
-      #     VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      #     VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_CONSUMER_APP }}
+      - name: Deploy a Vercel (DEV)
+        if: github.ref == 'refs/heads/main' && secrets.DEPLOY_TARGET == 'vercel'
+        run: |
+          npm install -g vercel
+          vercel --token=${{ secrets.VERCEL_TOKEN }} --yes
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_CONSUMER_APP }}
 
-      # - name: Deploy a Vercel (PROD)
-      #   if: startsWith(github.ref, 'refs/tags/v') && secrets.DEPLOY_TARGET == 'vercel'
-      #   run: |
-      #     npm install -g vercel
-      #     vercel --token=${{ secrets.VERCEL_TOKEN }} --prod --yes
-      #   env:
-      #     VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      #     VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_CONSUMER_APP }}
+      - name: Deploy a Vercel (PROD)
+        if: startsWith(github.ref, 'refs/tags/v') && secrets.DEPLOY_TARGET == 'vercel'
+        run: |
+          npm install -g vercel
+          vercel --token=${{ secrets.VERCEL_TOKEN }} --prod --yes
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_CONSUMER_APP }}

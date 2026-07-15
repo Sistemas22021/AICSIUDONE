@@ -1,0 +1,16 @@
+$kind: http-request
+name: Crear Evidencia
+method: POST
+url: '{{baseUrl}}/api/v1/evidencias'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "escenaId": 1,
+      "levantadaPorId": 1,
+      "tipo": "fisica",
+      "descripcion": "Descripción de la evidencia encontrada"
+    }

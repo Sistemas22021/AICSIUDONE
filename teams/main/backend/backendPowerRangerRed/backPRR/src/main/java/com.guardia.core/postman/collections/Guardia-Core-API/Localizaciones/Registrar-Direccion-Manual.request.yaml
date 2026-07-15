@@ -1,0 +1,13 @@
+$kind: http-request
+name: "Registrar Dirección Manual"
+method: PATCH
+url: '{{baseUrl}}/api/v1/localizaciones/{{localizacionId}}/direccion-manual'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "direccion": "Calle Principal 123, Ciudad, País"
+    }

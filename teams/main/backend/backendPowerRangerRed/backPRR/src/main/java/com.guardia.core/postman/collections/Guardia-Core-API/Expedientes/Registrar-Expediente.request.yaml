@@ -1,0 +1,55 @@
+$kind: http-request
+name: Registrar Expediente
+method: POST
+url: '{{baseUrl}}/api/expedientes/registrar'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "ubicacion": {
+        "municipio": "Santo Domingo",
+        "sector": "Gazcue",
+        "direccion": "Calle El Conde 123",
+        "referencia": "Frente al parque",
+        "coordenadas": {
+          "latitud": 18.4861,
+          "longitud": -69.9312
+        }
+      },
+      "delitos": [
+        {
+          "delito": "Robo",
+          "subDelito": {
+            "nombre": "Robo a mano armada"
+          },
+          "fechaHecho": "2025-01-15",
+          "horaInicioHecho": "08:00",
+          "horaFin": "09:00",
+          "hechoEnCurso": false
+        }
+      ],
+      "descripcion": "Descripción del expediente",
+      "esDenunciaFormal": true,
+      "victimas": [
+        {
+          "nombre": "Juan",
+          "apellido": "Pérez",
+          "cedula": "001-1234567-8",
+          "telefono": "809-555-0001",
+          "nacionalidad": "Dominicana",
+          "direccion": "Calle Principal 456"
+        }
+      ],
+      "denunciante": {
+        "nombre": "María",
+        "apellido": "García",
+        "cedula": "001-9876543-2",
+        "telefono": "809-555-0002",
+        "nacionalidad": "Dominicana",
+        "direccion": "Av. Independencia 789",
+        "relacionConHecho": "Testigo"
+      }
+    }
