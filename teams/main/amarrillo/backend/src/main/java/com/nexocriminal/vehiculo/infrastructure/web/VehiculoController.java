@@ -10,11 +10,14 @@ import com.nexocriminal.vehiculo.infrastructure.web.dto.VehiculoResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 import java.util.List;
 import java.util.Map;
 
 /** Adapter de entrada REST para vehiculo. Recibe DTOs, invoca casos de uso, devuelve DTOs. */
+@Tag(name = "Vehículos", description = "Gestión de vehículos y su estado (normal, robado, recuperado)")
 @RestController
 @RequestMapping("/api/v1/vehiculos")
 @CrossOrigin(origins = "*")
@@ -52,16 +55,19 @@ public class VehiculoController {
         return new VehiculoResponse(v, prop);
     }
 
+    @Operation(summary = "Listar vehículos", description = "Devuelve todos los vehículos, opcionalmente filtrados por estado")
     @GetMapping
     public List<VehiculoResponse> listar(@RequestParam(required = false) EstadoVehiculo estado) {
         return listVehiculos.execute(estado).stream().map(this::toResponse).toList();
     }
 
+    @Operation(summary = "Obtener vehículo", description = "Devuelve un vehículo por su identificador, incluyendo su propietario")
     @GetMapping("/{id}")
     public VehiculoResponse obtener(@PathVariable Long id) {
         return toResponse(getVehiculo.execute(id));
     }
 
+    @Operation(summary = "Crear vehículo", description = "Registra un nuevo vehículo con sus datos y propietario opcional")
     @PostMapping
     public ResponseEntity<VehiculoResponse> crear(@Valid @RequestBody VehiculoRequest req) {
         Vehiculo nuevo = Vehiculo.crear(
@@ -70,6 +76,7 @@ public class VehiculoController {
         return ResponseEntity.ok(toResponse(createVehiculo.execute(nuevo)));
     }
 
+    @Operation(summary = "Actualizar vehículo", description = "Modifica los datos de un vehículo existente")
     @PutMapping("/{id}")
     public VehiculoResponse actualizar(@PathVariable Long id, @Valid @RequestBody VehiculoRequest req) {
         Vehiculo v = updateVehiculo.execute(
@@ -78,12 +85,14 @@ public class VehiculoController {
         return toResponse(v);
     }
 
+    @Operation(summary = "Cambiar estado del vehículo", description = "Cambia el estado del vehículo (por ejemplo, marcarlo como robado o recuperado)")
     @PatchMapping("/{id}/estado")
     public VehiculoResponse cambiarEstado(@PathVariable Long id, @RequestBody Map<String, String> body) {
         EstadoVehiculo estado = EstadoVehiculo.valueOf(body.get("estado"));
         return toResponse(changeEstado.execute(id, estado));
     }
 
+    @Operation(summary = "Eliminar vehículo", description = "Elimina un vehículo del sistema por su identificador")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         deleteVehiculo.execute(id);

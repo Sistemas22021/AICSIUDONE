@@ -18,10 +18,13 @@ import com.nexocriminal.suceso.infrastructure.web.dto.SucesoResponse.VictimaNodo
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 import java.util.List;
 
 /** Adapter de entrada REST para suceso. Arma la respuesta anidando los nodos via readers. */
+@Tag(name = "Sucesos", description = "Registro de sucesos criminales (robos, avistamientos, transacciones)")
 @RestController
 @RequestMapping("/api/v1/sucesos")
 @CrossOrigin(origins = "*")
@@ -81,16 +84,19 @@ public class SucesoController {
         );
     }
 
+    @Operation(summary = "Listar sucesos", description = "Devuelve todos los sucesos, opcionalmente filtrados por tipo")
     @GetMapping
     public List<SucesoResponse> listar(@RequestParam(required = false) TipoSuceso tipo) {
         return listSucesos.execute(tipo).stream().map(this::toResponse).toList();
     }
 
+    @Operation(summary = "Obtener suceso", description = "Devuelve un suceso por su identificador, con sus entidades relacionadas")
     @GetMapping("/{id}")
     public SucesoResponse obtener(@PathVariable Long id) {
         return toResponse(getSuceso.execute(id));
     }
 
+    @Operation(summary = "Crear suceso", description = "Registra un nuevo suceso vinculando vehículo, víctima y ubicación según el tipo")
     @PostMapping
     public ResponseEntity<SucesoResponse> crear(@Valid @RequestBody SucesoRequest req) {
         Suceso nuevo = Suceso.crear(
@@ -99,12 +105,14 @@ public class SucesoController {
         return ResponseEntity.ok(toResponse(createSuceso.execute(nuevo)));
     }
 
+    @Operation(summary = "Eliminar suceso", description = "Elimina un suceso del sistema por su identificador")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         deleteSuceso.execute(id);
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Actualizar suceso", description = "Modifica los campos simples de un suceso (fecha, modus operandi, descripción); las relaciones se mantienen")
     @PutMapping("/{id}")
     public SucesoResponse actualizar(@PathVariable Long id, @RequestBody SucesoRequest req) {
         Suceso actualizado = updateSuceso.execute(

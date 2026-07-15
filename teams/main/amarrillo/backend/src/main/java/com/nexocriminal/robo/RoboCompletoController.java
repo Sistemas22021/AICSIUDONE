@@ -4,9 +4,11 @@ import com.nexocriminal.domain.suceso.Suceso;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.Map;
 
+@Tag(name = "Robo completo", description = "Registro transaccional de un robo: crea víctima, vehículo, suceso y testigos en una operación")
 @RestController
 @RequestMapping("/api/v1/robo-completo")
 @RequiredArgsConstructor

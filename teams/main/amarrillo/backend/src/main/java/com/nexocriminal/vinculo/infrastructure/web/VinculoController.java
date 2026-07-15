@@ -4,10 +4,13 @@ import com.nexocriminal.vinculo.application.ListVinculosActivos;
 import com.nexocriminal.vinculo.application.ListVinculosPorNodo;
 import com.nexocriminal.vinculo.infrastructure.web.dto.VinculoResponse;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 import java.util.List;
 
 /** Adapter de entrada REST para vinculo (solo lectura). */
+@Tag(name = "Vínculos", description = "Consulta de vínculos detectados entre entidades (solo lectura)")
 @RestController
 @RequestMapping("/api/v1/vinculos")
 @CrossOrigin(origins = "*")

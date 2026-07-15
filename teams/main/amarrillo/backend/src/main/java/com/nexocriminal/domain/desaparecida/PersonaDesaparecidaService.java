@@ -138,35 +138,35 @@ public class PersonaDesaparecidaService {
 
     @Transactional
     public void eliminarFoto(Long personaId, Long fotoId) {
-        FotoDesaparecida foto = fotoRepository.findById(fotoId)
-                .orElseThrow(() -> new IllegalArgumentException("Foto no encontrada"));
+        PersonaDesaparecida persona = obtener(personaId);
 
-        if (!foto.getPersonaDesaparecida().getId().equals(personaId)) {
-            throw new IllegalArgumentException("La foto no pertenece a esta persona");
-        }
+        FotoDesaparecida foto = persona.getFotos().stream()
+                .filter(f -> f.getId().equals(fotoId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Foto no encontrada"));
 
         boolean eraPrincipal = Boolean.TRUE.equals(foto.getPrincipal());
         String urlEliminada = foto.getUrl();
-        fotoRepository.delete(foto);
 
-        // Borrar el archivo fisico
-        fileStorageService.eliminarArchivo(urlEliminada);
+        // Quitar de la coleccion: orphanRemoval=true la elimina de la BD.
+        // NO usar fotoRepository.delete() aca, porque el cascade la re-insertaria.
+        persona.getFotos().remove(foto);
 
+        // Si era la principal, designar una nueva a partir de las restantes
         if (eraPrincipal) {
-            List<FotoDesaparecida> restantes = fotoRepository
-                    .findByPersonaDesaparecidaIdOrderByOrdenAsc(personaId);
-            PersonaDesaparecida persona = obtener(personaId);
-            if (!restantes.isEmpty()) {
-                FotoDesaparecida nuevaPrincipal = restantes.get(0);
+            if (!persona.getFotos().isEmpty()) {
+                FotoDesaparecida nuevaPrincipal = persona.getFotos().get(0);
                 nuevaPrincipal.setPrincipal(true);
-                fotoRepository.save(nuevaPrincipal);
                 persona.setFotoUrl(nuevaPrincipal.getUrl());
             } else {
                 persona.setFotoUrl(null);
             }
-            persona.setActualizadoEn(LocalDateTime.now());
-            repository.save(persona);
         }
+        persona.setActualizadoEn(LocalDateTime.now());
+        repository.save(persona);
+
+        // Borrar el archivo fisico despues de confirmar el cambio en BD
+        fileStorageService.eliminarArchivo(urlEliminada);
     }
 
     @Transactional
