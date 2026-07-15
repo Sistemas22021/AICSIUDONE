@@ -81,7 +81,9 @@ public class BulletImpl implements BulletService {
     @Transactional
     @Override
     public void deleteBullet(Long idBullet) {
-        BulletEntity bulletEntity = bulletRepository.findById(idBullet).orElseThrow(()-> new BulletNotFound("Bullet Not Found"));
+        BulletEntity bulletEntity = bulletRepository.findById(idBullet).orElseThrow(()->{
+            return new BulletNotFound("Bullet Not Found");
+        });
         
         if (bulletEntity.getImagePaths() != null) {
             for (com.ccc.sistema_balistico.core.infrastructure.out.persistence.entity.BulletImagesEntity img : bulletEntity.getImagePaths()) {
@@ -93,5 +95,13 @@ public class BulletImpl implements BulletService {
         
         bulletEntity.setIsDelete(true);
         bulletRepository.save(bulletEntity);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public Page<BulletDTO> searchBullets(String query, Pageable pageable) {
+        String safeQuery = (query == null) ? "" : query.trim();
+        Page<BulletEntity> page = bulletRepository.searchByQuery(safeQuery, pageable);
+        return page.map(BulletMapper::toDTO);
     }
 }

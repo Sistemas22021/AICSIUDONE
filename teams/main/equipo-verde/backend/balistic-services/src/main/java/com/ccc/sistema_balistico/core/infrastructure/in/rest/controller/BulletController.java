@@ -121,4 +121,15 @@ public class BulletController {
         return ResponseEntity.ok(bulletDTO);
     }
 
+    @Operation(
+            summary = "Buscar evidencias por expediente o fabricante",
+            description = "Retorna una página de evidencias que coinciden con el texto de búsqueda en el número de expediente o nombre de fabricante."
+    )
+    @GetMapping("/search")
+    public ResponseEntity<Page<BulletDTO>> searchBullets(
+            @RequestParam(value = "query", required = false, defaultValue = "") String query,
+            Pageable pageable) {
+        return ResponseEntity.ok(bulletService.searchBullets(query, pageable));
+    }
+
 }

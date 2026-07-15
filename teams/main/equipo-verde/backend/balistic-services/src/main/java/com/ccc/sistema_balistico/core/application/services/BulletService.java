@@ -14,4 +14,5 @@ public interface BulletService {
     BulletDTO createBullet(BulletDTO bulletDTO, List<MultipartFile> files);
     BulletDTO updateBullet(Long idBullet,BulletDTO bulletDTO);
     void deleteBullet(Long idBullet);
+    Page<BulletDTO> searchBullets(String query, Pageable pageable);
 }
