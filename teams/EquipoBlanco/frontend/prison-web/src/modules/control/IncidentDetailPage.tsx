@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ShieldAlert, Printer, AlertTriangle, User, Calendar, Home, FileText } from 'lucide-react'
+import { ArrowLeft, ShieldAlert, Printer, User, Calendar, Home, FileText } from 'lucide-react'
 import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
 
@@ -41,7 +41,7 @@ export default function IncidentDetailPage() {
             try {
                 const res = await api.get<IncidentData>(`/incidents/${id}`)
                 setIncident(res.data)
-            } catch (err: any) {
+            } catch (err) {
                 console.error(err)
                 setError('Error al cargar el detalle del incidente.')
             } finally {

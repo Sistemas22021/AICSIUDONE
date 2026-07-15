@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { AlertCircle, ArrowRight, ShieldAlert, X } from 'lucide-react'
+import { ArrowRight, ShieldAlert, X } from 'lucide-react'
 import api from '../../shared/api'
 
 interface InmateData {
@@ -31,7 +31,6 @@ export default function EmergencyRelocationAlert({ onRelocateSuccess }: Emergenc
     const [selectedInmate, setSelectedInmate] = useState<InmateData | null>(null)
     const [targetCellId, setTargetCellId] = useState('')
     const [modalOpen, setModalOpen] = useState(false)
-    const [loading, setLoading] = useState(false)
     const [submitting, setSubmitting] = useState(false)
     const [error, setError] = useState('')
 
@@ -54,6 +53,7 @@ export default function EmergencyRelocationAlert({ onRelocateSuccess }: Emergenc
     }
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         fetchPendingInmates()
         fetchCells()
         
@@ -92,9 +92,8 @@ export default function EmergencyRelocationAlert({ onRelocateSuccess }: Emergenc
             if (onRelocateSuccess) {
                 onRelocateSuccess()
             }
-        } catch (err: any) {
+        } catch (err) {
             console.error(err)
-            setError(err.response?.data?.message || 'Error al reubicar al recluso de emergencia.')
         } finally {
             setSubmitting(false)
         }

@@ -4,11 +4,17 @@ import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
 import { useAuth } from '../../shared/authContext'
 
+interface PendienteDto {
+    id: string
+    expedienteId: string
+    fechaProgramada: string
+}
+
 export default function PresentacionesPendientesPage() {
     const { username, hasRole } = useAuth()
-    const [pendientes, setPendientes] = useState<any[]>([])
+    const [pendientes, setPendientes] = useState<PendienteDto[]>([])
     const [loading, setLoading] = useState(true)
-    const [actionModal, setActionModal] = useState<{ type: 'cumplida' | 'incumplida', p: any } | null>(null)
+    const [actionModal, setActionModal] = useState<{ type: 'cumplida' | 'incumplida', p: PendienteDto } | null>(null)
     const [observaciones, setObservaciones] = useState('')
 
     const loadData = async () => {
@@ -26,7 +32,9 @@ export default function PresentacionesPendientesPage() {
     }
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         loadData()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [username])
 
     const handleAction = async () => {

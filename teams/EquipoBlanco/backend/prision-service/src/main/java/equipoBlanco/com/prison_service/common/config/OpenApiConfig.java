@@ -26,15 +26,18 @@ public class OpenApiConfig {
                                 .name("Equipo Blanco"))
                         .license(new License()
                                 .name("MIT")))
-                .addSecurityItem(new SecurityRequirement().addList("HeaderAuth"))
-                .schemaRequirement("HeaderAuth", new SecurityScheme()
-                        .name("HeaderAuth")
+                .addSecurityItem(new SecurityRequirement()
+                        .addList("UserNameHeader")
+                        .addList("UserRoleHeader"))
+                .schemaRequirement("UserNameHeader", new SecurityScheme()
+                        .name("X-User-Name")
                         .type(SecurityScheme.Type.APIKEY)
                         .in(SecurityScheme.In.HEADER)
-                        .description("Autenticación mediante headers X-User-Name y X-User-Role")
-                        .extensions(java.util.Map.of(
-                                "x-header-name", "X-User-Name",
-                                "x-header-role", "X-User-Role"
-                        )));
+                        .description("Nombre del usuario"))
+                .schemaRequirement("UserRoleHeader", new SecurityScheme()
+                        .name("X-User-Role")
+                        .type(SecurityScheme.Type.APIKEY)
+                        .in(SecurityScheme.In.HEADER)
+                        .description("Rol del usuario (ADMINISTRADOR_DEL_SISTEMA, OFICIAL_PENITENCIARIO, SUPERVISOR, OFICIAL_DE_SEGUIMIENTO)"));
     }
 }

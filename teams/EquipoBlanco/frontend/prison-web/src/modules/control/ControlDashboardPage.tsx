@@ -5,6 +5,19 @@ import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
 import { useAuth } from '../../shared/authContext'
 
+interface PendienteDto {
+    id: string
+    expedienteId: string
+    reclusoNombre: string | null
+    reclusoCedula: string | null
+    fechaProgramada: string
+}
+
+interface ExpedienteDto {
+    estado: string
+    oficialAsignadoNombre?: string
+}
+
 export default function ControlDashboardPage() {
     const { username, hasRole } = useAuth()
     const navigate = useNavigate()
@@ -17,9 +30,9 @@ export default function ControlDashboardPage() {
     })
     
     const [loading, setLoading] = useState(true)
-    const [pendientes, setPendientes] = useState<any[]>([])
+    const [pendientes, setPendientes] = useState<PendienteDto[]>([])
     const [loadingPendientes, setLoadingPendientes] = useState(true)
-    const [actionModal, setActionModal] = useState<{ type: 'cumplida' | 'incumplida', p: any } | null>(null)
+    const [actionModal, setActionModal] = useState<{ type: 'cumplida' | 'incumplida', p: PendienteDto } | null>(null)
     const [observaciones, setObservaciones] = useState('')
 
     // ── Alertas de Nivel 1 y 2 ───────────────────────────────────────────────
@@ -65,17 +78,17 @@ export default function ControlDashboardPage() {
                 api.get('/calendario/incumplimientos/30-dias', { params: { oficialCedula: hasRole('Oficial de Seguimiento') ? username : '' } })
             ])
             
-            const expedientes = expRes.data || []
-            const pendientesData = pendRes.data || []
-            const incumplimientosData = incRes.data || []
+            const expedientes: ExpedienteDto[] = expRes.data || []
+            const pendientesData: PendienteDto[] = pendRes.data || []
+            const incumplimientosData: unknown[] = incRes.data || []
             
             let activos = expedientes.length
             if (hasRole('Oficial de Seguimiento')) {
-                activos = expedientes.filter((e: any) => e.oficialAsignadoNombre === username).length
+                activos = expedientes.filter(e => e.oficialAsignadoNombre === username).length
             }
             
             const incumplimientos = incumplimientosData.length
-            const alertas = expedientes.filter((e: any) => e.estado === 'Alerta Crítica Activa').length
+            const alertas = expedientes.filter(e => e.estado === 'Alerta Crítica Activa').length
             
             setStats({
                 totalActivos: activos,
@@ -110,11 +123,13 @@ export default function ControlDashboardPage() {
     }
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         fetchDashboard()
         fetchAlertasN1()
         const interval = setInterval(() => { fetchDashboard(); fetchAlertasN1() }, 10000)
         return () => clearInterval(interval)
-    }, [username])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     const handleAction = async () => {
         if (!actionModal) return
@@ -306,7 +321,7 @@ export default function ControlDashboardPage() {
                                         ) : pendientes.length === 0 ? (
                                             <tr><td colSpan={6} className="px-6 py-4 text-center text-gray-500">No hay presentaciones pendientes para hoy.</td></tr>
                                         ) : (
-                                            pendientes.map((p: any) => (
+                                            pendientes.map(p => (
                                                 <tr key={p.id} className="hover:bg-gray-50">
                                                     <td className="px-6 py-4 font-mono text-xs text-gray-500">{p.expedienteId}</td>
                                                     <td className="px-6 py-4 font-medium text-gray-900">{p.reclusoNombre || '—'}</td>

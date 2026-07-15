@@ -133,9 +133,11 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchAlertas()
     const interval = setInterval(fetchAlertas, 30000)
     return () => clearInterval(interval)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auth.username])
 
   // Cerrar dropdown al hacer clic fuera

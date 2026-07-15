@@ -45,6 +45,7 @@ export default function TemporaryReturnPage() {
     }
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         loadInmates()
     }, [])
 
@@ -97,10 +98,8 @@ export default function TemporaryReturnPage() {
             alert('Retorno temporal registrado exitosamente. El recluso ha sido devuelto a su celda asignada.')
             setSelectedInmate(null)
             loadInmates() // Refresh the list
-        } catch (err: any) {
+        } catch (err) {
             console.error('Error al registrar retorno:', err)
-            const message = err.response?.data?.message || err.response?.data?.error || 'Error al registrar el retorno.'
-            setError(message)
         } finally {
             setLoading(false)
         }

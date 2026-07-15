@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { Search, Clock, ArrowLeft, ArrowRight, AlertCircle } from 'lucide-react'
 import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
-import { useAuth } from '../../shared/authContext'
 
 interface InmateData {
     id: string
@@ -16,7 +15,6 @@ interface InmateData {
 
 export default function TemporaryEgressPage() {
     const navigate = useNavigate()
-    const auth = useAuth()
     const [query, setQuery] = useState('')
     const [searchResults, setSearchResults] = useState<InmateData[]>([])
     const [selectedInmate, setSelectedInmate] = useState<InmateData | null>(null)
@@ -103,10 +101,8 @@ export default function TemporaryEgressPage() {
             })
             alert('Salida temporal registrada exitosamente. La celda asignada se mantiene reservada.')
             navigate('/dashboard')
-        } catch (err: any) {
+        } catch (err) {
             console.error('Error al registrar salida temporal:', err)
-            const message = err.response?.data?.message || err.response?.data?.error || 'Error al registrar la salida temporal.'
-            setError(message)
         } finally {
             setLoading(false)
         }

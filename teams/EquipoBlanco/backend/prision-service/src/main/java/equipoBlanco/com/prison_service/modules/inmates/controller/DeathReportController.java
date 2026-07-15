@@ -4,14 +4,12 @@ import equipoBlanco.com.prison_service.modules.inmates.dto.BelongingHandoverDto;
 import equipoBlanco.com.prison_service.modules.inmates.dto.BelongingDto;
 import equipoBlanco.com.prison_service.modules.inmates.dto.DeathReportDto;
 import equipoBlanco.com.prison_service.modules.inmates.dto.InternalIncidentDto;
-import equipoBlanco.com.prison_service.modules.inmates.model.Belonging.BelongingStatus;
 import equipoBlanco.com.prison_service.modules.inmates.service.BelongingService;
 import equipoBlanco.com.prison_service.modules.inmates.service.DeathReportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

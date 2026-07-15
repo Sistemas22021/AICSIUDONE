@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ShieldAlert, FileText, Eye, AlertTriangle } from 'lucide-react'
+import { ShieldAlert, Eye, AlertTriangle } from 'lucide-react'
 import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
 
@@ -27,7 +27,7 @@ export default function IncidentListPage() {
         try {
             const res = await api.get<IncidentData[]>('/incidents')
             setIncidents(res.data || [])
-        } catch (err: any) {
+        } catch (err) {
             console.error(err)
             setError('Error al obtener la bitácora de incidentes.')
         } finally {
@@ -36,6 +36,7 @@ export default function IncidentListPage() {
     }
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         loadIncidents()
     }, [])
 

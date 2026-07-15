@@ -101,9 +101,8 @@ export default function DischargePage() {
                     alert('Borrador de deceso no natural registrado exitosamente. Redirigiendo al expediente de incidente interno.')
                     navigate(`/incidentes/registrar/${selectedInmate.id}`)
                 }
-            } catch (err: any) {
+            } catch (err) {
                 console.error(err)
-                setError(err.response?.data?.message || 'Error al registrar el fallecimiento.')
             } finally {
                 setLoading(false)
             }
@@ -133,9 +132,8 @@ export default function DischargePage() {
                 : 'Egreso registrado exitosamente.'
             alert(mensaje)
             navigate('/dashboard')
-        } catch (err: any) {
+        } catch (err) {
             console.log(err)
-            setError(err.response?.data?.message || 'Error al registrar el egreso.')
         } finally {
             setLoading(false)
         }

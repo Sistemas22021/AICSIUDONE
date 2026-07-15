@@ -40,7 +40,7 @@ export default function IncidentRegisterPage() {
     const [error, setError] = useState('')
     
     const [deceased, setDeceased] = useState<InmateData | null>(null)
-    const [deathReport, setDeathReport] = useState<DeathReportData | null>(null)
+    const [, setDeathReport] = useState<DeathReportData | null>(null)
     
     const [description, setDescription] = useState('')
     const [reporter, setReporter] = useState('')
@@ -96,7 +96,7 @@ export default function IncidentRegisterPage() {
                         }))
                     setCohabitants(mates)
                 }
-            } catch (err: any) {
+            } catch (err) {
                 console.error(err)
                 setError('Error al cargar la información del recluso o la celda.')
             } finally {
@@ -149,16 +149,16 @@ export default function IncidentRegisterPage() {
             setSuccessCode(res.data.code)
             setSuccessId(res.data.id)
             alert(`Expediente de incidente ${res.data.code} creado exitosamente.`);
-        } catch (err: any) {
+        } catch (err) {
             console.error(err)
-            setError(err.response?.data?.message || 'Error al guardar el expediente del incidente.')
         } finally {
             setSaving(false)
         }
     }
 
-    const handleStatusChange = (mateId: string, status: any) => {
-        setCohabitants(prev => prev.map(c => c.inmateId === mateId ? { ...c, initialStatus: status } : c))
+    const handleStatusChange = (mateId: string, status: string) => {
+        const validStatus = status as CohabitantState['initialStatus']
+        setCohabitants(prev => prev.map(c => c.inmateId === mateId ? { ...c, initialStatus: validStatus } : c))
     }
 
     const handleCommentsChange = (mateId: string, value: string) => {
@@ -337,7 +337,7 @@ export default function IncidentRegisterPage() {
                                                     <td className="p-3">
                                                         <select
                                                             value={mate.initialStatus}
-                                                            onChange={e => handleStatusChange(mate.inmateId, e.target.value as any)}
+                                                            onChange={e => handleStatusChange(mate.inmateId, e.target.value)}
                                                             className="p-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-red-500 focus:border-red-500 bg-white text-xs font-bold"
                                                         >
                                                             <option value="ILESO">Ileso</option>

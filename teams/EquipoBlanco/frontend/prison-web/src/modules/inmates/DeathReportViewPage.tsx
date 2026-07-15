@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Printer, FileText, Activity, ShieldAlert, Heart, Calendar, User } from 'lucide-react'
+import { ArrowLeft, Printer, FileText, Activity, User } from 'lucide-react'
 import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
 
@@ -52,7 +52,7 @@ export default function DeathReportViewPage() {
 
                 const reportRes = await api.get<DeathReportData>(`/inmates/${inmateId}/death-report`)
                 setDeathReport(reportRes.data)
-            } catch (err: any) {
+            } catch (err) {
                 console.error(err)
                 setError('Error al obtener el informe de deceso. Asegúrese de que haya sido registrado.')
             } finally {

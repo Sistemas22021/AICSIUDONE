@@ -129,12 +129,13 @@ export default function CellMapPage() {
   const location = useLocation()
   const [registeredInmate, setRegisteredInmate] = useState<{ id: string; firstName: string; firstLastname: string } | null>(null)
 
-  useEffect(() => {
-    if (location.state?.fromRegister && location.state?.registeredInmate) {
-      setRegisteredInmate(location.state.registeredInmate)
-      window.history.replaceState({}, '')
+  if (location.state?.fromRegister && location.state?.registeredInmate) {
+    const inmate = location.state.registeredInmate as { id: string; firstName: string; firstLastname: string }
+    if (!registeredInmate || registeredInmate.id !== inmate.id) {
+      setRegisteredInmate(inmate)
     }
-  }, [location.state])
+    window.history.replaceState({}, '')
+  }
 
   useEffect(() => {
     const handleCloseMenu = () => setContextMenu(null)
@@ -147,7 +148,7 @@ export default function CellMapPage() {
   const loadData = async () => {
     try {
       const cellsRes = await api.get('/cells')
-      const cellsData: { id: string; identifier: string; currentOccupancy: number; conductLevel: string; lengthMeters: number | null; widthMeters: number | null; maxCapacity: number }[] = cellsRes.data
+      const cellsData: { id: string; identifier: string; currentOccupancy: number; conductLevel: string; lengthMeters: number | null; widthMeters: number | null; maxCapacity: number; blockedForInvestigation?: boolean; occupancyStatus?: string }[] = cellsRes.data
 
       let inmatesData: InmateDto[] = []
       try {

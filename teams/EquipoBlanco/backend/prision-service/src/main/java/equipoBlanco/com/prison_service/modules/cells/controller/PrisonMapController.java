@@ -1,7 +1,6 @@
 package equipoBlanco.com.prison_service.modules.cells.controller;
 
 import equipoBlanco.com.prison_service.modules.cells.dto.CellPositionDto;
-import equipoBlanco.com.prison_service.modules.cells.dto.MapWithPositionsDto;
 import equipoBlanco.com.prison_service.modules.cells.dto.PrisonMapDto;
 import equipoBlanco.com.prison_service.modules.cells.service.CellPositionService;
 import equipoBlanco.com.prison_service.modules.cells.service.PrisonMapService;

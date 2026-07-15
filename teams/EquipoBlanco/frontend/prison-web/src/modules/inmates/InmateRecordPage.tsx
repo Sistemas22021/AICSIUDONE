@@ -7,7 +7,9 @@ import { useAuth } from '../../shared/authContext'
 import TransferRequestModal from './TransferRequestModal'
 
 interface BelongingDto {
+  id: string
   description: string
+  status: string // ALMACENADO, ENTREGADO, RETENIDO_INVESTIGACION
   quantity: number
 }
 
@@ -38,6 +40,7 @@ interface InmateDto {
   fingerprintUrl?: string | null
   fingerprintRightUrl?: string | null
   status: string
+  motivoEgreso?: string
   belongings?: BelongingDto[]
   cellId: string | null
   cellIdentifier?: string | null
@@ -77,7 +80,16 @@ export default function InmateRecordPage() {
   const [rejectionError, setRejectionError] = useState('')
   const [actionLoading, setActionLoading] = useState(false)
 
-  const [handovers, setHandovers] = useState<any[]>([])
+  interface HandoverDto {
+    id: string
+    recipientName: string
+    recipientCedula: string
+    handoverDate: string
+    authorizedBy: string
+    belongingIds: string[]
+  }
+
+  const [handovers, setHandovers] = useState<HandoverDto[]>([])
   const [belongingHandoverModalOpen, setBelongingHandoverModalOpen] = useState(false)
   const [handoverReceiverName, setHandoverReceiverName] = useState('')
   const [handoverReceiverCedula, setHandoverReceiverCedula] = useState('')
@@ -116,8 +128,9 @@ export default function InmateRecordPage() {
     try {
       await api.put(`/belongings/${belongingId}/status`)
       await loadData()
-    } catch (err: any) {
-      alert(err.response?.data?.message || 'Error al modificar el estado de la pertenencia.')
+    } catch (err: unknown) {
+      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Error al modificar el estado de la pertenencia.'
+      alert(message)
     }
   }
 
@@ -143,8 +156,9 @@ export default function InmateRecordPage() {
       setHandoverReceiverCedula('')
       setSelectedBelongingIds(new Set())
       await loadData()
-    } catch (err: any) {
-      alert(err.response?.data?.message || 'Error al registrar la entrega de pertenencias.')
+    } catch (err: unknown) {
+      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Error al registrar la entrega de pertenencias.'
+      alert(message)
     }
   }
 
@@ -506,7 +520,7 @@ export default function InmateRecordPage() {
                   <div className="pt-4 border-t border-gray-150 space-y-2.5">
                     <h5 className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Registro de Entregas Realizadas</h5>
                     <div className="space-y-2">
-                      {handovers.map((h: any) => (
+                      {handovers.map((h: HandoverDto) => (
                         <div key={h.id} className="bg-gray-50 border border-gray-150 rounded-lg p-3 text-[11px] text-gray-700 space-y-1">
                           <div className="flex justify-between font-bold text-gray-800">
                             <span>Familiar: {h.recipientName} (C.I. {h.recipientCedula})</span>

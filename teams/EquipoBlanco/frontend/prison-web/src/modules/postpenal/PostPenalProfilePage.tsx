@@ -20,11 +20,17 @@ interface ExpedienteData {
     nivelRiesgo?: string
 }
 
+interface PresentacionResumen {
+    id: string
+    fechaProgramada: string
+    estado: string
+}
+
 export default function PostPenalProfilePage() {
     const { id } = useParams()
     const navigate = useNavigate()
     const [expediente, setExpediente] = useState<ExpedienteData | null>(null)
-    const [presentaciones, setPresentaciones] = useState<any[]>([])
+    const [presentaciones, setPresentaciones] = useState<PresentacionResumen[]>([])
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [error, setError] = useState('')

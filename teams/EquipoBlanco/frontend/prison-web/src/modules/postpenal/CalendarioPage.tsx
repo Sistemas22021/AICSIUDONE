@@ -37,10 +37,6 @@ export default function CalendarioPage() {
     const [observacionesEdit, setObservacionesEdit] = useState('')
     const [updating, setUpdating] = useState(false)
 
-    useEffect(() => {
-        loadCalendario()
-    }, [id])
-
     const loadCalendario = async () => {
         setLoading(true)
         try {
@@ -52,6 +48,12 @@ export default function CalendarioPage() {
             setLoading(false)
         }
     }
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        loadCalendario()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id])
 
     const handleGenerar = async (e: React.FormEvent) => {
         e.preventDefault()

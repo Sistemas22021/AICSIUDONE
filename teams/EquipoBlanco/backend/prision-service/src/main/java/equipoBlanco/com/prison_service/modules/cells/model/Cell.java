@@ -20,6 +20,7 @@ public class Cell {
     @Column(unique = true, nullable = false)
     private String identifier;
 
+    @Builder.Default
     @Column(nullable = false)
     private Integer maxCapacity = MAX_CAPACITY;
 
