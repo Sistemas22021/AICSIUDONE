@@ -15,7 +15,12 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/firma-conductual")
+@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
+/**
+ * Controlador para el registro y consulta de la Firma Conductual de un expediente.
+ * Ruta principal: /api/firma-conductual
+ */
 public class FirmaConductualController {
 
     private final FirmaConductualService firmaConductualService;

@@ -7,9 +7,21 @@ interface NeonConfirmModalProps {
     message: string
     onConfirm: () => void
     onCancel: () => void
+    /** Texto del botón de confirmación. Por defecto 'Borrar Todo' (comportamiento histórico del componente). */
+    confirmLabel?: string
+    /** Texto del botón de cancelar. Por defecto 'Cancelar'. */
+    cancelLabel?: string
 }
 
-export const NeonConfirmModal = ({ isOpen, title, message, onConfirm, onCancel }: NeonConfirmModalProps) => {
+export const NeonConfirmModal = ({
+                                     isOpen,
+                                     title,
+                                     message,
+                                     onConfirm,
+                                     onCancel,
+                                     confirmLabel = 'Borrar Todo',
+                                     cancelLabel = 'Cancelar',
+                                 }: NeonConfirmModalProps) => {
     if (!isOpen) return null
 
     return (
@@ -37,13 +49,13 @@ export const NeonConfirmModal = ({ isOpen, title, message, onConfirm, onCancel }
                             onClick={onCancel}
                             style={{ backgroundColor: '#00ffff33', color: '#00ffff' }}
                         >
-                            Cancelar
+                            {cancelLabel}
                         </NeonButton>
                         <NeonButton
                             onClick={onConfirm}
                             style={{ backgroundColor: '#ff000033', color: '#ff0000' }}
                         >
-                            Borrar Todo
+                            {confirmLabel}
                         </NeonButton>
                     </div>
                 </div>
