@@ -2,6 +2,7 @@
 .env
 .env.local
 .env.*.local
+**/application.properties
 
 # ─── Java / Maven ────────────────────────────────────────────────────────────
 target/
