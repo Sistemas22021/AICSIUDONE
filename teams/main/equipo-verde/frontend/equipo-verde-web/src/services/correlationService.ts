@@ -75,16 +75,19 @@ export class CorrelationService {
       // Evitamos compararlo contra sí mismo si viniera en la respuesta
       if (item.idBullet === sourceId) continue;
 
-      let target = database.find(e => e.id === String(item.idBullet));
-      if (!target) {
+      let target: EvidenceRecord;
+      const found = database.find(e => e.id === String(item.idBullet));
+      if (found) {
+        target = found;
+      } else {
         target = {
           id: String(item.idBullet),
           createdAt: '',
           expediente: item.caseFile,
           calibre: 'N/A',
           estrias: 'N/A',
-          twist: 'NONE',
-          percussion: 'CENTRAL',
+          twist: 'NONE' as any,
+          percussion: 'CENTRAL' as any,
           marca: item.manufacturer,
           previewUrl: null
         };

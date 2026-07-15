@@ -6,6 +6,7 @@
  */
 
 const BASE_URL = '/api/v1/bullet';
+const CALIBER_URL = '/api/v1/caliber';
 
 // ─── Tipos que coinciden con el BulletDTO del backend ───────────────────────
 
@@ -35,6 +36,35 @@ export interface PageResponse<T> {
   size: number;
 }
 
+/** Error tipado con el mensaje devuelto por el backend */
+export class BackendApiError extends Error {
+  status: number;
+  backendMessage: string;
+
+  constructor(status: number, backendMessage: string) {
+    super(backendMessage);
+    this.status = status;
+    this.backendMessage = backendMessage;
+    this.name = 'BackendApiError';
+  }
+}
+
+/**
+ * Lee la respuesta de error del backend (JSON con campo "message")
+ * y lanza un BackendApiError con el status HTTP y el mensaje del servidor.
+ */
+async function throwBackendError(res: Response): Promise<never> {
+  let backendMessage = `Error del servidor (${res.status})`;
+  try {
+    const body = await res.json();
+    if (body?.message) backendMessage = body.message;
+    else if (body?.error) backendMessage = body.error;
+  } catch {
+    // No pudo leer JSON — usar mensaje genérico
+  }
+  throw new BackendApiError(res.status, backendMessage);
+}
+
 // ─── Funciones del servicio ──────────────────────────────────────────────────
 
 /**
@@ -42,7 +72,7 @@ export interface PageResponse<T> {
  */
 export async function getBullets(page = 0, size = 20): Promise<PageResponse<BulletDTO>> {
   const res = await fetch(`${BASE_URL}?page=${page}&size=${size}`);
-  if (!res.ok) throw new Error(`Error al obtener evidencias: ${res.status}`);
+  if (!res.ok) await throwBackendError(res);
   return res.json();
 }
 
@@ -51,15 +81,37 @@ export async function getBullets(page = 0, size = 20): Promise<PageResponse<Bull
  */
 export async function getBulletById(id: number): Promise<BulletDTO> {
   const res = await fetch(`${BASE_URL}/${id}`);
-  if (!res.ok) throw new Error(`Error al obtener evidencia ${id}: ${res.status}`);
+  if (!res.ok) await throwBackendError(res);
   return res.json();
 }
 
 /**
- * Crear una nueva evidencia con su imagen
- * El backend espera multipart/form-data con los campos del BulletDTO + file
+ * Buscar evidencias por expediente o fabricante (paginado)
+ * Endpoint: GET /api/v1/bullet/search?query=...&page=...&size=...
  */
-export async function createBullet(bulletData: Omit<BulletDTO, 'idBullet'>, imageFile: File): Promise<BulletDTO> {
+export async function searchBullets(
+  query: string,
+  page = 0,
+  size = 20
+): Promise<PageResponse<BulletDTO>> {
+  const params = new URLSearchParams({ query, page: String(page), size: String(size) });
+  const res = await fetch(`${BASE_URL}/search?${params.toString()}`);
+  if (!res.ok) await throwBackendError(res);
+  return res.json();
+}
+
+/**
+ * Crear una nueva evidencia con su imagen.
+ * El backend espera multipart/form-data con los campos del BulletDTO + file.
+ * Lanza BackendApiError con mensajes específicos para:
+ *   413 → archivo demasiado pesado
+ *   415 → tipo no soportado
+ *   409 → imagen ya existente (conflict)
+ */
+export async function createBullet(
+  bulletData: Omit<BulletDTO, 'idBullet'>,
+  imageFile: File
+): Promise<BulletDTO> {
   const formData = new FormData();
   formData.append('caseFile', bulletData.caseFile);
   formData.append('landsAndGrooves', String(bulletData.landsAndGrooves));
@@ -73,7 +125,8 @@ export async function createBullet(bulletData: Omit<BulletDTO, 'idBullet'>, imag
     method: 'POST',
     body: formData,
   });
-  if (!res.ok) throw new Error(`Error al crear evidencia: ${res.status}`);
+
+  if (!res.ok) await throwBackendError(res);
   return res.json();
 }
 
@@ -86,7 +139,7 @@ export async function updateBullet(id: number, bulletData: BulletDTO): Promise<B
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(bulletData),
   });
-  if (!res.ok) throw new Error(`Error al actualizar evidencia ${id}: ${res.status}`);
+  if (!res.ok) await throwBackendError(res);
   return res.json();
 }
 
@@ -95,7 +148,7 @@ export async function updateBullet(id: number, bulletData: BulletDTO): Promise<B
  */
 export async function deleteBullet(id: number): Promise<void> {
   const res = await fetch(`${BASE_URL}/${id}`, { method: 'DELETE' });
-  if (!res.ok) throw new Error(`Error al eliminar evidencia ${id}: ${res.status}`);
+  if (!res.ok) await throwBackendError(res);
 }
 
 /**
@@ -103,4 +156,15 @@ export async function deleteBullet(id: number): Promise<void> {
  */
 export function getBulletImageUrl(filePath: string): string {
   return `${BASE_URL}/images/${filePath}`;
+}
+
+/**
+ * Buscar calibres por nombre (autocomplete)
+ * Endpoint: GET /api/v1/caliber/search?query=...
+ */
+export async function searchCalibers(query: string): Promise<PageResponse<CaliberDTO>> {
+  const params = new URLSearchParams({ query });
+  const res = await fetch(`${CALIBER_URL}/search?${params.toString()}`);
+  if (!res.ok) await throwBackendError(res);
+  return res.json();
 }

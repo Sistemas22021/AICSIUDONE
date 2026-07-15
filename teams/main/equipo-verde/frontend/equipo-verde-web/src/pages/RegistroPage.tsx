@@ -1,17 +1,31 @@
-import { useState, useEffect } from 'react';
-import { Box, TextField, MenuItem, Button, Typography, Snackbar, CircularProgress, LinearProgress, IconButton } from '@mui/material';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import {
+  Box, TextField, MenuItem, Button, Typography, Snackbar,
+  CircularProgress, LinearProgress, IconButton, Autocomplete
+} from '@mui/material';
 import { SectionTitle } from '../components/SectionTitle';
 import { DataCard } from '../components/DataCard';
-import { UploadCloud, Hash, CheckCircle2, X, Image as ImageIcon, ArrowLeft, Eraser, Plus, Pencil, Trash2, Database } from 'lucide-react';
-import { 
-  TwistDirection, 
-  PercussionType, 
-  FormStatus, 
-  EvidenceFormState, 
+import {
+  UploadCloud, Hash, CheckCircle2, X, Image as ImageIcon,
+  ArrowLeft, Eraser, Plus, Pencil, Trash2, Database
+} from 'lucide-react';
+import {
+  TwistDirection,
+  PercussionType,
+  FormStatus,
+  EvidenceFormState,
   EvidenceFormErrors,
   EvidenceRecord
 } from '../types/evidence';
-import { getBullets, createBullet, updateBullet, deleteBullet, getBulletImageUrl } from '../services/bulletService';
+import {
+  getBullets, createBullet, updateBullet, deleteBullet,
+  getBulletImageUrl, searchCalibers, CaliberDTO, BackendApiError
+} from '../services/bulletService';
+
+// Límite de peso aceptado (5 MB)
+const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+// Tipos MIME permitidos
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/jpg'];
 
 const INITIAL_FORM_STATE: EvidenceFormState = {
   expediente: '',
@@ -22,17 +36,6 @@ const INITIAL_FORM_STATE: EvidenceFormState = {
   marca: ''
 };
 
-export const CALIBERS = [
-  { id: 1, name: '9mm Parabellum' },
-  { id: 2, name: '.22 Long Rifle' },
-  { id: 3, name: '.45 ACP' },
-  { id: 4, name: '.308 Winchester' },
-  { id: 5, name: '7.62x39mm' },
-  { id: 6, name: '5.56x45mm NATO' },
-  { id: 7, name: '.357 Magnum' },
-  { id: 8, name: '12 gauge' }
-];
-
 const premiumInputStyles = {
   '& .MuiOutlinedInput-root': {
     borderRadius: '12px',
@@ -42,10 +45,10 @@ const premiumInputStyles = {
       borderColor: '#e2e8f0',
       transition: 'all 0.2s',
     },
-    '&:hover fieldset': { 
-      borderColor: '#cbd5e1' 
+    '&:hover fieldset': {
+      borderColor: '#cbd5e1'
     },
-    '&.Mui-focused': { 
+    '&.Mui-focused': {
       backgroundColor: '#ffffff',
       boxShadow: '0 0 0 4px rgba(15, 23, 42, 0.05)',
       '& fieldset': {
@@ -70,12 +73,19 @@ export const RegistroPage = () => {
   const [formData, setFormData] = useState<EvidenceFormState>(INITIAL_FORM_STATE);
   const [errors, setErrors] = useState<EvidenceFormErrors>({});
   const [status, setStatus] = useState<FormStatus>(FormStatus.IDLE);
-  
+
   // Estados para Drag & Drop dinámico
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+
+  // ── Estados para Autocomplete de Calibre ──────────────────────────────────
+  const [caliberOptions, setCaliberOptions] = useState<CaliberDTO[]>([]);
+  const [caliberInputValue, setCaliberInputValue] = useState('');
+  const [caliberSelected, setCaliberSelected] = useState<CaliberDTO | null>(null);
+  const [caliberLoading, setCaliberLoading] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (viewMode === 'list') {
@@ -83,23 +93,40 @@ export const RegistroPage = () => {
     }
   }, [viewMode]);
 
+  // Búsqueda de calibres con debounce 300ms
+  const fetchCalibers = useCallback((q: string) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      setCaliberLoading(true);
+      try {
+        const page = await searchCalibers(q);
+        setCaliberOptions(page.content);
+      } catch {
+        setCaliberOptions([]);
+      } finally {
+        setCaliberLoading(false);
+      }
+    }, 300);
+  }, []);
+
+  useEffect(() => {
+    fetchCalibers(caliberInputValue);
+  }, [caliberInputValue, fetchCalibers]);
+
   const loadBullets = async () => {
     try {
       const data = await getBullets(0, 50);
-      const mappedRecords: EvidenceRecord[] = data.content.map(b => {
-        const cal = CALIBERS.find(c => c.id === b.caliber);
-        return {
-          id: String(b.idBullet),
-          createdAt: b.createdAt || '',
-          expediente: b.caseFile,
-          calibre: cal ? cal.name : String(b.caliber),
-          estrias: String(b.landsAndGrooves),
-          twist: b.twistDirection as TwistDirection,
-          percussion: b.percussionType as PercussionType,
-          marca: b.manufacturer,
-          previewUrl: b.images && b.images.length > 0 ? getBulletImageUrl(b.images[0]) : null
-        };
-      });
+      const mappedRecords: EvidenceRecord[] = data.content.map(b => ({
+        id: String(b.idBullet),
+        createdAt: b.createdAt || '',
+        expediente: b.caseFile,
+        calibre: String(b.caliber),
+        estrias: String(b.landsAndGrooves),
+        twist: b.twistDirection as TwistDirection,
+        percussion: b.percussionType as PercussionType,
+        marca: b.manufacturer,
+        previewUrl: b.images && b.images.length > 0 ? getBulletImageUrl(b.images[0]) : null
+      }));
       setRecords(mappedRecords);
     } catch (error) {
       console.error("Error loading bullets:", error);
@@ -114,10 +141,9 @@ export const RegistroPage = () => {
   };
 
   const handleEdit = (record: EvidenceRecord) => {
-    const cal = CALIBERS.find(c => c.name === record.calibre);
     setFormData({
       expediente: record.expediente,
-      calibre: cal ? String(cal.id) : '',
+      calibre: record.calibre,
       estrias: record.estrias,
       twist: record.twist,
       percussion: record.percussion,
@@ -126,7 +152,7 @@ export const RegistroPage = () => {
     setEditingId(record.id);
     if (record.previewUrl) {
       setPreviewUrl(record.previewUrl);
-      setSelectedFile(new File([""], "evidencia-previa.png", { type: "image/png" })); // Fake file to bypass validation
+      setSelectedFile(new File([""], "evidencia-previa.png", { type: "image/png" }));
     } else {
       setSelectedFile(null);
       setPreviewUrl(null);
@@ -156,7 +182,7 @@ export const RegistroPage = () => {
     }
 
     if (!formData.calibre || String(formData.calibre).trim() === '') {
-      newErrors.calibre = 'Requerido';
+      newErrors.calibre = 'Selecciona un calibre de la lista';
       isValid = false;
     }
 
@@ -185,7 +211,7 @@ export const RegistroPage = () => {
       newErrors.marca = 'Requerido';
       isValid = false;
     }
-    
+
     if (!selectedFile && !previewUrl) {
       newErrors.general = 'Debes subir una evidencia fotográfica.';
       isValid = false;
@@ -201,7 +227,7 @@ export const RegistroPage = () => {
 
   const handleInputChange = (field: keyof EvidenceFormState, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    if (errors[field]) {
+    if (errors[field as keyof EvidenceFormErrors]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
     }
   };
@@ -232,17 +258,32 @@ export const RegistroPage = () => {
   };
 
   const processFile = (file: File) => {
-    if (!file.type.startsWith('image/')) {
-      setErrors(prev => ({ ...prev, general: 'Por favor, sube solo archivos de imagen (JPG, PNG).' }));
+    // ── Validación de tipo (cliente) ─────────────────────────────────────────
+    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+      setErrors(prev => ({
+        ...prev,
+        general: 'Tipo de archivo no soportado. Solo se permiten imágenes JPG, JPEG o PNG.'
+      }));
       setStatus(FormStatus.ERROR);
       return;
     }
-    
+
+    // ── Validación de peso (cliente) ─────────────────────────────────────────
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      setErrors(prev => ({
+        ...prev,
+        general: `El archivo supera el límite permitido de 5 MB (tamaño actual: ${(file.size / 1024 / 1024).toFixed(2)} MB).`
+      }));
+      setStatus(FormStatus.ERROR);
+      return;
+    }
+
+    // Limpiar error previo de archivo si lo había
     if (errors.general) {
       setErrors(prev => ({ ...prev, general: undefined }));
       setStatus(FormStatus.IDLE);
     }
-    
+
     setIsUploading(true);
     setTimeout(() => {
       setSelectedFile(file);
@@ -257,6 +298,24 @@ export const RegistroPage = () => {
       URL.revokeObjectURL(previewUrl);
     }
     setPreviewUrl(null);
+  };
+
+  // ── Mapea el código HTTP del backend a un mensaje claro en español ──────────
+  const resolveBackendErrorMessage = (err: unknown): string => {
+    if (err instanceof BackendApiError) {
+      if (err.status === 413) {
+        return 'El archivo supera el límite de 5 MB permitido por el servidor.';
+      }
+      if (err.status === 415) {
+        return 'Tipo de archivo no soportado por el servidor. Solo JPG, JPEG o PNG.';
+      }
+      if (err.status === 409) {
+        return 'Esta imagen ya fue registrada en el sistema (archivo duplicado).';
+      }
+      // Cualquier otro error: muestra el mensaje del backend directamente
+      return err.backendMessage || 'Error al procesar la evidencia en el servidor.';
+    }
+    return 'Error inesperado al procesar la evidencia.';
   };
 
   // --- ACCIONES ---
@@ -284,19 +343,19 @@ export const RegistroPage = () => {
         if (!selectedFile) throw new Error("Archivo de imagen requerido para registro nuevo");
         await createBullet(bulletData, selectedFile);
       }
-      
+
       setStatus(FormStatus.SUCCESS);
-      
+
       setTimeout(() => {
         handleClear();
         setViewMode('list');
         setStatus(FormStatus.IDLE);
       }, 1500);
-      
+
     } catch (err) {
       console.error(err);
       setStatus(FormStatus.ERROR);
-      setErrors(prev => ({ ...prev, general: 'Error al procesar la evidencia en el servidor.' }));
+      setErrors(prev => ({ ...prev, general: resolveBackendErrorMessage(err) }));
     }
   };
 
@@ -304,6 +363,8 @@ export const RegistroPage = () => {
     setFormData(INITIAL_FORM_STATE);
     setErrors({});
     setStatus(FormStatus.IDLE);
+    setCaliberSelected(null);
+    setCaliberInputValue('');
     removeFile();
   };
 
@@ -324,8 +385,8 @@ export const RegistroPage = () => {
       <Box className="animate-fade-in max-w-7xl mx-auto px-6 py-6">
         <Box className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <SectionTitle className="!mb-0">Lista de expedientes balisticos</SectionTitle>
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             startIcon={<Plus size={20} strokeWidth={2.5} />}
             onClick={handleCreateNew}
             className="bg-slate-900 text-white hover:bg-indigo-600 shadow-md hover:shadow-lg hover:-translate-y-0.5 px-6 py-2.5 font-bold transition-all duration-300"
@@ -347,8 +408,8 @@ export const RegistroPage = () => {
               <Typography variant="body2" className="text-slate-500 max-w-sm mb-6">
                 Crea tu primer registro de metadatos balísticos para empezar a armar la base de datos de expedientes.
               </Typography>
-              <Button 
-                variant="outlined" 
+              <Button
+                variant="outlined"
                 startIcon={<Plus size={18} />}
                 onClick={handleCreateNew}
                 className="font-bold border-slate-200 text-slate-700 hover:bg-slate-50 px-6 py-2"
@@ -382,15 +443,15 @@ export const RegistroPage = () => {
                       <td className="p-4 text-slate-600 font-medium">{record.marca}</td>
                       <td className="p-4 pr-8 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <IconButton 
-                            size="small" 
+                          <IconButton
+                            size="small"
                             onClick={() => handleEdit(record)}
                             className="bg-white border border-slate-200 text-slate-500 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 shadow-sm transition-colors"
                           >
                             <Pencil size={16} />
                           </IconButton>
-                          <IconButton 
-                            size="small" 
+                          <IconButton
+                            size="small"
                             onClick={() => handleDelete(record.id)}
                             className="bg-white border border-slate-200 text-slate-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50 shadow-sm transition-colors"
                           >
@@ -413,15 +474,16 @@ export const RegistroPage = () => {
   return (
     <Box className="animate-fade-in max-w-7xl mx-auto px-6 py-6">
       <SectionTitle>{editingId ? 'Editar Registro Balístico' : 'Nuevo Registro Balístico'}</SectionTitle>
-      
+
       <Box className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <Box className="lg:col-span-2">
           <DataCard className="h-full flex flex-col">
             <Typography variant="overline" className="text-slate-400 font-extrabold tracking-widest block" sx={{ mb: 3 }}>
               INFORMACIÓN TÉCNICA DE LA EVIDENCIA
             </Typography>
-            
+
             <Box className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-grow">
+              {/* Expediente */}
               <TextField
                 fullWidth
                 label="N° de Expediente"
@@ -434,24 +496,45 @@ export const RegistroPage = () => {
                 size="medium"
                 sx={premiumInputStyles}
               />
-              <TextField
+
+              {/* ── Calibre — campo de búsqueda ────────────────────────────── */}
+              <Autocomplete
                 fullWidth
-                select
-                label="Calibre"
-                value={formData.calibre}
-                onChange={(e) => handleInputChange('calibre', e.target.value)}
-                error={!!errors.calibre}
-                helperText={errors.calibre}
-                variant="outlined"
-                size="medium"
-                sx={premiumInputStyles}
-              >
-                {CALIBERS.map((cal) => (
-                  <MenuItem key={cal.id} value={cal.id}>
-                    {cal.name}
-                  </MenuItem>
-                ))}
-              </TextField>
+                options={caliberOptions}
+                getOptionLabel={(opt) => opt.name}
+                isOptionEqualToValue={(opt, val) => opt.idCaliber === val.idCaliber}
+                value={caliberSelected}
+                inputValue={caliberInputValue}
+                loading={caliberLoading}
+                noOptionsText={caliberInputValue.length === 0 ? 'Escribe para buscar calibres…' : 'Sin resultados'}
+                onInputChange={(_e, newInput) => {
+                  setCaliberInputValue(newInput);
+                  // Si el usuario borra el texto, limpia la selección
+                  if (!newInput) {
+                    setCaliberSelected(null);
+                    handleInputChange('calibre', '');
+                  }
+                }}
+                onChange={(_e, newValue) => {
+                  setCaliberSelected(newValue);
+                  handleInputChange('calibre', newValue ? String(newValue.idCaliber) : '');
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    fullWidth
+                    label="Calibre"
+                    placeholder="Ej: 9mm, .45, .308…"
+                    error={!!errors.calibre}
+                    helperText={errors.calibre}
+                    variant="outlined"
+                    size="medium"
+                    sx={premiumInputStyles}
+                  />
+                )}
+              />
+
+              {/* Número de estrías */}
               <TextField
                 fullWidth
                 label="Número de Estrías"
@@ -465,6 +548,8 @@ export const RegistroPage = () => {
                 size="medium"
                 sx={premiumInputStyles}
               />
+
+              {/* Dirección de Giro */}
               <TextField
                 fullWidth
                 select
@@ -483,6 +568,8 @@ export const RegistroPage = () => {
                   </MenuItem>
                 ))}
               </TextField>
+
+              {/* Tipo de Percusión */}
               <TextField
                 fullWidth
                 select
@@ -501,6 +588,8 @@ export const RegistroPage = () => {
                   </MenuItem>
                 ))}
               </TextField>
+
+              {/* Marca */}
               <TextField
                 fullWidth
                 label="Marca del Fabricante"
@@ -514,10 +603,10 @@ export const RegistroPage = () => {
                 sx={premiumInputStyles}
               />
             </Box>
-            
+
             <Box className="mt-10 pt-8 border-t border-slate-100 flex flex-col sm:flex-row justify-end items-center gap-4">
-              <Button 
-                variant="text" 
+              <Button
+                variant="text"
                 startIcon={<ArrowLeft size={18} strokeWidth={2.5} />}
                 onClick={handleCancel}
                 disabled={status === FormStatus.SAVING}
@@ -526,8 +615,8 @@ export const RegistroPage = () => {
               >
                 Volver
               </Button>
-              <Button 
-                variant="outlined" 
+              <Button
+                variant="outlined"
                 startIcon={<Eraser size={18} strokeWidth={2.5} />}
                 onClick={handleClear}
                 disabled={status === FormStatus.SAVING}
@@ -536,8 +625,8 @@ export const RegistroPage = () => {
               >
                 Limpiar datos
               </Button>
-              <Button 
-                variant="contained" 
+              <Button
+                variant="contained"
                 startIcon={status === FormStatus.SAVING ? <CircularProgress size={18} color="inherit" /> : <Hash size={18} strokeWidth={2.5} />}
                 onClick={handleSave}
                 disabled={status === FormStatus.SAVING}
@@ -549,14 +638,15 @@ export const RegistroPage = () => {
             </Box>
           </DataCard>
         </Box>
-        
+
+        {/* ── Panel de imagen ──────────────────────────────────────────────── */}
         <Box className="lg:col-span-1">
           <DataCard className="h-full flex flex-col">
             <Typography variant="overline" className="text-slate-400 font-extrabold tracking-widest block" sx={{ mb: 3 }}>
               DOCUMENTACIÓN FOTOGRÁFICA
             </Typography>
-            
-            <Box 
+
+            <Box
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
@@ -567,11 +657,11 @@ export const RegistroPage = () => {
               `}
               sx={{ minHeight: '320px' }}
             >
-              <input 
-                type="file" 
-                id="file-upload" 
-                className="hidden" 
-                accept="image/*"
+              <input
+                type="file"
+                id="file-upload"
+                className="hidden"
+                accept="image/jpeg,image/jpg,image/png"
                 onChange={handleFileInput}
               />
 
@@ -591,9 +681,9 @@ export const RegistroPage = () => {
               ) : previewUrl ? (
                 <Box className="flex flex-col items-center animate-fade-in w-full">
                   <Box className="relative mb-6">
-                    <img 
-                      src={previewUrl} 
-                      alt="Evidencia balística" 
+                    <img
+                      src={previewUrl}
+                      alt="Evidencia balística"
                       className="w-full max-w-[200px] aspect-square rounded-[1.25rem] shadow-md border-4 border-white object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                     <Box className="absolute -bottom-2 -right-2 bg-emerald-500 text-white p-1.5 rounded-full shadow-lg border-2 border-white z-20">
@@ -611,10 +701,10 @@ export const RegistroPage = () => {
                       SHA-256 Verificado
                     </Typography>
                   </Box>
-                  
+
                   <Box className="flex gap-3 mt-6">
-                    <Button 
-                      variant="text" 
+                    <Button
+                      variant="text"
                       startIcon={<UploadCloud size={16} strokeWidth={2.5} />}
                       onClick={(e) => { e.stopPropagation(); document.getElementById('file-upload')?.click(); }}
                       className="text-slate-600 hover:text-indigo-600 font-bold rounded-full px-5 py-2 transition-colors bg-white hover:bg-indigo-50 border border-slate-200 shadow-sm"
@@ -622,8 +712,8 @@ export const RegistroPage = () => {
                     >
                       Cambiar
                     </Button>
-                    <Button 
-                      variant="text" 
+                    <Button
+                      variant="text"
                       startIcon={<Trash2 size={16} strokeWidth={2.5} />}
                       onClick={(e) => { e.stopPropagation(); removeFile(); }}
                       className="text-slate-600 hover:text-red-600 font-bold rounded-full px-5 py-2 transition-colors bg-white hover:bg-red-50 border border-slate-200 shadow-sm"
@@ -646,8 +736,8 @@ export const RegistroPage = () => {
                   <Typography variant="body2" className="text-slate-500 leading-relaxed" sx={{ mb: 4 }}>
                     Arrastra tu imagen o haz clic para buscar.
                   </Typography>
-                  <Button 
-                    variant="contained" 
+                  <Button
+                    variant="contained"
                     className="bg-slate-900 text-white shadow-none hover:bg-indigo-600 hover:shadow-md font-bold pointer-events-none transition-all duration-300"
                     sx={{ textTransform: 'none', borderRadius: '999px', whiteSpace: 'nowrap', px: 4, py: 1 }}
                   >
@@ -656,7 +746,7 @@ export const RegistroPage = () => {
                 </Box>
               )}
             </Box>
-            
+
             <Box className="mt-6 p-5 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100 rounded-2xl">
               <Typography variant="caption" className="text-amber-800 font-medium leading-relaxed block text-justify">
                 <strong>ATENCIÓN:</strong> La imagen será procesada y normalizada a un formato sin pérdida (Lossless PNG/TIFF) y redimensionada (1:1) para extraer patrones de micro-estriado. Asegúrese de que la iluminación lateral sea la adecuada.
@@ -666,20 +756,21 @@ export const RegistroPage = () => {
         </Box>
       </Box>
 
-      <Snackbar 
-        open={status === FormStatus.SUCCESS || status === FormStatus.ERROR} 
-        autoHideDuration={6000} 
+      {/* ── Snackbar de estado ───────────────────────────────────────────────── */}
+      <Snackbar
+        open={status === FormStatus.SUCCESS || status === FormStatus.ERROR}
+        autoHideDuration={7000}
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
         sx={{ top: { xs: 80, sm: 90 }, zIndex: 2000 }}
       >
-        <Box 
+        <Box
           className={`flex items-center gap-4 p-4 pr-5 rounded-[1rem] shadow-[0_10px_40px_rgb(0,0,0,0.1)] border backdrop-blur-md ${
-            status === FormStatus.SUCCESS 
-              ? 'bg-emerald-50/90 border-emerald-200' 
+            status === FormStatus.SUCCESS
+              ? 'bg-emerald-50/90 border-emerald-200'
               : 'bg-red-50/90 border-red-200'
           }`}
-          sx={{ minWidth: '350px' }}
+          sx={{ minWidth: '380px', maxWidth: '520px' }}
         >
           <Box className={`flex flex-shrink-0 items-center justify-center w-12 h-12 rounded-full ${
             status === FormStatus.SUCCESS ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'
@@ -690,20 +781,20 @@ export const RegistroPage = () => {
             <Typography variant="subtitle2" className={`font-extrabold text-base tracking-tight leading-tight mb-0.5 ${
               status === FormStatus.SUCCESS ? 'text-emerald-900' : 'text-red-900'
             }`}>
-              {status === FormStatus.SUCCESS 
-                ? (editingId ? '¡Registro Actualizado!' : '¡Registro Exitoso!') 
-                : 'Error de Validación'}
+              {status === FormStatus.SUCCESS
+                ? (editingId ? '¡Registro Actualizado!' : '¡Registro Exitoso!')
+                : 'Error al procesar'}
             </Typography>
             <Typography variant="body2" className={`font-medium ${
               status === FormStatus.SUCCESS ? 'text-emerald-700' : 'text-red-700'
             }`}>
-              {status === FormStatus.SUCCESS 
-                ? 'El hash criptográfico ha sido generado y firmado en la red.' 
+              {status === FormStatus.SUCCESS
+                ? 'El hash criptográfico ha sido generado y firmado en la red.'
                 : errors.general || 'Por favor revisa los campos marcados en rojo.'}
             </Typography>
           </Box>
-          <Button 
-            onClick={handleCloseSnackbar} 
+          <Button
+            onClick={handleCloseSnackbar}
             className={`min-w-0 p-2 rounded-full transition-colors ${
               status === FormStatus.SUCCESS ? 'text-emerald-400 hover:text-emerald-700 hover:bg-emerald-100' : 'text-red-400 hover:text-red-700 hover:bg-red-100'
             }`}

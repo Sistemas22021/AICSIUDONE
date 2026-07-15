@@ -25,9 +25,9 @@ export interface MatchResult {
 export class MatchingEngine {
   // Pesos asignados a cada característica basada en su relevancia identificativa (Total: 100)
   private static WEIGHTS = {
-    ESTRIAS: 40,    // Alto valor identificativo de clase
-    TWIST: 30,      // Alto valor identificativo de clase
-    PERCUSSION: 20, // Valor identificativo medio
+    ESTRIAS: 70,    // Alto valor identificativo de clase
+    TWIST: 10,      // Alto valor identificativo de clase
+    PERCUSSION: 10, // Valor identificativo medio
     MARCA: 10       // Valor identificativo bajo (puede variar o ser genérica)
   };
 

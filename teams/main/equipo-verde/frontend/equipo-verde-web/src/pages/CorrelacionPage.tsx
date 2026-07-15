@@ -1,20 +1,20 @@
-import { useState, useMemo, useEffect } from 'react';
-import { 
-  Box, 
-  Typography, 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableContainer, 
-  TableHead, 
-  TableRow, 
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import {
+  Box,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   Paper,
   IconButton,
   Tooltip,
   Button,
   TextField,
-  MenuItem,
-  TablePagination
+  TablePagination,
+  Autocomplete
 } from '@mui/material';
 import { Check, X } from 'lucide-react';
 
@@ -23,13 +23,12 @@ import { ConfidenceBadge } from '../components/ranking/ConfidenceBadge';
 import { RankingFilters, RankingFilterState } from '../components/ranking/RankingFilters';
 import { ComparisonViewerModal } from '../components/ranking/ComparisonViewerModal';
 
-// Nuevos Servicios
+// Servicios
 import { CorrelationService, CorrelationResult } from '../services/correlationService';
 import { EvidenceRecord } from '../types/evidence';
 import { auditService } from '../services/auditService';
 import { AuditActionType } from '../types/audit';
-import { getBullets, getBulletImageUrl } from '../services/bulletService';
-import { CALIBERS } from './RegistroPage';
+import { searchBullets, getBulletImageUrl } from '../services/bulletService';
 
 // Extender el resultado con campos para la UI de esta tabla
 interface UIRankingResult extends CorrelationResult {
@@ -41,7 +40,13 @@ export const CorrelacionPage = () => {
   const [results, setResults] = useState<UIRankingResult[]>([]);
   const [sourceEvidence, setSourceEvidence] = useState<EvidenceRecord | null>(null);
   const [allEvidences, setAllEvidences] = useState<EvidenceRecord[]>([]);
-  
+
+  // Autocomplete de evidencia origen
+  const [evidenceInputValue, setEvidenceInputValue] = useState('');
+  const [evidenceOptions, setEvidenceOptions] = useState<EvidenceRecord[]>([]);
+  const [evidenceLoading, setEvidenceLoading] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Pagination State
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
@@ -58,37 +63,49 @@ export const CorrelacionPage = () => {
     confidenceFilter: 'all'
   });
 
-  // Load all bullets on mount to populate the selector
-  useEffect(() => {
-    const fetchAllEvidences = async () => {
+  // Búsqueda de evidencias en el backend con debounce 350ms
+  const fetchEvidences = useCallback((q: string) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      setEvidenceLoading(true);
       try {
-        const data = await getBullets(0, 100); // Load up to 100 for selection
-        const mappedRecords: EvidenceRecord[] = data.content.map(b => {
-          const cal = CALIBERS.find(c => c.id === b.caliber);
-          return {
-            id: String(b.idBullet),
-            createdAt: b.createdAt || '',
-            expediente: b.caseFile,
-            calibre: cal ? cal.name : String(b.caliber),
-            estrias: String(b.landsAndGrooves),
-            twist: b.twistDirection as any,
-            percussion: b.percussionType as any,
-            marca: b.manufacturer,
-            previewUrl: b.images && b.images.length > 0 ? getBulletImageUrl(b.images[0]) : null
-          };
+        const data = await searchBullets(q, 0, 30);
+        const mapped: EvidenceRecord[] = data.content.map(b => ({
+          id: String(b.idBullet),
+          createdAt: b.createdAt || '',
+          expediente: b.caseFile,
+          calibre: String(b.caliber),
+          estrias: String(b.landsAndGrooves),
+          twist: b.twistDirection as any,
+          percussion: b.percussionType as any,
+          marca: b.manufacturer,
+          previewUrl: b.images && b.images.length > 0 ? getBulletImageUrl(b.images[0]) : null
+        }));
+        setEvidenceOptions(mapped);
+        // Mantener allEvidences actualizado para el motor de correlación
+        setAllEvidences(prev => {
+          const existingIds = new Set(prev.map(e => e.id));
+          const newOnes = mapped.filter(m => !existingIds.has(m.id));
+          return [...prev, ...newOnes];
         });
-
-        setAllEvidences(mappedRecords);
-        if (mappedRecords.length > 0) {
-          setSourceEvidence(mappedRecords[0]);
-        }
       } catch (err) {
-        console.error("Error al cargar evidencias para selector:", err);
+        console.error('Error al buscar evidencias:', err);
+        setEvidenceOptions([]);
+      } finally {
+        setEvidenceLoading(false);
       }
-    };
-
-    fetchAllEvidences();
+    }, 350);
   }, []);
+
+  // Carga inicial de evidencias
+  useEffect(() => {
+    fetchEvidences('');
+  }, [fetchEvidences]);
+
+  // Re-buscar cuando cambia el input del Autocomplete
+  useEffect(() => {
+    fetchEvidences(evidenceInputValue);
+  }, [evidenceInputValue, fetchEvidences]);
 
   // Perform backend correlation when sourceEvidence, page, or pageSize changes
   useEffect(() => {
@@ -183,31 +200,47 @@ export const CorrelacionPage = () => {
     <Box className="animate-fade-in max-w-6xl mx-auto px-4 py-6">
       <SectionTitle>Motor de cotejo</SectionTitle>
 
-      {/* Selector de Evidencia Origen */}
+      {/* Selector de Evidencia Origen — campo de búsqueda */}
       <Box className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm mb-6">
         <Typography variant="subtitle1" className="font-bold text-slate-800 mb-3">
           Seleccionar Evidencia Origen para Cotejo
         </Typography>
-        <TextField
-          select
+        <Autocomplete
           fullWidth
-          label="Proyectil / Evidencia Origen"
-          value={sourceEvidence ? sourceEvidence.id : ''}
-          onChange={(e) => {
-            const selected = allEvidences.find(ev => ev.id === e.target.value);
-            if (selected) {
-              setSourceEvidence(selected);
-              setPage(0);
-            }
+          options={evidenceOptions}
+          getOptionLabel={(opt) =>
+            `${opt.expediente} — Calibre: ${opt.calibre} | Fabricante: ${opt.marca}`
+          }
+          isOptionEqualToValue={(opt, val) => opt.id === val.id}
+          value={sourceEvidence}
+          inputValue={evidenceInputValue}
+          loading={evidenceLoading}
+          noOptionsText={
+            evidenceInputValue.length === 0
+              ? 'Escribe para buscar por expediente o fabricante…'
+              : 'Sin coincidencias'
+          }
+          onInputChange={(_e, newInput) => setEvidenceInputValue(newInput)}
+          onChange={(_e, newValue) => {
+            setSourceEvidence(newValue);
+            setPage(0);
           }}
-          slotProps={{ input: { className: "bg-slate-50 rounded-xl" } }}
-        >
-          {allEvidences.map((ev) => (
-            <MenuItem key={ev.id} value={ev.id}>
-              {ev.expediente} — Calibre: {ev.calibre} | Fabricante: {ev.marca}
-            </MenuItem>
-          ))}
-        </TextField>
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              fullWidth
+              label="Proyectil / Evidencia Origen"
+              placeholder="Busca por expediente, calibre o fabricante…"
+              variant="outlined"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: '#f8fafc',
+                  borderRadius: '12px'
+                }
+              }}
+            />
+          )}
+        />
       </Box>
       
       {sourceEvidence && (
