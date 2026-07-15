@@ -3,11 +3,14 @@ package com.ccc.sistema_balistico.core;
 import com.ccc.sistema_balistico.core.infrastructure.out.persistence.entity.BulletEntity;
 import com.ccc.sistema_balistico.core.infrastructure.out.persistence.jpa.BulletRepository;
 import com.ccc.sistema_balistico.core.infrastructure.out.persistence.jpa.AuditLogViewRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.transaction.TestTransaction;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
 public class AuditSystemIntegrationTest {
 
     @Autowired
@@ -31,6 +35,13 @@ public class AuditSystemIntegrationTest {
     @Autowired
     private AuditLogViewRepository auditLogViewRepository;
 
+    private Long createdBulletId;
+
+    @AfterEach
+    void tearDown() {
+        // En lugar de borrar todo, solo borra el dato específico que creaste en el test
+        if (createdBulletId != null) bulletRepository.deleteById(createdBulletId);
+    }
     @Test
     @Transactional
     public void testAuditLoggingAndUnifiedView() throws Exception {
@@ -44,8 +55,12 @@ public class AuditSystemIntegrationTest {
                 .build();
 
         BulletEntity savedBullet = bulletRepository.saveAndFlush(bullet);
+        this.createdBulletId = savedBullet.getIdBullet();
 
-        // 2. Fetch the audit logs from the unified view repository
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
         var auditLogs = auditLogViewRepository.findAll();
         
         // Assert that a log has been created for the bullet

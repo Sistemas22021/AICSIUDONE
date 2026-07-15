@@ -3,8 +3,11 @@ package com.ccc.sistema_balistico.core.application.usecase;
 import com.ccc.sistema_balistico.core.domain.exceptions.custom.storage.FileAlreadyExistsException;
 import com.ccc.sistema_balistico.core.infrastructure.out.persistence.entity.BulletEntity;
 import com.ccc.sistema_balistico.core.infrastructure.out.persistence.entity.BulletImagesEntity;
+import com.ccc.sistema_balistico.core.infrastructure.out.persistence.entity.CaliberEntity;
 import com.ccc.sistema_balistico.core.infrastructure.out.persistence.jpa.BulletImageRepository;
 import com.ccc.sistema_balistico.core.application.services.FileStorageService;
+import com.ccc.sistema_balistico.core.application.services.ImageProcessingService;
+import com.ccc.sistema_balistico.core.application.dto.ExtractedFeatures;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,6 +35,9 @@ class BulletImageImplTest {
     @Mock
     private FileStorageService fileStorageService;
 
+    @Mock
+    private ImageProcessingService imageProcessingService;
+
     @InjectMocks
     private BulletImageImpl bulletImageService;
 
@@ -41,9 +47,14 @@ class BulletImageImplTest {
 
     @BeforeEach
     void setUp() throws Exception {
+        CaliberEntity sampleCaliber = CaliberEntity.builder()
+                .idCaliber(100L) // O el id que prefieras para simularlo
+                .name("9mm") // (Opcional, según las propiedades de tu entidad)
+                .build();
         sampleBullet = BulletEntity.builder()
                 .idBullet(1L)
                 .caseFile("EXP-2023-001")
+                .caliberEntity(sampleCaliber)
                 .imagePaths(new java.util.ArrayList<>())
                 .build();
 
@@ -61,6 +72,8 @@ class BulletImageImplTest {
 
     @Test
     void testSaveImageListSuccess() {
+        ExtractedFeatures dummyFeatures = new ExtractedFeatures(new byte[]{1}, new byte[]{2});
+        when(imageProcessingService.extractFeatures(any(byte[].class))).thenReturn(dummyFeatures);
         when(bulletImageRepository.existsByHashImage(expectedHash)).thenReturn(false);
         when(fileStorageService.saveImageFile(any(), anyString())).thenReturn("image-path.png");
         when(bulletImageRepository.save(any(BulletImagesEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));

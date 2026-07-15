@@ -10,7 +10,8 @@ INSERT INTO caliber_entity (id_caliber, name, is_delete) VALUES
                                                      (5, '7.62x39mm', FALSE),
                                                      (6, '5.56x45mm NATO', FALSE),
                                                      (7, '.357 Magnum', FALSE),
-                                                     (8, '12 gauge', FALSE)
+                                                     (8, '12 gauge', FALSE),
+                                                     (9, 'fuelte', FALSE)
     ON CONFLICT (id_caliber) DO NOTHING;
 
 
@@ -49,7 +50,6 @@ VALUES ('EXP-2024-150', 8, 'CENTRAL', 'DEXTRORSUM', 1, 'Hornady', CURRENT_TIMEST
 -- =============================================================================
 -- 3. VISTA DE AUDITORÍA (v_audit_logs)
 -- =============================================================================
-DROP VIEW IF EXISTS v_audit_logs CASCADE;
 CREATE OR REPLACE VIEW v_audit_logs AS
 SELECT
     CONCAT(CAST(b.rev AS VARCHAR), '_BULLET_', CAST(b.id_bullet AS VARCHAR)) AS id,

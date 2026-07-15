@@ -45,7 +45,8 @@ public class BulletImageImpl implements BulletImagesService {
             throw new RuntimeException("Error calculating SHA-256 hash: " + e.getMessage(), e);
         }
     }
-    private ExtractedFeatures getBytes(MultipartFile file){
+
+    private ExtractedFeatures getBytes(MultipartFile file) {
         byte[] fileBytes;
         try {
             fileBytes = file.getBytes();
@@ -55,9 +56,10 @@ public class BulletImageImpl implements BulletImagesService {
 
         return imageProcessingService.extractFeatures(fileBytes);
     }
+
     private BulletImagesEntity saveImage(MultipartFile file, BulletEntity bullet) {
         String fileHash = calculateSHA256(file);
-        
+
         if (bulletImageRepository.existsByHashImage(fileHash)) {
             throw new FileAlreadyExistsException("This image already exists in the system.");
         }
@@ -65,16 +67,22 @@ public class BulletImageImpl implements BulletImagesService {
         ExtractedFeatures features = getBytes(file);
         UUID imageUuid = UUID.randomUUID();
         String imagePath = fileStorageService.saveImageFile(file, imageUuid.toString());
-        BulletImagesEntity bulletImages = BulletImagesEntity.builder().
-                uuidBulletImages(imageUuid).
-                idBullet(bullet).
-                pathImage(imagePath).
-                hashImage(fileHash).
-                descriptor(features.descriptors()).
-                keypoints(features.keypoints()).
-                build();
+        try {
+            BulletImagesEntity bulletImages = BulletImagesEntity.builder().
+                    uuidBulletImages(imageUuid).
+                    idBullet(bullet).
+                    pathImage(imagePath).
+                    hashImage(fileHash).
+                    descriptor(features.descriptors()).
+                    keypoints(features.keypoints()).
+                    build();
+            return bulletImageRepository.save(bulletImages);
 
-        return bulletImageRepository.save(bulletImages);
+        } catch (Exception e) {
+            fileStorageService.deleteImage(imagePath);
+            throw e;
+        }
+
 
     }
 
