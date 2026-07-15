@@ -21,11 +21,11 @@ type FormularioActivo = null | 'corregir' | 'rechazar'
 interface ModusOperandiContentProps {
     expedienteId: string
     folioExpediente: string
-    /** Id del Analista Criminal autenticado. */
     analistaId: number
+    soloLectura?: boolean
 }
 
-export const ModusOperandiContent = ({ expedienteId, folioExpediente, analistaId }: ModusOperandiContentProps) => {
+export const ModusOperandiContent = ({ expedienteId, folioExpediente, analistaId, soloLectura  }: ModusOperandiContentProps) => {
     const { propuesta, estadoCarga, refetch } = usePropuestaModusOperandi(expedienteId)
     const { showToast, ToastContainer } = useNeonToast()
 
@@ -137,8 +137,7 @@ export const ModusOperandiContent = ({ expedienteId, folioExpediente, analistaId
         }
     }
 
-    const puedeValidar = !!propuesta && !propuesta.revisadoPorExperto && propuesta.estado !== 'SIN_COINCIDENCIAS'
-
+    const puedeValidar = !soloLectura && !!propuesta && !propuesta.revisadoPorExperto && propuesta.estado !== 'SIN_COINCIDENCIAS'
     return (
         <div className="flex flex-col gap-5">
             <div className="flex items-start justify-between gap-4">

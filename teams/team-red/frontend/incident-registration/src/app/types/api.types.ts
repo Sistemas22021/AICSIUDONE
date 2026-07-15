@@ -178,3 +178,10 @@ export interface RechazarPropuestaMoPayload {
     clasificacionManual: string
     justificacion: string
 }
+
+export interface Usuario {
+  id:             number
+  nombre:         string
+  identificacion: string
+  correo:         string
+}

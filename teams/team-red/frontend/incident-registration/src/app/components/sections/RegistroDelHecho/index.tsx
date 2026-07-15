@@ -1,4 +1,3 @@
-// Formulario completo de registro del hecho criminal (módulo A)
 import { useState, useRef, useEffect } from 'react'
 import { MapPin, Plus, X, AlertTriangle, Clock, AlignLeft, ChevronDown, FileText, Loader2 } from 'lucide-react'
 import { NeonPanel }    from '../../ui/NeonPanel'
@@ -9,6 +8,7 @@ import { NeonButton }   from '../../ui/NeonButton'
 import { NeonRadio }    from '../../ui/NeonRadio'
 import { NeonCheckbox } from '../../ui/NeonCheckbox'
 import { useNeonToast } from '../../ui/NeonToast'
+import { useExpedienteActivo } from '../../../context/ExpedienteActivoContext'
 import {
     useFormContext,
     TIPOS_INVOLUCRADO,
@@ -23,6 +23,7 @@ import { MapaPicker } from '../../ui/MapaPicker'
 import { useDelitoList }         from './useDelitoList'
 import { crearPayloadIncidente } from './crearPayloadIncidente'
 import { apiClient }             from '../../../services/api'
+import type { ExpedienteDetalleResponse } from '../../../types/api.types'
 
 // ─── Tipos de errores por involucrado ────────────────────────────────────────
 
@@ -51,16 +52,12 @@ const TIPO_REGISTRO_COLORS: Record<TipoRegistro, string> = {
 }
 
 // ─── Validación de identificación ─────────────────────────────────────────────
-// Acepta cédulas dominicanas/venezolanas: opcional prefijo V-/E- y luego dígitos.
-// Rechaza cadenas puramente alfabéticas (ej. "JUAN", "abc").
 function validarIdentificacion(valor: string): string | null {
     const trimmed = valor.trim()
     if (!trimmed) return 'La identificación es obligatoria'
 
-    // Eliminar prefijo V- / E- / v- / e- si existe
     const sinPrefijo = trimmed.replace(/^[VEve]-?/, '')
 
-    // Debe contener SOLO dígitos después del prefijo
     if (!/^\d+$/.test(sinPrefijo)) {
         return 'La identificación solo puede contener números (ej. 12345678 o V-12345678)'
     }
@@ -89,7 +86,6 @@ function validarInvolucrado(inv: Involucrado): InvolucradoFieldErrors {
     if (!inv.direccion.trim())
         errors.direccion = 'La dirección es obligatoria'
 
-    // La foto solo es obligatoria para la víctima
     if (inv.tipoInvolucrado === 'victima' && !inv.foto)
         errors.foto = 'La fotografía es obligatoria para la víctima'
 
@@ -112,11 +108,11 @@ export const RegistroDelHecho = () => {
     const { tipos, loading: loadingTipos, warning: tiposWarning } = useDelitoCategories()
     const { delitos, updateDelito, addDelito, removeDelito, validateTiempos, resetDelitos } = useDelitoList()
 
-    // ── Estado de envío y errores de involucrados ──────────────────────────────
+    const { setExpedienteActivo } = useExpedienteActivo()
+
     const [isSubmitting, setIsSubmitting]           = useState(false)
     const [involucradoErrors, setInvolucradoErrors] = useState<InvolucradoErrorMap>({})
 
-    // ── Dropdown "Tipo de Registro" ────────────────────────────────────────────
     const [dropdownOpen, setDropdownOpen] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -130,7 +126,6 @@ export const RegistroDelHecho = () => {
         return () => document.removeEventListener('mousedown', handler)
     }, [dropdownOpen])
 
-    // Derivado: ¿este tipo obliga a registrar datos del denunciante?
     const requiresDenunciante = TIPOS_REQUIEREN_DENUNCIANTE.includes(formData.tipoRegistro)
 
     // ── GPS ───────────────────────────────────────────────────────────────────
@@ -177,6 +172,7 @@ export const RegistroDelHecho = () => {
     const handleGuardar = async () => {
         const newErrors: InvolucradoErrorMap = {}
         let hayErrores = false
+
         formData.involucrados.forEach(inv => {
             const fieldErrors = validarInvolucrado(inv)
             if (Object.keys(fieldErrors).length > 0) {
@@ -184,6 +180,7 @@ export const RegistroDelHecho = () => {
                 hayErrores = true
             }
         })
+
         setInvolucradoErrors(newErrors)
         if (hayErrores) {
             showToast('Corrige los errores en los involucrados antes de guardar', 'error')
@@ -208,24 +205,10 @@ export const RegistroDelHecho = () => {
         })
 
         try {
-            // 1. Crear el expediente
-            const expedienteCreado = await apiClient.post<{ data: { id: number } }>('/incidentes', payload)
+            const expedienteCreado = await apiClient.post<{ data: ExpedienteDetalleResponse }>('/incidentes', payload)
+            setExpedienteActivo(expedienteCreado.data)
 
-            await fetch(`/api/expedientes/${expedienteCreado.data.id}/sellar?agenteSelladorId=1`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-            })
-
-            // 2. Sellarlo automáticamente (agenteSelladorId=1 por ahora)
-            try {
-                await fetch(`/api/expedientes/${expedienteCreado.data.id}/sellar?agenteSelladorId=1`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                })
-                showToast('Expediente registrado y sellado exitosamente', 'success')
-            } catch {
-                showToast('Expediente guardado, pero no se pudo sellar automáticamente', 'error')
-            }
+            showToast('Expediente registrado exitosamente', 'success')
 
             resetForm()
             resetDelitos()
@@ -250,7 +233,6 @@ export const RegistroDelHecho = () => {
 
     const selectedTipoLabel = TIPOS_REGISTRO.find(t => t.value === formData.tipoRegistro)?.label
 
-    // ─── Render ───────────────────────────────────────────────────────────────
     return (
         <div className="pb-6 space-y-4">
 
@@ -818,13 +800,11 @@ export const RegistroDelHecho = () => {
                 </div>
 
                 {/* ══ CRONOLOGÍA DEL REPORTE ═══════════════════════════════ */}
-                {/* ══ CRONOLOGÍA DEL REPORTE ══ */}
                 <div>
                     <div className="text-[11px] uppercase tracking-[0.12em] text-cyan-400 mb-3 font-medium">
                         Cronología del Reporte
                     </div>
 
-                    {/* Display de solo lectura — el usuario no puede modificarlos */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="flex flex-col gap-1.5">
                             <label className="text-[11px] uppercase tracking-[0.1em] text-cyan-400 font-medium">

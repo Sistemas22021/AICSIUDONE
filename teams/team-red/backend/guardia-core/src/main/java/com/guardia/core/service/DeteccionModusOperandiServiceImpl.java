@@ -22,15 +22,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
-/**
- * Implementación del pipeline de detección automática de Modus Operandi (HU2).
- *
- * <p>Deliberadamente NO se anota la orquestación completa con
- * {@code @Transactional}: cada paso (guardar embedding, guardar propuesta)
- * usa su propia transacción corta a través de los métodos de
- * {@code JpaRepository}, para no mantener una conexión de base de datos
- * abierta durante la llamada HTTP —potencialmente lenta— al modelo de OpenAI.</p>
- */
 public class DeteccionModusOperandiServiceImpl implements DeteccionModusOperandiService {
 
     private static final Logger log = LoggerFactory.getLogger(DeteccionModusOperandiServiceImpl.class);

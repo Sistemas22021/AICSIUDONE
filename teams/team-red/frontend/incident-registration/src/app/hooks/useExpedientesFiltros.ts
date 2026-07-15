@@ -2,11 +2,11 @@ import { useState } from 'react'
 import type { ExpedienteActivo, EstatusExpediente } from '../types/api.types'
 
 export type SortCol =
-  | 'folioCOPP'
-  | 'tipoDelito'
-  | 'fechaHecho'
-  | 'investigadorAsignado'
-  | 'estatus'
+    | 'folioCOPP'
+    | 'tipoDelito'
+    | 'fechaHecho'
+    | 'investigadorAsignado'
+    | 'estatus'
 
 export interface UseExpedientesFiltrosResult {
   filtrados:         ExpedienteActivo[]
@@ -22,7 +22,7 @@ export interface UseExpedientesFiltrosResult {
 }
 
 export function useExpedientesFiltros(
-  expedientes: ExpedienteActivo[],
+    expedientes: ExpedienteActivo[],
 ): UseExpedientesFiltrosResult {
   const [busqueda,      setBusqueda]      = useState('')
   const [filtroEstatus, setFiltroEstatus] = useState<EstatusExpediente | ''>('')
@@ -36,18 +36,20 @@ export function useExpedientesFiltros(
   }
 
   const filtrados = expedientes
-    .filter(e => {
-      const q = busqueda.toLowerCase()
-      if (q && ![e.folioCOPP, e.tipoDelito, e.subtipoDelito, e.investigadorAsignado, e.municipio]
-        .some(s => s.toLowerCase().includes(q))) return false
-      if (filtroEstatus && e.estatus !== filtroEstatus) return false
-      return !(soloAlertas && !e.tieneAlertaPatron);
+      .filter(e => {
+        const q = busqueda.toLowerCase()
+        if (q && ![e.folioCOPP, e.tipoDelito, e.subtipoDelito, e.investigadorAsignado, e.municipio]
+            .some(s => (s ?? '').toLowerCase().includes(q))) return false
+        if (filtroEstatus && e.estatus !== filtroEstatus) return false
+        return !(soloAlertas && !e.tieneAlertaPatron);
 
-    })
-    .sort((a, b) => {
-      const mul = sortAsc ? 1 : -1
-      return a[sortCol].localeCompare(b[sortCol]) * mul
-    })
+      })
+      .sort((a, b) => {
+        const mul = sortAsc ? 1 : -1
+        const valA = a[sortCol] ?? ''
+        const valB = b[sortCol] ?? ''
+        return valA.localeCompare(valB) * mul
+      })
 
   return {
     filtrados,

@@ -3,15 +3,18 @@ import { useState, useEffect, useRef } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { NeonPanel } from './ui/NeonPanel'
 import { useFormContext } from '../context/FormContext'
+import { SellarExpedienteButton } from './ui/SellarExpedienteButton'
 
 interface HeaderProps {
   onSearchClick: () => void
+  onSellarClick: () => void
 }
 
-export const Header = ({ onSearchClick }: HeaderProps) => {
+export const Header = ({ onSearchClick, onSellarClick }: HeaderProps) => {
   const { formData, resetForm } = useFormContext()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+
 
   useEffect(() => {
     if (!isDropdownOpen) return
@@ -75,11 +78,20 @@ export const Header = ({ onSearchClick }: HeaderProps) => {
                 Nuevo Expediente
               </button>
               <button
-                onClick={() => { onSearchClick(); setIsDropdownOpen(false) }}
-                className="w-full px-3 py-2 text-[10px] uppercase tracking-[0.12em] text-cyan-300 hover:bg-cyan-400/15 transition-all text-left"
+                  onClick={() => {
+                    onSearchClick()
+                    setIsDropdownOpen(false)
+                  }}
+                  className="w-full px-3 py-2 text-[10px] uppercase tracking-[0.12em] text-cyan-300 hover:bg-cyan-400/15 transition-all text-left border-b border-cyan-400/30"
               >
                 Búsqueda y Casos
               </button>
+              <SellarExpedienteButton
+                  onOpenPanel={() => {
+                    onSellarClick()
+                    setIsDropdownOpen(false)
+                  }}
+              />
             </div>
           )}
         </div>
