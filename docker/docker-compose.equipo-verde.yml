@@ -1,0 +1,34 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# docker-compose.equipo-verde.yml
+#
+# Levanta el micro-frontend del Equipo Verde:
+#   - equipo-verde-web (Módulo de Análisis Forense Holístico)
+#
+# Este archivo EXTIENDE docker-compose.common.yml.
+# Usar el siguiente comando para levantar TODO el ecosistema:
+#
+#   docker compose \
+#     -f docker/docker-compose.common.yml \
+#     -f docker/docker-compose.equipo-verde.yml \
+#     up --build
+#
+# Para bajar todo:
+#   docker compose \
+#     -f docker/docker-compose.common.yml \
+#     -f docker/docker-compose.equipo-verde.yml \
+#     down
+# ─────────────────────────────────────────────────────────────────────────────
+
+include:
+  - docker-compose.common.yml
+
+services:
+  equipo-verde-web:
+    build: ../teams/main/equipo-verde/frontend/equipo-verde-web
+    ports:
+      - "3002:80"
+    environment:
+      - VITE_API_GATEWAY_URL=http://localhost:8090
+      - VITE_LOGIN_MFE_URL=http://localhost:3000
+    networks:
+      - sso-network

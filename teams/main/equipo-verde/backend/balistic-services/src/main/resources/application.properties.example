@@ -1,0 +1,26 @@
+# ============================================================
+# EJEMPLO DE CONFIGURACIÓN - Copia este archivo como:
+#   application.properties
+# y reemplaza los valores con tus credenciales locales.
+# ============================================================
+
+# --- Almacenamiento ---
+storage.location=uploads
+storage.type=s3
+
+# --- Base de Datos PostgreSQL ---
+spring.datasource.url=jdbc:postgresql://localhost:5432/balistic-services-db
+spring.datasource.username=TU_USUARIO
+spring.datasource.password=TU_CONTRASEÑA
+spring.jpa.hibernate.ddl-auto=update
+spring.sql.init.mode=always
+spring.jpa.defer-datasource-initialization=true
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+
+# --- AWS S3 / LocalStack ---
+aws.s3.endpoint=http://127.0.0.1:4566
+aws.s3.region=us-east-1
+aws.s3.access-key=TU_ACCESS_KEY
+aws.s3.secret-key=TU_SECRET_KEY
+aws.s3.bucket-name=sistema-balistico-images

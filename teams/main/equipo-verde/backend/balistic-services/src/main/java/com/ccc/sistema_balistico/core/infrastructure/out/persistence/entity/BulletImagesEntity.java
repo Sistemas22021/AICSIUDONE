@@ -1,0 +1,35 @@
+package com.ccc.sistema_balistico.core.infrastructure.out.persistence.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.envers.Audited;
+
+import java.util.UUID;
+
+@Entity
+@Audited
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+public class BulletImagesEntity {
+
+    @Id
+    private UUID uuidBulletImages;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_bullet")
+    private BulletEntity idBullet;
+
+    private String pathImage;
+
+    private String hashImage;
+
+    @Column(name = "descriptor", columnDefinition = "bytea")
+    private byte[] descriptor;
+
+    @Column(name = "keypoints", columnDefinition = "bytea")
+    private byte[] keypoints;
+
+}

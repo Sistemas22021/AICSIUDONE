@@ -1,0 +1,52 @@
+import { ReactNode, useEffect, useState } from 'react';
+import { resolveToken, redirectToLogin, setAccessToken } from '../services/tokenService';
+
+interface AuthGuardProps {
+  children: ReactNode;
+}
+
+type AuthState = 'loading' | 'authenticated' | 'unauthenticated';
+
+export function AuthGuard({ children }: AuthGuardProps) {
+  const [authState, setAuthState] = useState<AuthState>('loading');
+
+  useEffect(() => {
+    async function checkAuth() {
+      const token = await resolveToken();
+
+      if (token) {
+        setAccessToken(token);
+        setAuthState('authenticated');
+      } else {
+        setAuthState('unauthenticated');
+        redirectToLogin();
+      }
+    }
+
+    // Modo Maquetación: Forzar inicio de sesión
+    // checkAuth();
+    setAuthState('authenticated');
+  }, []);
+
+  if (authState === 'loading') {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin w-10 h-10 border-4 border-indigo-500 border-t-transparent
+                          rounded-full mx-auto mb-4" />
+          <p className="text-slate-400 text-sm">Verificando sesión...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (authState === 'unauthenticated') {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <p className="text-slate-400 text-sm">Redirigiendo al login...</p>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}
