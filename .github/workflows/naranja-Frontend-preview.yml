@@ -2,14 +2,14 @@ name: Naranja - Frontend Deploy Dev
 
 on:
   push:
-    branches:
+    branches: 
       - naranja-dev/main
       - main
     paths:
       - 'teams/naranja/Frontend/**'
-
+      
   pull_request:
-    branches:
+    branches: 
       - naranja-dev/main
       - main
     paths:
@@ -39,15 +39,23 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
-      - name: Construir aplicación (Build)
-        run: npm run build
+      # Instalamos Vercel localmente para preparar el build de producción optimizado
+      - name: Instalar Vercel CLI
+        run: npm install --save-dev vercel
 
-      # Guardamos el resultado del build para que el job de deploy pueda usarlo
+      # Ejecuta el build nativo que Vercel entiende para producción (.vercel/output)
+      - name: Construir aplicación con Vercel CLI
+        run: npx vercel build --token=${{ secrets.NARANJA_VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.NARANJA_VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.NARANJA_VERCEL_PROJECT_ID }}
+
+      # Subimos la carpeta .vercel generada para el despliegue directo
       - name: Subir artefacto de construcción
         uses: actions/upload-artifact@v4
         with:
-          name: build-output
-          path: teams/naranja/Frontend/.next # O la carpeta de salida de tu build (ej: dist, build, .next)
+          name: vercel-production-build
+          path: teams/naranja/Frontend/.vercel
           retention-days: 1
 
   # ==========================================
@@ -55,7 +63,7 @@ jobs:
   # ==========================================
   deploy:
     runs-on: ubuntu-latest
-    needs: build # Este job solo corre si 'build' termina con éxito
+    needs: build
     defaults:
       run:
         working-directory: teams/naranja/Frontend
@@ -64,16 +72,20 @@ jobs:
       - name: Checkout del código
         uses: actions/checkout@v4
 
+      # Descargamos el build precompilado (.vercel)
       - name: Descargar artefacto de construcción
-        uses: actions/artifact-download-action@v4
+        uses: actions/download-artifact@v4
         with:
-          name: build-output
-          path: teams/naranja/Frontend/.next
+          name: vercel-production-build
+          path: teams/naranja/Frontend/.vercel
 
-      - name: Deploy a Vercel (Preview)
-        run: |
-          npm install -g vercel
-          vercel --token=${{ secrets.NARANJA_VERCEL_TOKEN }} --yes
+      # Instalamos Vercel CLI globalmente en este runner para hacer el deploy
+      - name: Instalar Vercel CLI
+        run: npm install -g vercel
+
+      # Desplegamos directamente usando el build que descargamos (deploy instantáneo)
+      - name: Deploy pre-built a Vercel
+        run: vercel deploy --prebuilt --token=${{ secrets.NARANJA_VERCEL_TOKEN }}
         env:
           VERCEL_ORG_ID: ${{ secrets.NARANJA_VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.NARANJA_VERCEL_PROJECT_ID }}
