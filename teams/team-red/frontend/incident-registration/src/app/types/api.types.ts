@@ -113,7 +113,7 @@ export interface FotoPayload {
 }
 
 export interface IncidentePayload {
-  tipoRegistro:     string                // ← NUEVO: denuncia_formal | denuncia_anonima | ...
+  tipoRegistro:     string
   ubicacion:        UbicacionPayload
   delitos:          DelitoPayload[]
   descripcion:      string
@@ -124,11 +124,11 @@ export interface IncidentePayload {
   fotos:            FotoPayload[]
 }
 
-export interface UsuarioDTO {
-  id: number
-  nombre: string
+export interface Usuario {
+  id:             number
+  nombre:         string
   identificacion: string
-  correo: string
+  correo:         string
 }
 
 export interface ExpedienteResumenDTO {
@@ -153,8 +153,63 @@ export interface CasoResponseDTO {
   id: number
   codigoCaso: string
   motivo: string
-  creadoPor: UsuarioDTO
+  creadoPor: Usuario
   fechaCreacion: string
   alertaOrigenId: number | null
   expedientes: ExpedienteResumenDTO[]
+}
+
+export type EstadoPropuestaMO =
+    | 'PENDIENTE'
+    | 'SIN_COINCIDENCIAS'
+    | 'APROBADA'
+    | 'CORREGIDA'
+    | 'RECHAZADA'
+
+export interface ExpedienteSimilarMO {
+  expedienteId: number
+  folio: string
+  similitudPorcentaje: number
+}
+
+export interface PropuestaModusOperandi {
+  id: number
+  expedienteId: number
+  folioExpediente: string
+  version: number
+  vigente: boolean
+  estado: EstadoPropuestaMO
+  caracteristicasComunes: string | null
+  posibleFirma: string | null
+  consistenciaHorarioZona: string | null
+  resumenGenerado: string | null
+  nivelConfianza: number | null
+  modeloEmbedding: string | null
+  modeloChat: string | null
+  fechaGeneracion: string
+  expedientesSimilares: ExpedienteSimilarMO[]
+  revisadoPorExperto: boolean
+  analistaRevisorId: number | null
+  analistaRevisorNombre: string | null
+  justificacionRevision: string | null
+  clasificacionManual: string | null
+  fechaRevision: string | null
+}
+
+export interface AprobarPropuestaMoPayload {
+  analistaId: number
+}
+
+export interface CorregirPropuestaMoPayload {
+  analistaId: number
+  caracteristicasComunes?: string
+  posibleFirma?: string
+  consistenciaHorarioZona?: string
+  justificacion: string
+}
+
+export interface RechazarPropuestaMoPayload {
+  analistaId: number
+  clasificacionManual: string
+  justificacion: string
 }
