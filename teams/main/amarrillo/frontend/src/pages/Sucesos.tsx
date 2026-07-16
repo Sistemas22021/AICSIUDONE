@@ -17,7 +17,6 @@ import FormSucesoPorTipo from '../components/FormSucesoPorTipo';
 import GaleriaFotos from '../components/GaleriaFotos';
 import Modal from '../components/Modal';
 import FormularioDesaparecida from '../components/FormularioDesaparecida';
-
 const TIPOS: TipoSuceso[] = ['ROBO_VEHICULO', 'DESAPARICION', 'AVISTAMIENTO', 'TRANSACCION'];
 const tipoLabel: Record<string, string> = {
   ROBO_VEHICULO: 'Robo de vehículo',
@@ -25,14 +24,12 @@ const tipoLabel: Record<string, string> = {
   AVISTAMIENTO: 'Avistamiento',
   TRANSACCION: 'Transacción',
 };
-
 const estadoDesapLabel: Record<string, string> = {
   BUSCADA: 'Buscada',
   ENCONTRADA_VIVA: 'Encontrada viva',
   ENCONTRADA_FALLECIDA: 'Encontrada fallecida',
   ARCHIVADA: 'Archivada',
 };
-
 /**
  * Fila unificada de la tabla: puede ser un suceso o una desaparicion.
  * Se marca con _origen para ramificar las acciones (ver/eliminar).
@@ -50,7 +47,6 @@ interface FilaUnificada {
   suceso?: Suceso;
   desaparecida?: PersonaDesaparecida;
 }
-
 export default function Sucesos() {
   const [searchParams] = useSearchParams();
   const [sucesos, setSucesos] = useState<Suceso[]>([]);
@@ -70,7 +66,7 @@ export default function Sucesos() {
   const [editandoDesap, setEditandoDesap] = useState<PersonaDesaparecida | null>(null);
   const [editandoSuceso, setEditandoSuceso] = useState<Suceso | null>(null);
   const [formSuceso, setFormSuceso] = useState({ fechaHora: '', modusOperandi: '', descripcion: '' });
-
+  const [enviandoCian, setEnviandoCian] = useState<number | null>(null);
   const cargar = async () => {
     try { setSucesos(await sucesoService.listar()); } catch (e) { console.error('Sucesos:', e); }
     try { setDesaparecidas(await desaparecidaService.listar()); } catch (e) { console.error('Desaparecidas:', e); }
@@ -78,7 +74,6 @@ export default function Sucesos() {
     try { setUbicaciones(await ubicacionService.listar()); } catch (e) { console.error('Ubicaciones:', e); }
     try { setPersonas(await personaService.listar()); } catch (e) { console.error('Personas:', e); }
   };
-
   useEffect(() => {
     cargar();
     if (searchParams.get('nueva') === '1') {
@@ -87,7 +82,6 @@ export default function Sucesos() {
       }, 300);
     }
   }, []);
-
   const filasSuceso: FilaUnificada[] = sucesos.map(s => ({
     _origen: 'suceso',
     id: s.id!,
@@ -100,7 +94,6 @@ export default function Sucesos() {
     modus: s.modusOperandi || '',
     suceso: s,
   }));
-
   const filasDesap: FilaUnificada[] = desaparecidas.map(d => ({
     _origen: 'desaparicion',
     id: d.id!,
@@ -113,11 +106,9 @@ export default function Sucesos() {
     modus: '',
     desaparecida: d,
   }));
-
   const todas = [...filasSuceso, ...filasDesap].sort(
     (a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
   );
-
   const filtrados = todas.filter(f => {
     if (filtroTipo && f.tipo !== filtroTipo) return false;
     if (filtroVehiculo && String(f.suceso?.vehiculo?.id) !== filtroVehiculo) return false;
@@ -131,9 +122,7 @@ export default function Sucesos() {
       f.personaTexto.toLowerCase().includes(q) ||
       (f.suceso?.descripcion?.toLowerCase().includes(q) ?? false);
   });
-
   const { visibles, pagina, setPagina, total, porPagina } = usePaginacion(filtrados, 10);
-
   const confirmarEliminar = async () => {
     if (!aEliminar) return;
     try {
@@ -151,7 +140,6 @@ export default function Sucesos() {
       setAEliminar(null);
     }
   };
-
   const exportar = () => {
     exportarCSV(
       filtrados.map(f => ({
@@ -165,7 +153,6 @@ export default function Sucesos() {
       'sucesos'
     );
   };
-
   const puntos: PuntoMapa[] = useMemo(() => {
     const deSucesos: PuntoMapa[] = sucesos
       .filter(s => s.ubicacion?.latitud && s.ubicacion?.longitud)
@@ -198,7 +185,6 @@ export default function Sucesos() {
       }));
     return [...deSucesos, ...deDesap];
   }, [sucesos, desaparecidas]);
-
   const totalRegistros = sucesos.length + desaparecidas.length;
   const ultimaSemana = todas.filter(f => {
     const d = new Date(f.fecha);
@@ -206,7 +192,6 @@ export default function Sucesos() {
   }).length;
   const robos = sucesos.filter(s => s.tipo === 'ROBO_VEHICULO').length;
   const desapCount = desaparecidas.length;
-
   const abrirEditarSuceso = (s: Suceso) => {
     setEditandoSuceso(s);
     setFormSuceso({
@@ -215,7 +200,6 @@ export default function Sucesos() {
       descripcion: s.descripcion || '',
     });
   };
-
   const guardarEdicionSuceso = async () => {
     if (!editandoSuceso) return;
     try {
@@ -233,17 +217,28 @@ export default function Sucesos() {
       setErr(e?.response?.data?.error || 'No se pudo actualizar el suceso');
     }
   };
-
+  const enviarACian = async (origen: 'suceso' | 'desaparicion', id: number) => {
+    setEnviandoCian(id);
+    setErr(''); setOk('');
+    try {
+      const r = origen === 'suceso'
+        ? await sucesoService.enviarACian(id)
+        : await desaparecidaService.enviarACian(id);
+      setOk(`Incidente enviado a patrullas. Prioridad IA: ${r.prioridad}. ID Cian: ${r.incidenteCian?.id ?? 's/d'}`);
+      setTimeout(() => setOk(''), 5000);
+    } catch (e: any) {
+      setErr(e?.response?.data?.error || 'No se pudo enviar a patrullas');
+    } finally {
+      setEnviandoCian(null);
+    }
+  };
   const limpiarFiltros = () => {
     setFiltro(''); setFiltroTipo(''); setFiltroVehiculo('');
     setFiltroPersona(''); setFiltroUbicacion('');
   };
   const filtrosActivos = filtro || filtroTipo || filtroVehiculo || filtroPersona || filtroUbicacion;
-
   const idEtiqueta = (f: FilaUnificada) =>
     f._origen === 'suceso' ? `EV-${String(f.id).padStart(4, '0')}` : `DS-${String(f.id).padStart(4, '0')}`;
-
-
   return (
     <>
       <div className="page-header">
@@ -256,14 +251,12 @@ export default function Sucesos() {
           <span className="badge-pill alerta">ÚLTIMA SEMANA: {ultimaSemana}</span>
         </div>
       </div>
-
       <div className="toolbar">
         <button className="btn-ghost" onClick={exportar}>
           <span className="material-symbols-outlined" style={{ fontSize: 16 }}>download</span>
           Exportar CSV
         </button>
       </div>
-
       <div className="bento-grid" id="form-suceso">
         <div className="bento-col-5">
           <div className="form-card" style={{ height: '100%' }}>
@@ -308,7 +301,6 @@ export default function Sucesos() {
           </div>
         </div>
       </div>
-
       <div className="form-card" style={{ marginBottom: 20, padding: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
           <span className="material-symbols-outlined" style={{ color: 'var(--red-500)', fontSize: 18 }}>filter_alt</span>
@@ -349,7 +341,6 @@ export default function Sucesos() {
           </select>
         </div>
       </div>
-
       <div className="table-wrap">
         <div className="table-header">
           <div className="table-header-title">
@@ -417,6 +408,24 @@ export default function Sucesos() {
                           <span className="material-symbols-outlined" style={{ fontSize: 18 }}>edit</span>
                         </button>
                       )}
+                      {f._origen === 'suceso' && f.suceso && (
+                        <button className="btn-icon" title="Enviar a patrullas (Cian)"
+                          disabled={enviandoCian === f.id}
+                          onClick={() => enviarACian('suceso', f.suceso!.id!)}>
+                          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                            {enviandoCian === f.id ? 'hourglass_empty' : 'local_police'}
+                          </span>
+                        </button>
+                      )}
+                      {f._origen === 'desaparicion' && f.desaparecida && (
+                        <button className="btn-icon" title="Enviar a patrullas (Cian)"
+                          disabled={enviandoCian === f.id}
+                          onClick={() => enviarACian('desaparicion', f.desaparecida!.id!)}>
+                          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                            {enviandoCian === f.id ? 'hourglass_empty' : 'local_police'}
+                          </span>
+                        </button>
+                      )}
                       <button className="btn-icon danger" onClick={() => setAEliminar(f)} title="Eliminar">
                         <span className="material-symbols-outlined" style={{ fontSize: 18 }}>delete</span>
                       </button>
@@ -435,7 +444,6 @@ export default function Sucesos() {
         <Paginacion total={total} pagina={pagina} porPagina={porPagina}
           onCambiar={setPagina} label="registros" />
       </div>
-
       {detalle && detalle._origen === 'suceso' && detalle.suceso && (
         <ModalDetalle abierto={true} onClose={() => setDetalle(null)}
           titulo={tipoLabel[detalle.suceso.tipo]}
@@ -472,7 +480,6 @@ export default function Sucesos() {
           }
         />
       )}
-
       {detalle && detalle._origen === 'desaparicion' && detalle.desaparecida && (
         <ModalDetalle abierto={true} onClose={() => setDetalle(null)}
           titulo={`${detalle.desaparecida.nombre} ${detalle.desaparecida.apellido}`}
@@ -529,7 +536,6 @@ export default function Sucesos() {
           }
         />
       )}
-
       <Modal
         abierto={!!editandoDesap}
         onClose={() => setEditandoDesap(null)}
@@ -551,7 +557,6 @@ export default function Sucesos() {
           />
         )}
       </Modal>
-
       <Modal
         abierto={!!editandoSuceso}
         onClose={() => setEditandoSuceso(null)}
@@ -593,7 +598,6 @@ export default function Sucesos() {
           </div>
         )}
       </Modal>
-
       <ModalConfirmar abierto={!!aEliminar} titulo="¿Eliminar registro?"
         mensaje={aEliminar
           ? `Vas a eliminar ${idEtiqueta(aEliminar)}${aEliminar._origen === 'desaparicion' ? ` (${aEliminar.personaTexto})` : ''}.`

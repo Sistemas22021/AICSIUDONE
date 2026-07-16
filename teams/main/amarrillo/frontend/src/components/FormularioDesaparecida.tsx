@@ -358,6 +358,7 @@ export default function FormularioDesaparecida({ inicial, onGuardado, onCancelar
           <div className="form-group">
             <label className="form-label">Fecha y hora de la desaparición</label>
             <input type="datetime-local" value={form.fechaDesaparicion}
+              max={new Date().toISOString().slice(0, 16)}
               onChange={(e) => setForm({ ...form, fechaDesaparicion: e.target.value })}
               required />
           </div>
