@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
+import com.nexocriminal.integracion.CianClient;
+import com.nexocriminal.ia.IAService;
 
 import java.util.List;
 import java.util.Map;
@@ -42,12 +44,15 @@ public class DesaparecidaController {
     // Service viejo: solo para fotos y estadisticas (infraestructura de archivos)
     private final PersonaDesaparecidaService fotoService;
     private final FileStorageService fileStorageService;
+    private final CianClient cianClient;
+    private final IAService iaService;
 
     public DesaparecidaController(CreateDesaparecida createDesaparecida, ListDesaparecidas listDesaparecidas,
                                   GetDesaparecida getDesaparecida, UpdateDesaparecida updateDesaparecida,
                                   ChangeDesaparecidaEstado changeEstado, DeleteDesaparecida deleteDesaparecida,
                                   BuscarCercanas buscarCercanas, UbicacionReaderPort ubicacionReader,
-                                  PersonaDesaparecidaService fotoService, FileStorageService fileStorageService) {
+                                  PersonaDesaparecidaService fotoService, FileStorageService fileStorageService,
+                                  CianClient cianClient, IAService iaService) {
         this.createDesaparecida = createDesaparecida;
         this.listDesaparecidas = listDesaparecidas;
         this.getDesaparecida = getDesaparecida;
@@ -58,6 +63,8 @@ public class DesaparecidaController {
         this.ubicacionReader = ubicacionReader;
         this.fotoService = fotoService;
         this.fileStorageService = fileStorageService;
+        this.cianClient = cianClient;
+        this.iaService = iaService;
     }
 
     private UbicacionNodo ubicacionNodo(Long id) {
@@ -207,5 +214,41 @@ public class DesaparecidaController {
     public Map<String, Boolean> marcarPrincipal(@PathVariable Long id, @PathVariable Long fotoId) {
         fotoService.marcarPrincipal(id, fotoId);
         return Map.of("actualizada", true);
+    }
+
+    @Operation(summary = "Enviar desaparición a patrullas (Cian)",
+               description = "Calcula la prioridad con IA y envía la desaparición como incidente al sistema de patrullaje del Equipo Cian")
+    @PostMapping("/{id}/enviar-cian")
+    public ResponseEntity<?> enviarACian(@PathVariable Long id) {
+        Desaparecida pd = getDesaparecida.execute(id);
+
+        Long ubicacionId = pd.getUltimaUbicacionId();
+        if (ubicacionId == null) {
+            return ResponseEntity.badRequest().body(
+                Map.of("error", "La desaparición no tiene última ubicación; no se puede enviar a patrullas."));
+        }
+        var ubiOpt = ubicacionReader.findById(ubicacionId);
+        if (ubiOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body(
+                Map.of("error", "La ubicación no tiene coordenadas; no se puede enviar a patrullas."));
+        }
+        var ubi = ubiOpt.get();
+
+        try {
+            String priority = iaService.calcularPrioridadDesaparicion(id);
+            String description = "Persona desaparecida: " + pd.getNombre() + " " + pd.getApellido()
+                    + (pd.getCircunstancias() != null ? ". " + pd.getCircunstancias() : "");
+
+            Map<String, Object> respuestaCian = cianClient.enviarIncidente(
+                    "DESAPARICION", description, ubi.latitud(), ubi.longitud(), priority);
+
+            return ResponseEntity.ok(Map.of("prioridad", priority, "incidenteCian", respuestaCian));
+        } catch (org.springframework.web.client.ResourceAccessException e) {
+            return ResponseEntity.status(503).body(
+                Map.of("error", "No se pudo conectar con el sistema de patrullas (Cian). ¿Está corriendo?"));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(
+                Map.of("error", "Error al enviar el incidente: " + e.getMessage()));
+        }
     }
 }

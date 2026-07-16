@@ -39,10 +39,15 @@ public class MiddlewareFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String path = request.getRequestURI();
+        String metodo = request.getMethod();
 
-        // Las rutas publicas se saltan la cadena
+        // Excepción para el equipo Blanco: el GET de personas es público (solo lectura)
+        boolean esConsultaPersonasPublica =
+                path.startsWith("/api/v1/personas") && "GET".equalsIgnoreCase(metodo);
+
+        // Las rutas públicas se saltan la cadena
         boolean esPublica = RUTAS_PUBLICAS.stream().anyMatch(path::startsWith);
-        if (esPublica || !path.startsWith("/api/")) {
+        if (esPublica || esConsultaPersonasPublica || !path.startsWith("/api/")) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -57,10 +62,10 @@ public class MiddlewareFilter extends OncePerRequestFilter {
             response.getWriter().write(objectMapper.writeValueAsString(
                     Map.of("error", contexto.getMensajeError())
             ));
-            return; // corta aqui, no llega al controller
+            return; // corta aquí, no llega al controller
         }
 
-        // La cadena dejo pasar: continuar al controller
+        // La cadena dejó pasar: continuar al controller
         filterChain.doFilter(request, response);
     }
 }
