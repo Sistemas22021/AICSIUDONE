@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { AuthProvider } from './context/AuthContext'
 import { FormProvider } from './context/FormContext'
 import { Header } from './components/Header'
 import { useNeonToast } from './components/ui/NeonToast'
@@ -37,47 +38,47 @@ export default function App() {
         setModoPanel('busqueda')
         setIsPanelOpen(true)
     }
-
-
     return (
-        <FormProvider>
-            <ExpedienteActivoProvider>
-                <div className="min-h-screen text-cyan-300">
-                    <ToastContainer />
-                    <Header
-                        onSearchClick={handleAbrirBusqueda}
-                        onSellarClick={handleAbrirSellado}
-                    />
-                    <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+        <AuthProvider>
+            <FormProvider>
+                <ExpedienteActivoProvider>
+                    <div className="min-h-screen text-cyan-300">
+                        <ToastContainer />
+                        <Header
+                            onSearchClick={handleAbrirBusqueda}
+                            onSellarClick={handleAbrirSellado}
+                        />
+                        <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
 
-                    <div className="w-[95%] max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
-                        {activeTab === 'registro' && <RegistroDelHecho />}
+                        <div className="w-[95%] max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+                            {activeTab === 'registro' && <RegistroDelHecho />}
 
-                        {activeTab === 'escena' && (
-                            <div className="pb-6">
-                                <EscenaDelCrimen
-                                    expedienteIdInicial={expedienteSeleccionado?.id}
-                                    folioInicial={expedienteSeleccionado?.folio}
-                                />
-                            </div>
-                        )}
+                            {activeTab === 'escena' && (
+                                <div className="pb-6">
+                                    <EscenaDelCrimen
+                                        expedienteIdInicial={expedienteSeleccionado?.id}
+                                        folioInicial={expedienteSeleccionado?.folio}
+                                    />
+                                </div>
+                            )}
 
-                        {activeTab === 'inteligencia' && (
-                            <div className="pb-6">
-                                <InteligenciaMOTab />
-                            </div>
-                        )}
+                            {activeTab === 'inteligencia' && (
+                                <div className="pb-6">
+                                    <InteligenciaMOTab />
+                                </div>
+                            )}
+                        </div>
+
+                        <ExpedientesPanel
+                            isOpen={isPanelOpen}
+                            onClose={() => setIsPanelOpen(false)}
+                            onAbrirExpediente={handleAbrirEnModuloB}
+                            modo={modoPanel}
+                            showToast={showToast}
+                        />
                     </div>
-
-                    <ExpedientesPanel
-                        isOpen={isPanelOpen}
-                        onClose={() => setIsPanelOpen(false)}
-                        onAbrirExpediente={handleAbrirEnModuloB}
-                        modo={modoPanel}
-                        showToast={showToast}
-                    />
-                </div>
-            </ExpedienteActivoProvider>
-        </FormProvider>
+                </ExpedienteActivoProvider>
+            </FormProvider>
+        </AuthProvider>
     )
 }

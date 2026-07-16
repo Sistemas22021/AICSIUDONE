@@ -7,6 +7,7 @@ import com.guardia.core.exception.ResourceNotFoundException;
 import com.guardia.core.model.Usuario;
 import com.guardia.core.repository.UsuarioRepository;
 import com.guardia.core.service.UsuarioService;
+import com.guardia.core.security.PasswordHasher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,7 @@ import java.util.List;
 public class UsuarioServiceImpl implements UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
+    private final PasswordHasher passwordHasher;
 
     @Override
     public UsuarioResponse crear(UsuarioRequest request) {
@@ -33,7 +35,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         Usuario usuario = new Usuario();
         usuario.setNombre(request.nombre());
         usuario.setIdentificacion(request.identificacion());
-        usuario.setCredenciales(request.credenciales());
+        usuario.setCredenciales(passwordHasher.hash(request.credenciales()));
         usuario.setCorreo(request.correo());
 
         return toResponse(usuarioRepository.save(usuario));
@@ -64,7 +66,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         Usuario usuario = findById(id);
         usuario.setNombre(request.nombre());
         usuario.setCorreo(request.correo());
-        usuario.setCredenciales(request.credenciales());
+        usuario.setCredenciales(passwordHasher.hash(request.credenciales()));
         return toResponse(usuarioRepository.save(usuario));
     }
 
@@ -75,9 +77,10 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public boolean autenticar(Long id, String credenciales) {
         Usuario usuario = findById(id);
-        return usuario.autenticar(credenciales);
+        return passwordHasher.matches(credenciales, usuario.getCredenciales());
     }
 
     private Usuario findById(Long id) {

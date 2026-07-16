@@ -18,3 +18,4 @@ public interface UsuarioService {
     boolean autenticar(Long id, String credenciales);
     UsuarioResponse obtenerPorCorreo(String correo);
 }
+

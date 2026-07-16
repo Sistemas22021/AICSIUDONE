@@ -43,13 +43,7 @@ public class Usuario {
     @OneToMany(mappedBy = "levantadaPor", fetch = FetchType.LAZY)
     private List<Escena> escenasLevantadas;
 
-    // Methods
-    public boolean autenticar(String credenciales) {
-        return this.credenciales != null && this.credenciales.equals(credenciales);
-    }
-
     public boolean verificarAcceso(String permiso) {
-        // Lógica de permisos a implementar según roles del sistema
         return permiso != null && !permiso.isBlank();
     }
 
@@ -66,7 +60,4 @@ public class Usuario {
                 .orElse(null);
     }
 
-    public void registrarActividad(String accion) {
-        // Lógica de auditoría a implementar
-    }
 }
