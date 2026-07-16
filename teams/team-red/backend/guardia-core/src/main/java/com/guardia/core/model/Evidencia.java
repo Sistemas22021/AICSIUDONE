@@ -51,6 +51,7 @@ public class Evidencia {
         this.escena = escena;
         this.tipo = tipo;
         this.descripcion = descripcion;
+        this.investigador = investigador;
         this.timestampRegistro = LocalDateTime.now();
         if (hashArchivoCliente != null && !hashArchivoCliente.isBlank()) {
             this.hashIntegridad = hashArchivoCliente;

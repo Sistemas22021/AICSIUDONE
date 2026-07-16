@@ -62,9 +62,10 @@ public class ExpedienteServiceImpl implements ExpedienteService {
 
     @Override
     public ExpedienteResponse crear(ExpedienteRequest request) {
-        // Mapear ubicación
-        Localizacion localizacion = new Localizacion();
+
+        Localizacion localizacion = null;
         if (request.getUbicacion() != null) {
+            localizacion = new Localizacion();
             localizacion.registrarDireccionManual(
                     request.getUbicacion().getMunicipio(),
                     request.getUbicacion().getSector(),
