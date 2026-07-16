@@ -9,7 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
-
+import com.nexocriminal.domain.persona.RolPersona;
 
 import java.util.List;
 
@@ -40,8 +40,8 @@ public class PersonaController {
 
     @Operation(summary = "Listar personas", description = "Devuelve todas las personas registradas en el sistema")
     @GetMapping
-    public List<PersonaResponse> listar() {
-        return listPersonas.execute().stream().map(PersonaResponse::new).toList();
+    public List<PersonaResponse> listar(@RequestParam(required = false) RolPersona rol) {
+        return listPersonas.execute(rol).stream().map(PersonaResponse::new).toList();
     }
 
     @Operation(summary = "Obtener persona", description = "Devuelve una persona por su identificador")
