@@ -1,7 +1,6 @@
 package com.sso.auth.application;
 
 import com.sso.auth.application.service.LoginService;
-import com.sso.auth.domain.model.RefreshToken;
 import com.sso.auth.domain.model.User;
 import com.sso.auth.domain.port.in.LoginUseCase;
 import com.sso.auth.domain.port.out.RefreshTokenRepository;

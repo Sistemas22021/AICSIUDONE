@@ -1,7 +1,6 @@
 package com.sso.auth.infrastructure.adapter.persistence;
 
 import com.sso.auth.domain.model.User;
-import com.sso.auth.infrastructure.adapter.out.persistence.UserJpaEntity;
 import com.sso.auth.infrastructure.adapter.out.persistence.UserJpaRepository;
 import com.sso.auth.infrastructure.adapter.out.persistence.UserRepositoryAdapter;
 import org.junit.jupiter.api.BeforeEach;
