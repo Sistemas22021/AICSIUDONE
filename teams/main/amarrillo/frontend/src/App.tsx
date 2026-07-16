@@ -16,7 +16,7 @@ import Grafo from './pages/Grafo';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import FooterStatus from './components/FooterStatus';
-
+import Testimonios from './pages/Testimonios';
 
 function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -61,6 +61,7 @@ function ProtectedRoutes() {
         <Route path="/asistente-ia" element={<AsistenteIA />} />
         <Route path="/grafo" element={<Grafo />} />
         <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/testimonios" element={<Testimonios />} />
       </Routes>
     </Layout>
   );
