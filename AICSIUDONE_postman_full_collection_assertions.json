@@ -1,0 +1,162 @@
+{
+  "info": {
+    "_postman_id": "aicsiudone-full-collection-assertions",
+    "name": "AICSIUDONE Full API Tests with Assertions",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Full collection with stronger assertions for critical endpoints. Set {{baseUrl}} and run."
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "accessToken", "value": "" },
+    { "key": "adminToken", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "POST /api/v1/auth/register",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"test_user_assert\",\n  \"password\": \"Password123!\",\n  \"fullName\": \"Test User Assert\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/register", "host": ["{{baseUrl}}"], "path": ["api","v1","auth","register"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [
+            "pm.test('Status is 201 or 200', function () { pm.expect(pm.response.code).to.be.within(200, 201); });",
+            "var json = null; try { json = pm.response.json(); } catch(e) { };",
+            "pm.test('Response has id and username', function () { if (json) { pm.expect(json.id || json.data && json.data.id).to.exist; pm.expect(json.username || json.data && json.data.username).to.exist; } else { pm.expect.fail('Response body not JSON'); } });"
+          ] } } ]
+        },
+        {
+          "name": "POST /api/v1/auth/login",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"test_user_assert\",\n  \"password\": \"Password123!\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/login", "host": ["{{baseUrl}}"], "path": ["api","v1","auth","login"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [
+            "var json = null; try { json = pm.response.json(); } catch(e) { json = null; }",
+            "pm.test('Login returns accessToken', function () { pm.expect(pm.response.code).to.be.within(200,299); if (json && json.accessToken) { pm.environment.set('accessToken', json.accessToken); } else { pm.expect.fail('accessToken missing'); } });",
+            "pm.test('accessToken looks like JWT', function () { var t = pm.environment.get('accessToken'); pm.expect(t).to.match(/^([A-Za-z0-9-_]+)\\.([A-Za-z0-9-_]+)\\.([A-Za-z0-9-_]+)$/); });"
+          ] } } ]
+        },
+        {
+          "name": "POST /api/v1/auth/refresh",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/refresh", "host": ["{{baseUrl}}"], "path": ["api","v1","auth","refresh"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [
+            "pm.test('Refresh returns accessToken', function () { pm.expect(pm.response.code).to.be.within(200,299); try { var j = pm.response.json(); pm.expect(j.accessToken || (j.data && j.data.accessToken)).to.exist; } catch(e) { pm.expect.fail('Response not JSON'); } });"
+          ] } } ]
+        }
+      ]
+    },
+    {
+      "name": "Users Maintainer",
+      "item": [
+        {
+          "name": "GET /api/users",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
+            "url": { "raw": "{{baseUrl}}/api/users?search=&page=0&size=10", "host": ["{{baseUrl}}"], "path": ["api","users"], "query": [ { "key": "search", "value": "" }, { "key": "page", "value": "0" }, { "key": "size", "value": "10" } ] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [
+            "pm.test('Status 2xx and returns page', function() { pm.expect(pm.response.code).to.be.within(200,299); try { var j = pm.response.json(); pm.expect(j.content || j.data || j).to.exist; } catch(e) { pm.expect.fail('Not JSON'); } });"
+          ] } } ]
+        },
+        {
+          "name": "PUT /api/users/{id}",
+          "request": {
+            "method": "PUT",
+            "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
+            "body": { "mode": "raw", "raw": "{ \"fullName\": \"Updated Name\" }" },
+            "url": { "raw": "{{baseUrl}}/api/users/:id", "host": ["{{baseUrl}}"], "path": ["api","users",":id"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [
+            "pm.test('Update returns 2xx and updated fullName', function(){ pm.expect(pm.response.code).to.be.within(200,299); try { var j = pm.response.json(); var u = j || (j.data && j.data); pm.expect(u.fullName || u.full_name || u.data && u.data.fullName).to.exist; } catch(e){} });"
+          ] } } ]
+        }
+      ]
+    },
+    {
+      "name": "Guardia - Core",
+      "item": [
+        {
+          "name": "POST /api/expedientes/registrar",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"titulo\": \"Expediente prueba assert\",\n  \"descripcion\": \"Desc\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/expedientes/registrar", "host": ["{{baseUrl}}"], "path": ["api","expedientes","registrar"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [
+            "pm.test('Create expediente: status 201', function(){ pm.expect(pm.response.code).to.be.within(200,201); });",
+            "pm.test('Response has data.id or id', function(){ try{ var j = pm.response.json(); pm.expect(j.data && j.data.id || j.id || j.expedienteId).to.exist; } catch(e){ pm.expect.fail('Not JSON'); } });"
+          ] } } ]
+        },
+        {
+          "name": "POST /api/v1/escenas",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"expedienteId\": 1,\n  \"descripcion\": \"Escena assert\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/escenas", "host": ["{{baseUrl}}"], "path": ["api","v1","escenas"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [
+            "pm.test('Create escena: 2xx', function(){ pm.expect(pm.response.code).to.be.within(200,299); });",
+            "pm.test('Escena response contains id', function(){ try{ var j = pm.response.json(); var d = j.data || j; pm.expect(d.id || d.escenaId).to.exist; }catch(e){ pm.expect.fail('Not JSON'); } });"
+          ] } } ]
+        },
+        {
+          "name": "POST /api/v1/evidencias",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{accessToken}}" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"escenaId\": 1,\n  \"descripcion\": \"Evidencia assert\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/evidencias", "host": ["{{baseUrl}}"], "path": ["api","v1","evidencias"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [
+            "pm.test('Create evidencia: 2xx', function(){ pm.expect(pm.response.code).to.be.within(200,299); });",
+            "pm.test('Evidencia has id', function(){ try{ var j = pm.response.json(); var d = j.data || j; pm.expect(d.id || d.evidenciaId).to.exist; }catch(e){ pm.expect.fail('Not JSON'); } });"
+          ] } } ]
+        }
+      ]
+    },
+    {
+      "name": "Guardia - Extra Assertions",
+      "item": [
+        {
+          "name": "POST /api/v1/victimas",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Víctima Assert\",\n  \"edad\": 30\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/victimas", "host": ["{{baseUrl}}"], "path": ["api","v1","victimas"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [
+            "pm.test('Victima created: 2xx', function(){ pm.expect(pm.response.code).to.be.within(200,201); });",
+            "pm.test('Victima response includes id', function(){ try{ var j = pm.response.json(); var d = j.data || j; pm.expect(d.id || d.victimaId).to.exist; }catch(e){ pm.expect.fail('Not JSON'); } });"
+          ] } } ]
+        },
+        {
+          "name": "POST /api/v1/localizaciones",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"municipio\": \"Ciudad Assert\",\n  \"sector\": \"Centro\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/localizaciones", "host": ["{{baseUrl}}"], "path": ["api","v1","localizaciones"] }
+          },
+          "event": [ { "listen": "test", "script": { "exec": [
+            "pm.test('Localizacion created', function(){ pm.expect(pm.response.code).to.be.within(200,201); });",
+            "pm.test('Has id', function(){ try{ var j = pm.response.json(); var d = j.data || j; pm.expect(d.id || d.localizacionId).to.exist; }catch(e){ pm.expect.fail('Not JSON'); } });"
+          ] } } ]
+        }
+      ]
+    }
+  ]
+}

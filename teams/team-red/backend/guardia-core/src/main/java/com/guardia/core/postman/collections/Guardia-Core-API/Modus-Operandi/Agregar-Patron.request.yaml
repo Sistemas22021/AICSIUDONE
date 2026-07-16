@@ -1,0 +1,13 @@
+$kind: http-request
+name: "Agregar Patrón a Modus Operandi"
+method: PATCH
+url: '{{baseUrl}}/api/v1/modus-operandi/{{modusId}}/patron'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "patron": "Nuevo patrón de comportamiento"
+    }

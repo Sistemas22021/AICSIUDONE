@@ -1,0 +1,4 @@
+$kind: http-request
+name: Obtener Involucrado por ID
+method: GET
+url: '{{baseUrl}}/api/v1/involucrados/{{involucradoId}}'

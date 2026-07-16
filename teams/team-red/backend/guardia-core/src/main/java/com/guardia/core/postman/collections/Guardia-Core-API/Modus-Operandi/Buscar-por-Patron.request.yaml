@@ -1,0 +1,7 @@
+$kind: http-request
+name: "Buscar Modus Operandi por Patrón"
+method: GET
+url: '{{baseUrl}}/api/v1/modus-operandi/buscar'
+queryParams:
+  - key: patron
+    value: '{{patron}}'

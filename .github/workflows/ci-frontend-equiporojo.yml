@@ -1,0 +1,61 @@
+name: CI - Frontend (incident-registration)
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'teams/team-red/frontend/incident-registration/src/**'
+      - 'teams/team-red/frontend/incident-registration/package.json'
+      - 'teams/team-red/frontend/incident-registration/package-lock.json'
+      - '.github/workflows/ci-frontend-equiporojo.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'teams/team-red/frontend/incident-registration/src/**'
+      - 'teams/team-red/frontend/incident-registration/package.json'
+      - 'teams/team-red/frontend/incident-registration/package-lock.json'
+
+env:
+  FRONTEND_DIR: teams/team-red/frontend/incident-registration
+
+jobs:
+  lint-typecheck-build:
+    name: Lint, typecheck y build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.FRONTEND_DIR }}
+
+    steps:
+      - name: Descargar codigo
+        uses: actions/checkout@v7
+
+      - name: Configurar Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: '${{ env.FRONTEND_DIR }}/package-lock.json'
+
+      - name: Instalar dependencias (reproducible)
+        run: npm ci
+
+      - name: Ejecutar ESLint
+        run: npm run lint
+
+      - name: Verificar tipos de TypeScript
+        run: npm run typecheck
+
+      - name: Build de produccion
+        run: npm run build
+        env:
+          # URL ficticia solo para validar que el build no rompe por falta
+          # de variables; en CD se inyecta la URL real del entorno destino.
+          VITE_API_URL: http://localhost:8080
+
+      - name: Publicar build como artefacto de verificacion
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist-preview
+          path: ${{ env.FRONTEND_DIR }}/dist/
+          retention-days: 7

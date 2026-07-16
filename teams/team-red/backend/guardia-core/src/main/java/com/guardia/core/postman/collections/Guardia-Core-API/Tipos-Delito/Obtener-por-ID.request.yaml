@@ -1,0 +1,4 @@
+$kind: http-request
+name: Obtener Tipo de Delito por ID
+method: GET
+url: '{{baseUrl}}/api/v1/tipos-delito/{{tipoDelitoId}}'

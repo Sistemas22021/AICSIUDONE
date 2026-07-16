@@ -1,0 +1,4 @@
+$kind: http-request
+name: Firmar Levantamiento de Evidencia
+method: PATCH
+url: '{{baseUrl}}/api/v1/evidencias/{{evidenciaId}}/firmar/{{investigadorId}}'

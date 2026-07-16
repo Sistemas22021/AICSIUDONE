@@ -1,0 +1,4 @@
+$kind: http-request
+name: "Obtener Categorías de Delitos"
+method: GET
+url: '{{baseUrl}}/api/v1/delitos/categorias'

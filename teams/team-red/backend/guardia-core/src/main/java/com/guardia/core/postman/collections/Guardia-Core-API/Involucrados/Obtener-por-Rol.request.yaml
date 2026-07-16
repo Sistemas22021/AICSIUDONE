@@ -1,0 +1,4 @@
+$kind: http-request
+name: Obtener Involucrados por Rol
+method: GET
+url: '{{baseUrl}}/api/v1/involucrados/rol/{{rol}}'

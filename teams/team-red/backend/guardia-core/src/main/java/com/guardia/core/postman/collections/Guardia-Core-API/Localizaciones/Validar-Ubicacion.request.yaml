@@ -1,0 +1,4 @@
+$kind: http-request
+name: "Validar Ubicación"
+method: GET
+url: '{{baseUrl}}/api/v1/localizaciones/{{localizacionId}}/validar'
