@@ -31,6 +31,11 @@ public class PersonaService {
                 .orElseThrow(() -> new IllegalArgumentException("Persona no encontrada: " + id));
     }
 
+    @Transactional(readOnly = true)
+    public java.util.Optional<Persona> buscarPorDocumento(String documento) {
+        return personaRepository.findByDocumento(documento);
+    }
+
     public Persona actualizar(Long id, Persona datos) {
         Persona existente = obtener(id);
         existente.setNombre(datos.getNombre());

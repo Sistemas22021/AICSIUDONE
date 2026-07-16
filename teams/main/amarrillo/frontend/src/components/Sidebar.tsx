@@ -72,6 +72,10 @@ export default function Sidebar() {
           <span className="material-symbols-outlined">psychology</span>
           {t('Asistente IA')}
         </NavLink>
+        <NavLink to="/testimonios" className={link}>
+          <span className="material-symbols-outlined">record_voice_over</span>
+          {t('Testimonios')}
+        </NavLink>
       </nav>
 
       <div className="sidebar-footer">
