@@ -387,4 +387,127 @@ public class IAService {
 
         return ctx.toString();
     }
+
+    /**
+     * Analiza un suceso y determina la prioridad para el sistema de patrullas (Cian).
+     * Devuelve exactamente uno de: LOW, MEDIUM, HIGH.
+     */
+    public String calcularPrioridadIncidente(Long sucesoId) {
+        Suceso s = sucesoService.obtener(sucesoId);
+
+        String system = """
+                Eres un clasificador de prioridad para despacho de patrullas policiales.
+                Analiza un suceso criminal y devuelve su prioridad de atención.
+                Respondé ÚNICAMENTE con una palabra en mayúsculas: LOW, MEDIUM o HIGH.
+                No agregues explicación ni ningún otro texto.
+                Criterio: HIGH para hechos violentos, en curso o con riesgo a personas;
+                MEDIUM para delitos contra la propiedad ya consumados; LOW para hechos menores o antiguos.
+                """;
+
+        StringBuilder prompt = new StringBuilder();
+        prompt.append("Clasificá la prioridad de este suceso:\n");
+        prompt.append("- Tipo: ").append(s.getTipo()).append("\n");
+        if (s.getDescripcion() != null) prompt.append("- Descripción: ").append(s.getDescripcion()).append("\n");
+        if (s.getModusOperandi() != null) prompt.append("- Modus operandi: ").append(s.getModusOperandi()).append("\n");
+        prompt.append("\nRespondé solo con LOW, MEDIUM o HIGH.");
+
+        RespuestaIA r = claudeClient.preguntar(system, prompt.toString());
+        String salida = r.getContenido() != null ? r.getContenido().trim().toUpperCase() : "";
+
+        // Normalizar: quedarnos solo con una de las tres etiquetas validas
+        if (salida.contains("HIGH")) return "HIGH";
+        if (salida.contains("LOW")) return "LOW";
+        return "MEDIUM"; // valor seguro por defecto
+    }
+
+    /**
+     * Calcula la prioridad de una desaparición para el despacho de patrullas (Cian).
+     * Devuelve LOW, MEDIUM o HIGH.
+     */
+    public String calcularPrioridadDesaparicion(Long desaparecidaId) {
+        PersonaDesaparecida pd = desaparecidaService.obtener(desaparecidaId);
+
+        String system = """
+                Sos un clasificador de prioridad para despacho de patrullas policiales.
+                Analizás un caso de persona desaparecida y devolvés su prioridad de atención.
+                Respondé ÚNICAMENTE con una palabra en mayúsculas: LOW, MEDIUM o HIGH.
+                No agregues explicación ni ningún otro texto.
+                Criterio: HIGH para desapariciones recientes, menores de edad o con circunstancias
+                de riesgo; MEDIUM para casos activos sin riesgo inmediato evidente; LOW para casos
+                antiguos o archivados.
+                """;
+
+        StringBuilder prompt = new StringBuilder();
+        prompt.append("Clasificá la prioridad de esta desaparición:\n");
+        prompt.append("- Nombre: ").append(pd.getNombre()).append(" ").append(pd.getApellido()).append("\n");
+        prompt.append("- Prioridad interna registrada: ").append(pd.getPrioridad()).append("\n");
+        prompt.append("- Estado: ").append(pd.getEstado()).append("\n");
+        prompt.append("- Fecha desaparición: ").append(pd.getFechaDesaparicion()).append("\n");
+        if (pd.getCircunstancias() != null) prompt.append("- Circunstancias: ").append(pd.getCircunstancias()).append("\n");
+        prompt.append("\nRespondé solo con LOW, MEDIUM o HIGH.");
+
+        RespuestaIA r = claudeClient.preguntar(system, prompt.toString());
+        String salida = r.getContenido() != null ? r.getContenido().trim().toUpperCase() : "";
+        if (salida.contains("HIGH")) return "HIGH";
+        if (salida.contains("LOW")) return "LOW";
+        return "MEDIUM";
+    }
+
+    /**
+     * Procesa el texto de un testimonio (transcripción de Naranja) y extrae
+     * campos estructurados usando IA. Devuelve un Map con los campos que la IA
+     * pudo identificar. Si la IA falla, devuelve un mapa con error.
+     */
+    public java.util.Map<String, String> extraerCamposTestimonio(String texto) {
+        if (texto == null || texto.isBlank()) {
+            return java.util.Map.of("error", "El texto del testimonio está vacío");
+        }
+
+        String system = """
+                Sos un analista de inteligencia criminal. Te dan la transcripción de un
+                testimonio (texto plano) y tu tarea es extraer datos estructurados de un
+                posible suceso criminal.
+                Respondé ÚNICAMENTE con un objeto JSON válido, sin texto antes ni después,
+                sin markdown, con exactamente estas claves (usá cadena vacía si no aplica):
+                {
+                  "tipoSugerido": "ROBO_VEHICULO | AVISTAMIENTO | TRANSACCION | DESAPARICION | OTRO",
+                  "modusOperandi": "breve descripción del método usado, si se menciona",
+                  "descripcion": "resumen objetivo de los hechos relatados",
+                  "ubicacionMencionada": "lugar o dirección que se mencione, si hay",
+                  "personasMencionadas": "nombres o alias mencionados, separados por coma"
+                }
+                No inventes datos: si algo no está en el testimonio, dejá la cadena vacía.
+                """;
+
+        String prompt = "TRANSCRIPCIÓN DEL TESTIMONIO:\n" + texto +
+                "\n\nExtraé los campos y respondé solo con el JSON.";
+
+        try {
+            RespuestaIA r = claudeClient.preguntar(system, prompt);
+            String salida = r.getContenido() != null ? r.getContenido().trim() : "";
+
+            // Blindaje: extraer solo el bloque JSON (desde la primera { hasta la última })
+            int ini = salida.indexOf('{');
+            int fin = salida.lastIndexOf('}');
+            if (ini < 0 || fin < 0 || fin <= ini) {
+                return java.util.Map.of("error", "La IA no devolvió un JSON válido",
+                        "respuestaCruda", salida);
+            }
+            String json = salida.substring(ini, fin + 1);
+
+            // Parsear el JSON a un Map<String,String>
+            com.fasterxml.jackson.databind.ObjectMapper mapper =
+                    new com.fasterxml.jackson.databind.ObjectMapper();
+            com.fasterxml.jackson.databind.JsonNode node = mapper.readTree(json);
+
+            java.util.Map<String, String> campos = new java.util.HashMap<>();
+            node.fieldNames().forEachRemaining(k ->
+                    campos.put(k, node.get(k).asText("")));
+            return campos;
+
+        } catch (Exception e) {
+            log.warn("Error al extraer campos del testimonio: {}", e.getMessage());
+            return java.util.Map.of("error", "No se pudo procesar el testimonio: " + e.getMessage());
+        }
+    }
 }
