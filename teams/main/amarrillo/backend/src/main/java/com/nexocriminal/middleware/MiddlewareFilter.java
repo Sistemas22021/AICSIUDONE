@@ -29,6 +29,7 @@ public class MiddlewareFilter extends OncePerRequestFilter {
     private static final List<String> RUTAS_PUBLICAS = List.of(
             "/api/v1/auth/login",
             "/api/v1/auth/registrar",
+            "/api/v1/auth/sso-token-demo",
             "/files/"
     );
 

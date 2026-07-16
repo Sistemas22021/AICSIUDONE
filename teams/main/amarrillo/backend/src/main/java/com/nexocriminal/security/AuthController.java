@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.Map;
@@ -114,5 +116,18 @@ public class AuthController {
         private String password;
 
         private String nombreCompleto;
+    }
+    
+    @Operation(summary= "[DEMO SSO] Generar token de prueba estilo SSO",
+    description = "Genera un JWT firmado con el secreto compartido, como el que emitiría el Auth Service del profesor.")
+    @PostMapping("/sso-token-demo")
+    public ResponseEntity<?> ssoTokenDemo (@RequestBody Map<String, String> body) {
+        String username = body.getOrDefault("username", "usuario.sso");
+        // Firma con el MISMO JwtService (mismo secreto, mismo HS256)
+        String token = jwtService.generarToken(username, "ANALISTA");
+        return ResponseEntity.ok(Map.of(
+            "token", token,
+            "nota", "Token estilo SSO firmado con el secreto compartido."
+        ));
     }
 }

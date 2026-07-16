@@ -32,8 +32,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/files/**").permitAll()
                         .requestMatchers("/api/v1/**").permitAll()
-                        .anyRequest().permitAll()
-                )
+                        .requestMatchers("/api/v1/auth/sso-token-demo").permitAll()
+                        .anyRequest().permitAll())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
