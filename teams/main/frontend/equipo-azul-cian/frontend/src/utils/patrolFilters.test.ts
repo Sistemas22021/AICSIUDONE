@@ -50,7 +50,7 @@ describe('filterPatrols — búsqueda por texto', () => {
   it('filtra por código de unidad (case-insensitive)', () => {
     const result = filterPatrols(mockPatrols, 'p-101', 'ALL');
     expect(result).toHaveLength(1);
-    expect(result[0].code).toBe('P-101');
+    expect(result[0]!.code).toBe('P-101');
   });
 
   it('filtra por nombre del oficial (parcial, case-insensitive)', () => {
@@ -59,13 +59,13 @@ describe('filterPatrols — búsqueda por texto', () => {
     // por lo que "gomez" no matchea "Gómez". Se prueba con el texto real.
     const result = filterPatrols(mockPatrols, 'Gómez', 'ALL');
     expect(result).toHaveLength(1);
-    expect(result[0].officerName).toBe('Of. Laura Gómez');
+    expect(result[0]!.officerName).toBe('Of. Laura Gómez');
   });
 
   it('filtra por rango numérico en el código (ej: "P-3")', () => {
     const result = filterPatrols(mockPatrols, 'P-3', 'ALL');
     expect(result).toHaveLength(1);
-    expect(result[0].code).toBe('P-303');
+    expect(result[0]!.code).toBe('P-303');
   });
 
   it('devuelve array vacío si el searchTerm no coincide con nada', () => {
@@ -79,25 +79,25 @@ describe('filterPatrols — filtrado por estado', () => {
   it('devuelve solo las patrullas AVAILABLE', () => {
     const result = filterPatrols(mockPatrols, '', 'AVAILABLE');
     expect(result).toHaveLength(1);
-    expect(result[0].status).toBe('AVAILABLE');
+    expect(result[0]!.status).toBe('AVAILABLE');
   });
 
   it('devuelve solo las patrullas EN_ROUTE', () => {
     const result = filterPatrols(mockPatrols, '', 'EN_ROUTE');
     expect(result).toHaveLength(1);
-    expect(result[0].status).toBe('EN_ROUTE');
+    expect(result[0]!.status).toBe('EN_ROUTE');
   });
 
   it('devuelve solo las patrullas BUSY', () => {
     const result = filterPatrols(mockPatrols, '', 'BUSY');
     expect(result).toHaveLength(1);
-    expect(result[0].status).toBe('BUSY');
+    expect(result[0]!.status).toBe('BUSY');
   });
 
   it('devuelve solo las patrullas OUT_OF_SERVICE', () => {
     const result = filterPatrols(mockPatrols, '', 'OUT_OF_SERVICE');
     expect(result).toHaveLength(1);
-    expect(result[0].status).toBe('OUT_OF_SERVICE');
+    expect(result[0]!.status).toBe('OUT_OF_SERVICE');
   });
 
   it('devuelve todas las patrullas cuando el filtro es ALL', () => {
@@ -112,7 +112,7 @@ describe('filterPatrols — filtros combinados (texto + estado)', () => {
     // Buscamos "Sgto." (hay dos: Mendez y Rivas) pero solo AVAILABLE
     const result = filterPatrols(mockPatrols, 'Sgto.', 'AVAILABLE');
     expect(result).toHaveLength(1);
-    expect(result[0].code).toBe('P-101');
+    expect(result[0]!.code).toBe('P-101');
   });
 
   it('devuelve vacío si la búsqueda y el estado no coinciden para ninguna patrulla', () => {

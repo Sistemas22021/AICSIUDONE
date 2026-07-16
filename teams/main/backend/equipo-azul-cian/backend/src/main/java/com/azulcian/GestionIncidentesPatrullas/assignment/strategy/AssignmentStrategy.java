@@ -6,16 +6,22 @@ import com.azulcian.GestionIncidentesPatrullas.assignment.model.Assignment;
 // =============================================================
 // PRINCIPIO SOLID: O - Open/Closed Principle (OCP)
 // -------------------------------------------------------------
-// Esta interfaz define el contrato de las estrategias de asignación.
+// Define el contrato de las estrategias de asignación.
 //
-// El sistema está abierto a extensión porque pueden crearse nuevas
-// estrategias (por ejemplo: asignación por proximidad o prioridad)
-// sin modificar el código existente.
+// Permite agregar nuevas estrategias sin modificar el código
+// existente, facilitando la extensión del sistema.
 //
-// Está cerrado a modificación porque este contrato no cambia,
-// garantizando estabilidad del sistema.
+// ✔ Abierto a extensión, cerrado a modificación.
+// =============================================================
+// PRINCIPIO SOLID: L - Liskov Substitution Principle (LSP)
+// -------------------------------------------------------------
+// Cualquier implementación de AssignmentStrategy puede sustituir
+// a otra implementación sin afectar el funcionamiento del sistema.
 //
-// ✔ Permite extender el comportamiento sin modificar el núcleo.
+// Todas las estrategias respetan el contrato definido por execute(),
+// permitiendo su intercambio mediante la abstracción.
+//
+// ✔ Garantiza la sustituibilidad de estrategias.
 // =============================================================
 public interface AssignmentStrategy {
 

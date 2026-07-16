@@ -13,47 +13,31 @@ import java.util.List;
 // =============================================================
 // PRINCIPIO SOLID: S - Single Responsibility Principle (SRP)
 // -------------------------------------------------------------
-// Esta clase tiene una única responsabilidad: coordinar el Caso de
-// Uso CU-03 "Asignación Operativa".
+// Coordina el Caso de Uso CU-03 "Asignación Operativa",
+// delegando la lógica de negocio a la estrategia correspondiente.
 //
-// Su función es actuar como punto de entrada del caso de uso,
-// delegando la lógica de negocio a la estrategia de asignación.
-//
-// Responsabilidades que NO tiene:
-// • No contiene reglas de negocio complejas.
-// • No decide cómo se asigna una patrulla.
-// • No gestiona validaciones internas.
-//
-// ✔ Mantiene una única razón de cambio: la coordinación del caso de uso.
-// =============================================================
-//
+// ✔ Mantiene una única responsabilidad.
 // =============================================================
 // PRINCIPIO SOLID: D - Dependency Inversion Principle (DIP)
 // -------------------------------------------------------------
-// Esta clase depende de abstracciones (AssignmentStrategy y
-// AssignmentRepository), no de implementaciones concretas.
+// Depende de abstracciones como AssignmentStrategy,
+// reduciendo el acoplamiento con implementaciones concretas.
 //
-// Spring inyecta automáticamente las dependencias, lo que:
-// • Reduce el acoplamiento.
-// • Permite testabilidad.
-// • Facilita extensibilidad.
-//
-// ✔ Cumple DIP correctamente.
-// =============================================================
-//
+// ✔ Facilita mantenimiento y pruebas.
 // =============================================================
 // PRINCIPIO SOLID: O - Open/Closed Principle (OCP)
 // -------------------------------------------------------------
-// El comportamiento de asignación está encapsulado en AssignmentStrategy.
+// Permite cambiar o agregar estrategias de asignación sin
+// modificar la lógica del servicio.
 //
-// Esto permite extender el sistema agregando nuevas estrategias como:
-// • ProximityAssignmentStrategy
-// • PriorityAssignmentStrategy
-// • LoadBalancedAssignmentStrategy
+// ✔ Facilita la extensión del sistema.
+// =============================================================
+// PRINCIPIO SOLID: L - Liskov Substitution Principle (LSP)
+// -------------------------------------------------------------
+// Al trabajar con AssignmentStrategy, cualquier implementación
+// compatible puede sustituir a otra sin afectar el servicio.
 //
-// sin modificar este servicio.
-//
-// ✔ Abierto a extensión, cerrado a modificación.
+// ✔ Permite intercambiar estrategias manteniendo el contrato.
 // =============================================================
 public class AssignmentService {
 
@@ -71,8 +55,7 @@ public class AssignmentService {
     // ==========================================================
     // CU-03: ASIGNACIÓN OPERATIVA
     // ----------------------------------------------------------
-    // Punto de entrada del caso de uso.
-    // Toda la lógica de asignación se delega a la estrategia.
+    // Punto de entrada del caso de uso. Toda la lógica de asignación se delega a la estrategia.
     // ==========================================================
     public Assignment assign(AssignmentRequestDTO dto) {
         return assignmentStrategy.execute(dto);

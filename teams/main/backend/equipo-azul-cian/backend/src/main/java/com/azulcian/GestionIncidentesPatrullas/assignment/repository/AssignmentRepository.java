@@ -9,41 +9,12 @@ import java.util.List;
 import java.util.Optional;
 
 // =============================================================
-// PRINCIPIO SOLID: L - Liskov Substitution Principle (LSP)
-// -------------------------------------------------------------
-// AssignmentRepository hereda de JpaRepository, lo que permite
-// que pueda ser sustituido por su tipo base sin afectar el
-// comportamiento del sistema.
-//
-// Durante el Caso de Uso CU-03 "Asignación Operativa", el servicio
-// utiliza este repositorio como una abstracción del acceso a datos,
-// sin depender de su implementación concreta.
-//
-// Spring Data JPA garantiza la implementación automática,
-// respetando el contrato definido por JpaRepository.
-//
-// ✔ Cumple el Principio de Sustitución de Liskov (LSP).
-// =============================================================
-//
-// =============================================================
 // PRINCIPIO SOLID: I - Interface Segregation Principle (ISP)
 // -------------------------------------------------------------
-// Esta interfaz está diseñada específicamente para el dominio de
-// asignaciones dentro del Caso de Uso CU-03.
+// Define métodos específicos para la gestión de asignaciones,
+// evitando depender de operaciones innecesarias.
 //
-// No obliga a los clientes a depender de métodos que no utilizan,
-// manteniendo una interfaz pequeña, cohesiva y enfocada.
-//
-// Métodos expuestos:
-//
-// • findByIncident(): permite validar si un incidente ya tiene asignación.
-// • findByFinishedAtIsNull(): permite obtener asignaciones activas.
-// • findByPatrolAndFinishedAtIsNull(): permite obtener la asignación activa de una patrulla.
-//
-// Esto evita una interfaz sobrecargada con responsabilidades ajenas
-// al dominio de asignación.
-//
-// ✔ Cumple el principio de Segregación de Interfaces (ISP).
+// ✔ Mantiene una interfaz pequeña y enfocada al dominio.
 // =============================================================
 public interface AssignmentRepository extends JpaRepository<Assignment, Long> {
 

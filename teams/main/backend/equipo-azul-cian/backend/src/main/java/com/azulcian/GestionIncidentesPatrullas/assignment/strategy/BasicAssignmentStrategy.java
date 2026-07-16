@@ -11,6 +11,14 @@ import com.azulcian.GestionIncidentesPatrullas.patrol.model.PatrolStatus;
 import com.azulcian.GestionIncidentesPatrullas.patrol.repository.PatrolRepository;
 import org.springframework.stereotype.Component;
 
+// =============================================================
+// PRINCIPIO SOLID: L - Liskov Substitution Principle (LSP)
+// -------------------------------------------------------------
+// Implementa AssignmentStrategy respetando su contrato, por lo que
+// puede ser sustituida por cualquier otra estrategia compatible.
+//
+// ✔ Permite intercambiar estrategias sin afectar al sistema.
+// =============================================================
 @Component
 public class BasicAssignmentStrategy implements AssignmentStrategy {
 

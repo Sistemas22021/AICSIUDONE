@@ -23,31 +23,12 @@ import java.util.List;
 // =============================================================
 // PRINCIPIO SOLID: S - Single Responsibility Principle (SRP)
 // -------------------------------------------------------------
-// Esta clase tiene una única responsabilidad:
+// Este controlador únicamente gestiona solicitudes HTTP y delega
+// la lógica del CU-03 al AssignmentService.
 //
-// Actuar como controlador REST del módulo de asignaciones.
+// No contiene reglas de negocio ni acceso directo a datos.
 //
-// Su función consiste únicamente en:
-//
-// • Recibir solicitudes HTTP.
-// • Mapear los endpoints de la API.
-// • Delegar la lógica de negocio al AssignmentService.
-// • Retornar la respuesta al cliente.
-//
-// Esta clase NO:
-//
-// • Contiene reglas de negocio.
-// • Valida estados de incidentes o patrullas.
-// • Accede directamente a la base de datos.
-// • Gestiona la persistencia de información.
-//
-// Toda la lógica del Caso de Uso CU-03 "Asignación Operativa"
-// se encuentra encapsulada en AssignmentService.
-//
-// De esta manera, si cambia la lógica del negocio, este
-// controlador no necesita modificarse.
-//
-// ✔ Cumple el principio de Responsabilidad Única (SRP).
+// ✔ Mantiene una única responsabilidad.
 // =============================================================
 public class AssignmentController {
 

@@ -79,6 +79,23 @@ class IncidentServiceTest {
         assertEquals(1L, result.getId());
     }
 
+    @Test
+    void getIncidentById_shouldThrowExceptionWhenNotFound() {
+
+        when(incidentRepository.findById(1L))
+                .thenReturn(Optional.empty());
+
+        RuntimeException exception = assertThrows(
+                RuntimeException.class,
+                () -> incidentService.getIncidentById(1L)
+        );
+
+        assertEquals(
+                "Incident not found with id: 1",
+                exception.getMessage()
+        );
+    }
+
     // =========================================
     // TEST UPDATE STATUS
     // =========================================
@@ -91,10 +108,57 @@ class IncidentServiceTest {
         when(incidentRepository.save(any(Incident.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        // Se cambia a IN_PROGRESS porque CLOSED ahora lanza excepción en este método
+        // Se cambia a IN_PROGRESS porque CLOSED ahora lanza excepción en este metodo
         Incident result = incidentService.updateStatus(1L, IncidentStatus.IN_PROGRESS);
 
         assertEquals(IncidentStatus.IN_PROGRESS, result.getStatus());
+    }
+
+    @Test
+    void updateStatus_shouldRejectClosedStatus() {
+
+        when(incidentRepository.findById(1L))
+                .thenReturn(Optional.of(incident));
+
+        RuntimeException exception = assertThrows(
+                RuntimeException.class,
+                () -> incidentService.updateStatus(
+                        1L,
+                        IncidentStatus.CLOSED
+                )
+        );
+
+        assertEquals(
+                "Use close endpoint to close incidents",
+                exception.getMessage()
+        );
+    }
+
+    // =========================================
+    // TEST GET RECENT
+    // =========================================
+    @Test
+    void getRecentCreated_shouldReturnIncidents() {
+
+        when(incidentRepository.findTop10ByOrderByCreatedAtDesc())
+                .thenReturn(List.of(incident));
+
+        List<Incident> result =
+                incidentService.getRecentCreated();
+
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    void getRecentUpdates_shouldReturnIncidents() {
+
+        when(incidentRepository.findTop10ByOrderByUpdatedAtDesc())
+                .thenReturn(List.of(incident));
+
+        List<Incident> result =
+                incidentService.getRecentUpdates();
+
+        assertEquals(1, result.size());
     }
 
     // =========================================
@@ -121,6 +185,39 @@ class IncidentServiceTest {
         assertEquals(1, result.getInProgress());
         assertEquals(1, result.getClosed());
         assertEquals(3, result.getTotal());
+    }
+
+    // =========================================
+    // TEST GET DETAILS & ALL INCIDENTS
+    // =========================================
+    @Test
+    void getIncidentDetailById_shouldReturnDTO() {
+
+        when(incidentRepository.findById(1L))
+                .thenReturn(Optional.of(incident));
+
+        when(assignmentRepository.findByIncident(incident))
+                .thenReturn(Optional.empty());
+
+        var result =
+                incidentService.getIncidentDetailById(1L);
+
+        assertEquals(incident.getId(), result.getId());
+        assertEquals(incident.getType(), result.getType());
+    }
+
+    @Test
+    void getAllIncidents_shouldReturnDTOList() {
+
+        when(incidentRepository.findTop10ByOrderByCreatedAtDesc())
+                .thenReturn(List.of(incident));
+
+        when(assignmentRepository.findByIncident(incident))
+                .thenReturn(Optional.empty());
+
+        var result = incidentService.getAllIncidents();
+
+        assertEquals(1, result.size());
     }
 
     // =========================================
