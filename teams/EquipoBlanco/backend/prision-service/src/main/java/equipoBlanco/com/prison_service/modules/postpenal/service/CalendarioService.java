@@ -11,11 +11,15 @@ import equipoBlanco.com.prison_service.modules.postpenal.repository.CalendarioPr
 import equipoBlanco.com.prison_service.modules.postpenal.repository.ExpedienteSeguimientoRepository;
 import equipoBlanco.com.prison_service.modules.control.model.Alerta;
 import equipoBlanco.com.prison_service.modules.control.repository.AlertaRepository;
+import equipoBlanco.com.prison_service.modules.inmates.model.Inmate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -92,8 +96,6 @@ public class CalendarioService {
     }
 
     public List<CalendarioDto> obtenerPendientesHoy(String oficialCedula) {
-        // En una app real, cruzaríamos con ExpedienteSeguimiento para filtrar por el oficial
-        // Para simplicidad en este MVP, devolveremos todas las pendientes de hoy
         LocalDate hoy = LocalDate.now();
         List<CalendarioPresentacion> pendientes = calendarioRepository.findByFechaProgramadaAndEstado(hoy, "PENDIENTE");
 
@@ -132,11 +134,53 @@ public class CalendarioService {
         CalendarioPresentacion cp = calendarioRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Presentación no encontrada: " + id));
 
-        cp.setEstado("CUMPLIDA");
-        String obsActual = cp.getObservaciones() == null ? "" : cp.getObservaciones() + "\n";
-        cp.setObservaciones(obsActual + "[" + java.time.LocalDateTime.now() + " - " + dto.getOficialQueRegistro() + "]: Cumplida - " + dto.getObservaciones());
+        // Validar que no esté ya cumplida (bloquear reescrituras)
+        if ("CUMPLIDA".equals(cp.getEstado())) {
+            throw new RuntimeException("Esta presentación ya fue registrada como cumplida y no puede modificarse.");
+        }
 
-        return toDto(calendarioRepository.save(cp));
+        cp.setEstado("CUMPLIDA");
+        cp.setFechaReal(LocalDate.now());
+
+        // Parsear hora real
+        if (dto.getHoraReal() != null && !dto.getHoraReal().isEmpty()) {
+            try {
+                cp.setHoraReal(LocalTime.parse(dto.getHoraReal(), DateTimeFormatter.ofPattern("HH:mm")));
+            } catch (Exception e) {
+                cp.setHoraReal(LocalTime.now());
+            }
+        } else {
+            cp.setHoraReal(LocalTime.now());
+        }
+
+        String obsActual = cp.getObservaciones() == null ? "" : cp.getObservaciones() + "\n";
+        cp.setObservaciones(obsActual + "[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")) + " - " + dto.getOficialQueRegistro() + "]: Cumplida - " + (dto.getObservaciones() != null ? dto.getObservaciones() : "Sin observaciones"));
+
+        CalendarioPresentacion saved = calendarioRepository.save(cp);
+
+        // Registrar en statusHistory del recluso
+        try {
+            ExpedienteSeguimiento exp = expedienteSeguimientoRepository.findById(cp.getExpedienteId()).orElse(null);
+            if (exp != null) {
+                Inmate inmate = inmateRepository.findById(exp.getIdRecluso()).orElse(null);
+                if (inmate != null) {
+                    if (inmate.getStatusHistory() == null) {
+                        inmate.setStatusHistory(new ArrayList<>());
+                    }
+                    inmate.getStatusHistory().add(String.format("[%s] Presentación del %s cumplida. Hora: %s. Registrado por: %s. Obs: %s",
+                        LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")),
+                        cp.getFechaProgramada(),
+                        cp.getHoraReal(),
+                        dto.getOficialQueRegistro(),
+                        dto.getObservaciones() != null ? dto.getObservaciones() : "Ninguna"));
+                    inmateRepository.save(inmate);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error registrando cumplimiento en historial del recluso: " + e.getMessage());
+        }
+
+        return toDto(saved);
     }
 
     @Transactional
@@ -144,9 +188,17 @@ public class CalendarioService {
         CalendarioPresentacion cp = calendarioRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Presentación no encontrada: " + id));
 
+        // Validar que no haya sido ya procesada como INCUMPLIDA
+        if ("INCUMPLIDA".equals(cp.getEstado())) {
+            throw new RuntimeException("Esta presentación ya fue registrada como incumplida. No se puede duplicar el registro.");
+        }
+
         cp.setEstado("INCUMPLIDA");
+        cp.setDetectadoPorSistema(false);
+        cp.setFechaIncumplimiento(dto.getFechaDetectada() != null ? dto.getFechaDetectada() : LocalDateTime.now());
+
         String obsActual = cp.getObservaciones() == null ? "" : cp.getObservaciones() + "\n";
-        cp.setObservaciones(obsActual + "[" + java.time.LocalDateTime.now() + " - " + dto.getOficialQueRegistro() + "]: Incumplida - " + dto.getObservaciones());
+        cp.setObservaciones(obsActual + "[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")) + " - " + dto.getOficialQueRegistro() + "]: Incumplida (registrado por oficial) - " + (dto.getObservaciones() != null ? dto.getObservaciones() : "Sin observaciones"));
 
         calendarioRepository.save(cp);
 
@@ -159,11 +211,29 @@ public class CalendarioService {
         exp.setContadorIncumplimientos(contador);
 
         if (contador >= 3) {
-            exp.setEstado("Alerta Crítica Activa");
+            exp.setEstado("alerta_critica");
         }
         expedienteSeguimientoRepository.save(exp);
 
         crearAlertaEscalonada(exp, contador);
+
+        // Registrar en statusHistory del recluso
+        try {
+            Inmate inmate = inmateRepository.findById(exp.getIdRecluso()).orElse(null);
+            if (inmate != null) {
+                if (inmate.getStatusHistory() == null) {
+                    inmate.setStatusHistory(new ArrayList<>());
+                }
+                inmate.getStatusHistory().add(String.format("[%s] Incumplimiento #%d registrado por oficial %s. Obs: %s",
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")),
+                    contador,
+                    dto.getOficialQueRegistro(),
+                    dto.getObservaciones() != null ? dto.getObservaciones() : "Ninguna"));
+                inmateRepository.save(inmate);
+            }
+        } catch (Exception e) {
+            System.err.println("Error registrando incumplimiento en historial del recluso: " + e.getMessage());
+        }
 
         return toDto(cp);
     }
@@ -175,8 +245,11 @@ public class CalendarioService {
 
         for (CalendarioPresentacion cp : vencidas) {
             cp.setEstado("INCUMPLIDA");
+            cp.setDetectadoPorSistema(true);
+            cp.setFechaIncumplimiento(LocalDateTime.now());
+
             String obsActual = cp.getObservaciones() == null ? "" : cp.getObservaciones() + "\n";
-            cp.setObservaciones(obsActual + "[" + java.time.LocalDateTime.now() + " - Sistema]: Incumplida - Detectado por sistema");
+            cp.setObservaciones(obsActual + "[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")) + " - Sistema]: Incumplida - Detectado por sistema");
             calendarioRepository.save(cp);
 
             ExpedienteSeguimiento exp = expedienteSeguimientoRepository.findById(cp.getExpedienteId())
@@ -187,7 +260,7 @@ public class CalendarioService {
             exp.setContadorIncumplimientos(contador);
 
             if (contador >= 3) {
-                exp.setEstado("Alerta Crítica Activa");
+                exp.setEstado("alerta_critica");
             }
             expedienteSeguimientoRepository.save(exp);
 
@@ -218,7 +291,7 @@ public class CalendarioService {
                 .expedienteId(exp.getId())
                 .nombreEgresado(nombreEgresado)
                 .cedulaEgresado(cedulaEgresado)
-                .fechaEmision(java.time.LocalDateTime.now())
+                .fechaEmision(LocalDateTime.now())
                 .destinatario(exp.getOficialAsignadoNombre())
                 .estado("activa")
                 .accionRequerida(mensaje)
@@ -230,7 +303,7 @@ public class CalendarioService {
                 .expedienteId(exp.getId())
                 .nombreEgresado(nombreEgresado)
                 .cedulaEgresado(cedulaEgresado)
-                .fechaEmision(java.time.LocalDateTime.now())
+                .fechaEmision(LocalDateTime.now())
                 .destinatario(exp.getOficialAsignadoNombre())
                 .estado("activa")
                 .accionRequerida(mensaje)
@@ -240,7 +313,7 @@ public class CalendarioService {
                 .expedienteId(exp.getId())
                 .nombreEgresado(nombreEgresado)
                 .cedulaEgresado(cedulaEgresado)
-                .fechaEmision(java.time.LocalDateTime.now())
+                .fechaEmision(LocalDateTime.now())
                 .destinatario("Supervisor")
                 .estado("activa")
                 .accionRequerida(mensaje)
@@ -252,10 +325,10 @@ public class CalendarioService {
                 .expedienteId(exp.getId())
                 .nombreEgresado(nombreEgresado)
                 .cedulaEgresado(cedulaEgresado)
-                .fechaEmision(java.time.LocalDateTime.now())
+                .fechaEmision(LocalDateTime.now())
                 .destinatario("Supervisor")
                 .estado("activa")
-                .accionRequerida("Solicitud de medida urgente ante tribunal")
+                .accionRequerida("CRÍTICO: Incumplimiento #" + contador + " - Solicitud de medida urgente ante tribunal")
                 .build();
             alertaRepository.save(alerta);
         }
@@ -288,6 +361,10 @@ public class CalendarioService {
             .observaciones(c.getObservaciones())
             .reclusoNombre(reclusoNombre)
             .reclusoCedula(reclusoCedula)
+            .fechaReal(c.getFechaReal())
+            .horaReal(c.getHoraReal())
+            .detectadoPorSistema(c.getDetectadoPorSistema())
+            .fechaIncumplimiento(c.getFechaIncumplimiento())
             .build();
     }
 }

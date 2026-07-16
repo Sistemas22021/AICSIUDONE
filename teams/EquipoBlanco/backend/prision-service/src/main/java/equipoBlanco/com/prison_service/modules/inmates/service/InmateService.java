@@ -44,6 +44,10 @@ public class InmateService {
             throw new RuntimeException("Ya existe un expediente activo con la cédula: " + dto.getCedula());
         }
 
+        if (dto.getBirthDate() == null) {
+            throw new RuntimeException("La fecha de nacimiento es obligatoria");
+        }
+
         LocalDate release = null;
         if (dto.getAdmissionDate() != null) {
             release = dto.getAdmissionDate()

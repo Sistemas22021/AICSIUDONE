@@ -6,4 +6,5 @@ import lombok.Data;
 public class CumplimientoDto {
     private String oficialQueRegistro;
     private String observaciones;
+    private String horaReal; // HH:mm
 }

@@ -990,9 +990,30 @@ export default function CellMapPage() {
                   )}
                 </div>
                 {modalAsignacion.bloqueada ? (
-                  <div className="p-3.5 bg-red-50 border border-red-200 text-red-800 rounded-xl font-bold flex items-center gap-2">
-                    <ShieldAlert className="w-5 h-5 text-red-600 shrink-0" />
-                    Esta celda se encuentra clausurada por investigación judicial. No se permiten nuevos ingresos.
+                  <div className="space-y-3">
+                    <div className="p-3.5 bg-red-50 border border-red-200 text-red-800 rounded-xl font-bold flex items-center gap-2">
+                      <ShieldAlert className="w-5 h-5 text-red-600 shrink-0" />
+                      Esta celda se encuentra clausurada por investigación judicial. No se permiten nuevos ingresos.
+                    </div>
+                    {(auth.hasRole('Supervisor') || auth.hasRole('Administrador del Sistema')) && (
+                      <button
+                        onClick={async () => {
+                          if (!confirm('¿Está seguro de desbloquear esta celda? Esto permitirá nuevamente asignar reclusos.')) return
+                          try {
+                            await api.post(`/cells/${modalAsignacion.id}/unlock`)
+                            alert('Celda desbloqueada exitosamente.')
+                            setModalAsignacion(null)
+                            loadData()
+                          } catch {
+                            alert('Error al desbloquear la celda.')
+                          }
+                        }}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-500 text-white rounded-xl hover:bg-amber-600 transition-colors text-xs font-bold uppercase tracking-wider shadow-sm"
+                      >
+                        <ShieldAlert className="w-4 h-4" />
+                        Desbloquear Celda por Investigación
+                      </button>
+                    )}
                   </div>
                 ) : auth.hasRole('Oficial Penitenciario') && modalAsignacion.reclusosAsignados.length < modalAsignacion.capacidad ? (
                   <div className="pt-3.5 border-t border-gray-150">

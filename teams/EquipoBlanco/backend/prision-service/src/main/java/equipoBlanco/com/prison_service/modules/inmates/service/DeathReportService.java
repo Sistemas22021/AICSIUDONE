@@ -2,6 +2,7 @@ package equipoBlanco.com.prison_service.modules.inmates.service;
 
 import equipoBlanco.com.prison_service.modules.cells.model.Cell;
 import equipoBlanco.com.prison_service.modules.cells.repository.CellRepository;
+import equipoBlanco.com.prison_service.modules.inmates.dto.ConcludeIncidentDto;
 import equipoBlanco.com.prison_service.modules.inmates.dto.DeathReportDto;
 import equipoBlanco.com.prison_service.modules.inmates.dto.IncidentParticipantDto;
 import equipoBlanco.com.prison_service.modules.inmates.dto.InternalIncidentDto;
@@ -42,26 +43,58 @@ public class DeathReportService {
             throw new RuntimeException("El recluso ya se encuentra egresado");
         }
 
+        LocalDateTime eventTime = dto.getDateTimeFound() != null ? dto.getDateTimeFound() : LocalDateTime.now();
+
         DeathReport report = DeathReport.builder()
             .inmate(inmate)
             .deceaseType("NATURAL")
-            .dateTimeFound(dto.getDateTimeFound() != null ? dto.getDateTimeFound() : LocalDateTime.now())
+            .dateTimeFound(eventTime)
             .description(dto.getDescription())
             .build();
         deathReportRepository.save(report);
 
-        // Finalize egress
+        // ── Registrar en bitácora de incidentes (ya cerrado, no genera investigación) ──
+        String code = String.format("INC-%d-%04d", eventTime.getYear(), internalIncidentRepository.count() + 1);
+        String inmateName = inmate.getFirstName() + " " + inmate.getFirstLastname();
+        InternalIncident naturalIncident = InternalIncident.builder()
+            .code(code)
+            .cellId(inmate.getCell() != null ? inmate.getCell().getId() : null)
+            .cellIdentifier(inmate.getCell() != null ? inmate.getCell().getIdentifier() : "N/A")
+            .description("Fallecimiento Natural. " + dto.getDescription())
+            .incidentDate(eventTime)
+            .reporter(username)
+            .status("CERRADO")
+            .conclusionType("NATURAL")
+            .causaMedicaDefinitiva(dto.getDescription())
+            .concludedAt(eventTime)
+            .concludedBy(username)
+            .responsableNoAplica(true)
+            .build();
+        InternalIncident savedNaturalIncident = internalIncidentRepository.save(naturalIncident);
+
+        // Participante fallecido en el incidente natural
+        IncidentParticipant part = IncidentParticipant.builder()
+            .incident(savedNaturalIncident)
+            .inmate(inmate)
+            .role("FALLECIDO")
+            .initialStatus("FALLECIDO")
+            .comments("Fallecimiento Natural. " + dto.getDescription())
+            .build();
+        incidentParticipantRepository.save(part);
+
+        // ── Finalizar egreso ──────────────────────────────────────────────────
         inmate.setStatus(InmateStatus.EGRESADO);
         inmate.setCell(null);
-        inmate.setDischargeDate(report.getDateTimeFound().toLocalDate());
+        inmate.setDischargeDate(eventTime.toLocalDate());
         inmate.setMotivoEgreso("Fallecimiento");
         inmate.setObservacionesEgreso("Fallecimiento Natural: " + dto.getDescription());
 
         if (inmate.getStatusHistory() == null) {
             inmate.setStatusHistory(new ArrayList<>());
         }
-        inmate.getStatusHistory().add(String.format("[%s] Fallecimiento Natural registrado por %s. Expediente cerrado. Celda liberada.",
-            LocalDateTime.now().format(FORMATTER), username));
+        inmate.getStatusHistory().add(String.format(
+            "[%s] Fallecimiento Natural registrado por %s. Acta de incidente [%s] generada. Expediente cerrado.",
+            LocalDateTime.now().format(FORMATTER), username, code));
         inmateRepository.save(inmate);
 
         return toDto(report);
@@ -209,6 +242,86 @@ public class DeathReportService {
         return toIncidentDto(inc, parts);
     }
 
+    @Transactional
+    public InternalIncidentDto concludeIncident(UUID id, ConcludeIncidentDto dto, String username) {
+        InternalIncident inc = internalIncidentRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Incidente no encontrado"));
+
+        if (!"EN_INVESTIGACION".equals(inc.getStatus())) {
+            throw new RuntimeException("El incidente ya está cerrado o en un estado que no permite cierre.");
+        }
+
+        // Validar campos legales obligatorios
+        if (dto.getAutopsiaProtocolo() == null || dto.getAutopsiaProtocolo().isBlank()) {
+            throw new RuntimeException("El Número de Protocolo de Autopsia es obligatorio para cerrar la investigación.");
+        }
+        if (dto.getFiscaliaExpediente() == null || dto.getFiscaliaExpediente().isBlank()) {
+            throw new RuntimeException("El Número de Expediente de la Fiscalía es obligatorio para cerrar la investigación.");
+        }
+
+        inc.setConclusionType(dto.getConclusionType());
+        inc.setCausaMedicaDefinitiva(dto.getCausaMedicaDefinitiva());
+        inc.setAutopsiaProtocolo(dto.getAutopsiaProtocolo());
+        inc.setFiscaliaExpediente(dto.getFiscaliaExpediente());
+        inc.setResponsableInmateId(dto.getResponsableInmateId());
+        inc.setResponsablePersonal(dto.getResponsablePersonal());
+        inc.setResponsableNoAplica(Boolean.TRUE.equals(dto.getResponsableNoAplica()));
+        inc.setConcludedAt(LocalDateTime.now());
+        inc.setConcludedBy(username);
+        inc.setStatus("CERRADO");
+
+        // Desbloquear la celda automáticamente al cerrar la investigación
+        if (inc.getCellId() != null) {
+            cellRepository.findById(inc.getCellId()).ifPresent(cell -> {
+                cell.setBlockedForInvestigation(false);
+                cellRepository.save(cell);
+            });
+        }
+
+        inc.setAdditionalSentenceYears(dto.getAdditionalSentenceYears());
+        inc.setAdditionalSentenceMonths(dto.getAdditionalSentenceMonths());
+
+        internalIncidentRepository.save(inc);
+
+        // ── Imputar condena adicional al responsable (si aplica) ───────────────────
+        if (!Boolean.TRUE.equals(dto.getResponsableNoAplica()) && dto.getResponsableInmateId() != null) {
+            Inmate responsable = inmateRepository.findById(dto.getResponsableInmateId())
+                .orElseThrow(() -> new RuntimeException("Recluso responsable no encontrado: " + dto.getResponsableInmateId()));
+
+            int addYears = dto.getAdditionalSentenceYears() != null ? dto.getAdditionalSentenceYears() : 0;
+            int addMonths = dto.getAdditionalSentenceMonths() != null ? dto.getAdditionalSentenceMonths() : 0;
+
+            if (addYears > 0 || addMonths > 0) {
+                int currentYears = responsable.getSentenceYears() != null ? responsable.getSentenceYears() : 0;
+                int currentMonths = responsable.getSentenceMonths() != null ? responsable.getSentenceMonths() : 0;
+
+                int totalMonths = (currentYears * 12 + currentMonths) + (addYears * 12 + addMonths);
+                responsable.setSentenceYears(totalMonths / 12);
+                responsable.setSentenceMonths(totalMonths % 12);
+
+                // Recalcular fecha estimada de egreso
+                if (responsable.getAdmissionDate() != null) {
+                    responsable.setEstimatedReleaseDate(
+                        responsable.getAdmissionDate().plusYears(responsable.getSentenceYears())
+                            .plusMonths(responsable.getSentenceMonths())
+                    );
+                }
+
+                String responsableName = responsable.getFirstName() + " " + responsable.getFirstLastname();
+                if (responsable.getStatusHistory() == null) responsable.setStatusHistory(new ArrayList<>());
+                responsable.getStatusHistory().add(String.format(
+                    "[%s] Condena ampliada en %d año(s) y %d mes(es) por responsabilidad en incidente %s (concluido por %s). Nueva condena total: %d años %d meses.",
+                    LocalDateTime.now().format(FORMATTER), addYears, addMonths, inc.getCode(), username,
+                    responsable.getSentenceYears(), responsable.getSentenceMonths()));
+                inmateRepository.save(responsable);
+            }
+        }
+
+        List<IncidentParticipantDto> parts = incidentParticipantRepository.findByIncidentId(id).stream()
+            .map(this::toParticipantDto).toList();
+        return toIncidentDto(inc, parts);
+    }
+
     public DeathReportDto getDeathReportByInmate(UUID inmateId) {
         DeathReport report = deathReportRepository.findByInmateId(inmateId)
             .orElseThrow(() -> new RuntimeException("Reporte de fallecimiento no encontrado"));
@@ -238,6 +351,14 @@ public class DeathReportService {
     }
 
     private InternalIncidentDto toIncidentDto(InternalIncident inc, List<IncidentParticipantDto> parts) {
+        // Resolver nombre del responsable si hay ID
+        String responsableInmateName = null;
+        if (inc.getResponsableInmateId() != null) {
+            responsableInmateName = inmateRepository.findById(inc.getResponsableInmateId())
+                .map(r -> r.getFirstName() + " " + r.getFirstLastname())
+                .orElse(null);
+        }
+
         return InternalIncidentDto.builder()
             .id(inc.getId())
             .code(inc.getCode())
@@ -248,6 +369,18 @@ public class DeathReportService {
             .reporter(inc.getReporter())
             .status(inc.getStatus())
             .participants(parts)
+            .conclusionType(inc.getConclusionType())
+            .causaMedicaDefinitiva(inc.getCausaMedicaDefinitiva())
+            .autopsiaProtocolo(inc.getAutopsiaProtocolo())
+            .fiscaliaExpediente(inc.getFiscaliaExpediente())
+            .responsableInmateId(inc.getResponsableInmateId())
+            .responsableInmateName(responsableInmateName)
+            .responsablePersonal(inc.getResponsablePersonal())
+            .responsableNoAplica(inc.getResponsableNoAplica())
+            .concludedAt(inc.getConcludedAt())
+            .concludedBy(inc.getConcludedBy())
+            .additionalSentenceYears(inc.getAdditionalSentenceYears())
+            .additionalSentenceMonths(inc.getAdditionalSentenceMonths())
             .build();
     }
 }

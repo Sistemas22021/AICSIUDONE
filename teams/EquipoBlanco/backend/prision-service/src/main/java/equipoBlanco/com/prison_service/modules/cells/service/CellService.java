@@ -102,6 +102,18 @@ public class CellService {
         return toDto(cell);
     }
 
+    public CellDto unlockCell(UUID cellId) {
+        Cell cell = cellRepository.findById(cellId)
+            .orElseThrow(() -> new RuntimeException("Celda no encontrada"));
+
+        if (!cell.isBlockedForInvestigation()) {
+            throw new RuntimeException("La celda no se encuentra bloqueada");
+        }
+
+        cell.setBlockedForInvestigation(false);
+        return toDto(cellRepository.save(cell));
+    }
+
     private CellDto toDto(Cell cell) {
         int occupancy = inmateRepository.countByCellId(cell.getId());
         String status = cell.isBlockedForInvestigation() ? "BLOQUEADA"

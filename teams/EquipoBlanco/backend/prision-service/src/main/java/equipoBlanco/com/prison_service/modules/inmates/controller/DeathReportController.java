@@ -2,6 +2,7 @@ package equipoBlanco.com.prison_service.modules.inmates.controller;
 
 import equipoBlanco.com.prison_service.modules.inmates.dto.BelongingHandoverDto;
 import equipoBlanco.com.prison_service.modules.inmates.dto.BelongingDto;
+import equipoBlanco.com.prison_service.modules.inmates.dto.ConcludeIncidentDto;
 import equipoBlanco.com.prison_service.modules.inmates.dto.DeathReportDto;
 import equipoBlanco.com.prison_service.modules.inmates.dto.InternalIncidentDto;
 import equipoBlanco.com.prison_service.modules.inmates.service.BelongingService;
@@ -78,6 +79,18 @@ public class DeathReportController {
             @Parameter(description = "Rol del usuario (debe ser Supervisor)") @RequestHeader(value = "X-User-Role", defaultValue = "") String role) {
         verifySupervisorRole(role);
         return ResponseEntity.ok(deathReportService.getIncidentById(id));
+    }
+
+    @PutMapping("/incidents/{id}/conclude")
+    @Operation(summary = "Concluir investigación de incidente",
+               description = "Cierra formalmente una investigación. Requiere Protocolo de Autopsia y Expediente de Fiscalía obligatorios. Desbloquea la celda automáticamente.")
+    public ResponseEntity<InternalIncidentDto> concludeIncident(
+            @Parameter(description = "UUID del incidente") @PathVariable UUID id,
+            @RequestBody ConcludeIncidentDto dto,
+            @Parameter(description = "Nombre del supervisor") @RequestHeader(value = "X-User-Name", defaultValue = "Supervisor") String username,
+            @Parameter(description = "Rol del usuario (debe ser Supervisor)") @RequestHeader(value = "X-User-Role", defaultValue = "") String role) {
+        verifySupervisorRole(role);
+        return ResponseEntity.ok(deathReportService.concludeIncident(id, dto, username));
     }
 
     @GetMapping("/inmates/{id}/death-report")

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ShieldAlert, Eye, AlertTriangle } from 'lucide-react'
+import { ShieldAlert, Eye, AlertTriangle, CheckCircle } from 'lucide-react'
 import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
 
@@ -119,10 +119,17 @@ export default function IncidentListPage() {
                                                 {inc.reporter || 'N/A'}
                                             </td>
                                             <td className="px-6 py-4">
-                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 uppercase tracking-wider">
-                                                    <AlertTriangle className="w-3 h-3" />
-                                                    {inc.status === 'EN_INVESTIGACION' ? 'En Investigación' : inc.status}
-                                                </span>
+                                                {inc.status === 'CERRADO' ? (
+                                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase tracking-wider">
+                                                        <CheckCircle className="w-3 h-3" />
+                                                        Cerrado
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 uppercase tracking-wider">
+                                                        <AlertTriangle className="w-3 h-3" />
+                                                        En Investigación
+                                                    </span>
+                                                )}
                                             </td>
                                             <td className="px-6 py-4">
                                                 <button

@@ -16,4 +16,23 @@ public class InternalIncidentDto {
     private String reporter;
     private String status;
     private List<IncidentParticipantDto> participants;
+
+    // Campos de conclusión
+    private String conclusionType;
+    private String causaMedicaDefinitiva;
+    private String autopsiaProtocolo;
+    private String fiscaliaExpediente;
+    private UUID responsableInmateId;
+    private String responsablePersonal;
+    private Boolean responsableNoAplica;
+    private LocalDateTime concludedAt;
+    private String concludedBy;
+
+    // Condena adicional imputada al responsable
+    private Integer additionalSentenceYears;
+    private Integer additionalSentenceMonths;
+    /** Nombre del recluso al que se imputó la condena adicional */
+    private String responsableInmateName;
 }
+
+

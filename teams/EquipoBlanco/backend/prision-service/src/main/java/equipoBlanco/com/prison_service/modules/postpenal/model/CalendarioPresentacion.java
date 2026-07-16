@@ -3,6 +3,8 @@ package equipoBlanco.com.prison_service.modules.postpenal.model;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.UUID;
 
 @Entity
@@ -30,4 +32,13 @@ public class CalendarioPresentacion {
     
     @Column(length = 500)
     private String observaciones;
+
+    // HU-S3-03: Campos para registro de cumplimiento
+    private LocalDate fechaReal;
+    private LocalTime horaReal;
+
+    // HU-S3-05: Campos para registro de incumplimiento
+    @Builder.Default
+    private Boolean detectadoPorSistema = false;
+    private LocalDateTime fechaIncumplimiento;
 }

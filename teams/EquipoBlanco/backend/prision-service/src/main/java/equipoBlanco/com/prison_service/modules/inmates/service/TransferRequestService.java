@@ -35,6 +35,10 @@ public class TransferRequestService {
         Cell targetCell = cellRepository.findById(dto.getTargetCellId())
             .orElseThrow(() -> new RuntimeException("Celda destino no encontrada"));
 
+        if (targetCell.isBlockedForInvestigation()) {
+            throw new RuntimeException("La celda de destino está bloqueada por investigación");
+        }
+
         if (inmate.getCell() != null && inmate.getCell().getId().equals(targetCell.getId())) {
             throw new RuntimeException("El recluso ya se encuentra asignado a la celda de destino");
         }
@@ -76,6 +80,10 @@ public class TransferRequestService {
         } else if (newStatus == TransferStatus.APROBADO) {
             Inmate inmate = request.getInmate();
             Cell targetCell = request.getTargetCell();
+
+            if (targetCell.isBlockedForInvestigation()) {
+                throw new RuntimeException("La celda de destino está bloqueada por investigación");
+            }
 
             // Traslado del recluso a la nueva celda (capacidad máxima permitida según requerimiento)
             inmate.setCell(targetCell);

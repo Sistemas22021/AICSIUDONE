@@ -32,6 +32,9 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
 
+                // ─── Permite Preflight de CORS (OPTIONS) ───
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
                 // ─── Celdas ───
                 // Administrador del Sistema: CRUD completo de celdas
                 .requestMatchers(HttpMethod.POST, "/api/v1/cells").hasRole("ADMINISTRADOR_DEL_SISTEMA")
@@ -40,6 +43,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.DELETE, "/api/v1/cells/*/position").hasRole("ADMINISTRADOR_DEL_SISTEMA")
                 // Asignar recluso a celda: Oficial Penitenciario
                 .requestMatchers(HttpMethod.POST, "/api/v1/cells/*/assign/**").hasRole("OFICIAL_PENITENCIARIO")
+                // Desbloquear celda: Supervisor o Administrador del Sistema
+                .requestMatchers(HttpMethod.POST, "/api/v1/cells/*/unlock").hasAnyRole("SUPERVISOR", "ADMINISTRADOR_DEL_SISTEMA")
                 // Ver celdas: Oficial Penitenciario, Supervisor, Administrador del Sistema
                 .requestMatchers(HttpMethod.GET, "/api/v1/cells/**").hasAnyRole("OFICIAL_PENITENCIARIO", "SUPERVISOR", "ADMINISTRADOR_DEL_SISTEMA")
 
@@ -58,6 +63,12 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/v1/transfers").hasRole("OFICIAL_PENITENCIARIO")
                 .requestMatchers(HttpMethod.PUT, "/api/v1/transfers/*/resolve").hasRole("SUPERVISOR")
                 .requestMatchers(HttpMethod.GET, "/api/v1/transfers/**").hasAnyRole("OFICIAL_PENITENCIARIO", "SUPERVISOR")
+
+                // ─── Incidentes y Fallecimientos ───
+                .requestMatchers("/api/v1/incidents/**").hasRole("SUPERVISOR")
+                .requestMatchers("/api/v1/inmates/*/death-report/**").hasRole("SUPERVISOR")
+                .requestMatchers("/api/v1/inmates/*/belongings/**").hasRole("SUPERVISOR")
+                .requestMatchers("/api/v1/belongings/**").hasRole("SUPERVISOR")
 
                 // ─── Post-Penitenciario ───
                 .requestMatchers(HttpMethod.POST, "/api/v1/post-penal/expedientes/*/assign").hasRole("SUPERVISOR")

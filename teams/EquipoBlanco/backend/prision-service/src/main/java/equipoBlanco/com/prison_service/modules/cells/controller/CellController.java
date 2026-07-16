@@ -73,4 +73,12 @@ public class CellController {
         cellPositionService.deleteByCellId(cellId);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/{cellId}/unlock")
+    @Operation(summary = "Desbloquear celda", description = "Desbloquea una celda que fue clausurada por investigación")
+    public ResponseEntity<CellDto> unlockCell(
+            @Parameter(description = "UUID de la celda") @PathVariable UUID cellId) {
+        return ResponseEntity.ok(cellService.unlockCell(cellId));
+    }
 }
+

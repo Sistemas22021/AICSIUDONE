@@ -13,7 +13,7 @@ Este es el microservicio principal encargado de la gestión interna penitenciari
 
 3. **Ejecutar la aplicación** con Maven Wrapper:
    ```bash
-   .\mvnw.cmd spring-boot:run
+   
    ```
 
    La aplicación se levantará en `http://localhost:8081`.

@@ -45,14 +45,18 @@ public class PostPenalService {
             .historialAsignaciones(new ArrayList<>())
             .build();
 
-        expedienteSeguimientoRepository.save(expediente);
+        ExpedienteSeguimiento saved = expedienteSeguimientoRepository.save(expediente);
+        UUID expId = (saved != null) ? saved.getId() : UUID.randomUUID();
 
         Alerta alerta = Alerta.builder()
             .nivel(2)
+            .expedienteId(expId)
+            .nombreEgresado(inmate.getFirstName() + " " + inmate.getFirstLastname())
+            .cedulaEgresado(inmate.getCedula())
             .fechaEmision(LocalDateTime.now())
             .destinatario("Supervisor")
             .estado("activa")
-            .accionRequerida("Asignar oficial de seguimiento al egresado (Cédula: " + inmate.getCedula() + ")")
+            .accionRequerida("Asignar oficial de seguimiento al egresado: " + inmate.getFirstName() + " " + inmate.getFirstLastname() + " (Cédula: " + inmate.getCedula() + ")")
             .build();
 
         alertaRepository.save(alerta);
@@ -76,7 +80,7 @@ public class PostPenalService {
         expedientes.sort(Comparator.comparing(
             (ExpedienteSeguimiento e) -> {
                 String estado = e.getEstado();
-                if ("Alerta Crítica Activa".equals(estado)) return 0;
+                if ("Alerta Crítica Activa".equals(estado) || "alerta_critica".equals(estado)) return 0;
                 if ("Alerta Crítica — Atendida".equals(estado)) return 1;
                 if ("Perfil Incompleto".equals(estado)) return 2;
                 return 3;
@@ -159,6 +163,9 @@ public class PostPenalService {
 
         Alerta alerta = Alerta.builder()
             .nivel(1)
+            .expedienteId(expediente.getId())
+            .nombreEgresado(inmate != null ? inmate.getFirstName() + " " + inmate.getFirstLastname() : null)
+            .cedulaEgresado(inmate != null ? inmate.getCedula() : null)
             .fechaEmision(LocalDateTime.now())
             .destinatario(dto.getOficialNombre())
             .estado("activa")
