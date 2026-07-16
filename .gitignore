@@ -13,6 +13,7 @@ target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**
 !**/src/test/**
+HELP.md
 
 # ─── Node.js / Frontend ───────────────────────────────────────────────────────
 node_modules/
@@ -20,11 +21,24 @@ dist/
 build/
 .npm
 
-# ─── IntelliJ IDEA ───────────────────────────────────────────────────────────
+# ─── IDEs ────────────────────────────────────────────────────────────────────
 .idea/
 *.iws
 *.iml
 *.ipr
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/nbdist/
+/.nb-gradle/
 
 # ─── VS Code ─────────────────────────────────────────────────────────────────
 .vscode/
@@ -44,3 +58,17 @@ Thumbs.db
 # ─── Logs ────────────────────────────────────────────────────────────────────
 *.log
 logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ─── Java Backend (Specific) ─────────────────────────────────────────────────
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+
+# ─── React Frontend (Specific) ───────────────────────────────────────────────
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/*.local
