@@ -5,7 +5,7 @@ services:
     container_name: balistic-postgres
     image: postgres:16
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
       POSTGRES_DB: balistic-services-db
       POSTGRES_USER: admin
