@@ -43,7 +43,7 @@ jobs:
           node-version: "24"
           cache: npm
           cache-dependency-path: teams/EquipoBlanco/frontend/prison-web/package-lock.json
-      - run: npm ci
+      - run: npm install
       - run: npm test
 
   build-and-deploy:
@@ -58,7 +58,7 @@ jobs:
           node-version: "24"
           cache: npm
           cache-dependency-path: teams/EquipoBlanco/frontend/prison-web/package-lock.json
-      - run: npm ci
+      - run: npm install
       - run: npm run build
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
