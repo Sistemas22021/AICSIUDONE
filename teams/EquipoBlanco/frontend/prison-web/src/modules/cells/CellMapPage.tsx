@@ -4,7 +4,7 @@ import { Settings, X, User, Move, MapPin, Info, Users, CheckCircle, AlertTriangl
 import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
 import { useAuth } from '../../shared/authContext'
-import { PieChart } from '@cell-component/PieChart'
+import { PieChart } from '../../lib/components/PieChart'
 import TransferRequestModal from '../inmates/TransferRequestModal'
 import EmergencyRelocationAlert from '../inmates/EmergencyRelocationAlert'
 
