@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import MapView from '../map/MapView';
+import { API_BASE_URL } from '../../config';
 
 interface Props {
   onClose: () => void;
@@ -42,7 +43,7 @@ const IncidentsModal: React.FC<Props> = ({ onClose, onCreated }) => {
 
     try {
       const res = await fetch(
-        'http://localhost:8080/api/incidents',
+        `${API_BASE_URL}/incidents`,
         {
           method: 'POST',
           headers: {

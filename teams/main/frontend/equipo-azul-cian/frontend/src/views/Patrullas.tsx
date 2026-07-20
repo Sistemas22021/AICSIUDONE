@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { Patrol, PatrolStatus } from '../types/patrol';
 import MapView from '../components/map/MapView';
 import { fetchWithRetry } from '../utils/fetchWithRetry';
+import { API_BASE_URL } from '../config';
 
 interface NewPatrol {
   code: string;
@@ -36,7 +37,7 @@ const Patrullas: React.FC = () => {
   const fetchPatrols = async (): Promise<void> => {
     setLoading(true);
     try {
-      const response = await fetchWithRetry('http://localhost:8080/api/patrols');
+      const response = await fetchWithRetry(`${API_BASE_URL}/patrols`);
       if (!response.ok) {
         throw new Error('Error al obtener la lista de patrullas');
       }
@@ -61,7 +62,7 @@ const Patrullas: React.FC = () => {
     newStatus: PatrolStatus
   ): Promise<void> => {
     try {
-      const response = await fetch(`http://localhost:8080/api/patrols/${id}/status`, {
+      const response = await fetch(`${API_BASE_URL}/patrols/${id}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -164,7 +165,7 @@ const Patrullas: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch('http://localhost:8080/api/patrols', {
+      const response = await fetch(`${API_BASE_URL}/patrols`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
