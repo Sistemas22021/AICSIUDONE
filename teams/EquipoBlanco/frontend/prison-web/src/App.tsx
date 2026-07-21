@@ -24,9 +24,6 @@ function HomeRedirect() {
     if (auth.hasRole('Administrador del Sistema')) {
         return <Navigate to="/celdas/configurar" replace />
     }
-    if (auth.hasRole('Oficial de Seguimiento', 'Supervisor')) {
-        return <Navigate to="/post" replace />
-    }
     return <Navigate to="/dashboard" replace />
 }
 
@@ -74,13 +71,13 @@ export default function App() {
                     } />
 
                     <Route path="/internos/egreso-temporal" element={
-                        <ProtectedRoute allowedRoles={['Oficial Penitenciario', 'Supervisor']}>
+                        <ProtectedRoute allowedRoles={['Oficial Penitenciario']}>
                             <TemporaryEgressPage />
                         </ProtectedRoute>
                     } />
 
                     <Route path="/internos/retorno-temporal" element={
-                        <ProtectedRoute allowedRoles={['Oficial Penitenciario', 'Supervisor']}>
+                        <ProtectedRoute allowedRoles={['Oficial Penitenciario']}>
                             <TemporaryReturnPage />
                         </ProtectedRoute>
                     } />

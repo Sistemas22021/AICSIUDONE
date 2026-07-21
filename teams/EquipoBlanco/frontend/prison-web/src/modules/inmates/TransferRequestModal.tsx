@@ -222,11 +222,14 @@ export default function TransferRequestModal({
             <textarea
               required
               rows={3}
+              minLength={15}
+              maxLength={500}
               placeholder="Describa el motivo o justificación de seguridad, conducta o segregación para solicitar el traslado..."
               value={reason}
               onChange={e => setReason(e.target.value)}
               className="w-full p-3 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none"
             />
+            <p className="text-[10px] text-gray-500 text-right mt-1">{reason.length}/500 (mínimo 15)</p>
           </div>
 
           {selectedCell && selectedCell.currentOccupancy >= selectedCell.maxCapacity && (

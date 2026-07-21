@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Search, Clock, ArrowLeft, ArrowRight, AlertCircle } from 'lucide-react'
 import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
+import { maxDateTimeNow, formatCedulaIntelligent, cedulaKeyFilter } from '../../shared/validations'
 
 interface InmateData {
     id: string
@@ -74,9 +75,14 @@ export default function TemporaryEgressPage() {
         e.preventDefault()
         if (!selectedInmate) return
 
-        const egressDate = new Date(fechaSalidaTemporal);
-        const estimatedReturnDate = new Date(fechaRetornoEstimada);
+        const egressDate = new Date(fechaSalidaTemporal)
+        const estimatedReturnDate = new Date(fechaRetornoEstimada)
+        const now = new Date()
 
+        if (egressDate > now) {
+            setError('La fecha de salida no puede ser futura.')
+            return
+        }
         if (estimatedReturnDate <= egressDate) {
             setError('La fecha y hora de retorno estimada debe ser posterior a la fecha de salida.')
             return
@@ -133,9 +139,13 @@ export default function TemporaryEgressPage() {
                                 <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                 <input
                                     type="text"
-                                    placeholder="Buscar por nombre o cédula..."
+                                    placeholder="Ej: V-12345678"
                                     value={query}
-                                    onChange={e => setQuery(e.target.value)}
+                                    onChange={e => {
+                                        setQuery(formatCedulaIntelligent(e.target.value));
+                                        setError('');
+                                    }}
+                                    onKeyDown={cedulaKeyFilter}
                                     className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 />
                             </div>
@@ -205,6 +215,7 @@ export default function TemporaryEgressPage() {
                                     <input 
                                         type="datetime-local" 
                                         value={fechaSalidaTemporal}
+                                        max={maxDateTimeNow()}
                                         onChange={e => setFechaSalidaTemporal(e.target.value)}
                                         className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
                                         required
@@ -216,10 +227,14 @@ export default function TemporaryEgressPage() {
                                     <input 
                                         type="datetime-local" 
                                         value={fechaRetornoEstimada}
+                                        min={fechaSalidaTemporal}
                                         onChange={e => setFechaRetornoEstimada(e.target.value)}
-                                        className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                                        className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 ${new Date(fechaRetornoEstimada) <= new Date(fechaSalidaTemporal) ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
                                         required
                                     />
+                                    {new Date(fechaRetornoEstimada) <= new Date(fechaSalidaTemporal) && (
+                                        <p className="text-xs text-red-600 mt-1">El retorno debe ser posterior a la salida</p>
+                                    )}
                                 </div>
                             </div>
 
@@ -229,9 +244,11 @@ export default function TemporaryEgressPage() {
                                     rows={3}
                                     value={observaciones}
                                     onChange={e => setObservaciones(e.target.value)}
+                                    maxLength={1000}
                                     placeholder="Detalles sobre el traslado, custodia policial, nombre de la clínica o tribunal..."
                                     className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
                                 />
+                                <p className="text-xs text-gray-500 mt-1 text-right">{observaciones.length}/1000</p>
                             </div>
 
                             <div className="pt-4 border-t border-gray-100 flex gap-3">

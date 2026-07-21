@@ -219,6 +219,8 @@ export default function CellConfigPage() {
                     value={form.identifier}
                     onChange={handleChange}
                     placeholder="Ej. A-01"
+                    pattern="^[A-Z]-\d{2,3}$"
+                    title="Formato requerido: Letra mayúscula, guion y 2 o 3 números (Ej: A-01, B-103)"
                     required
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                   />
@@ -242,6 +244,8 @@ export default function CellConfigPage() {
                     name="lengthMeters"
                     type="number"
                     step="0.01"
+                    min="1"
+                    max="50"
                     value={form.lengthMeters}
                     onChange={handleChange}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
@@ -253,6 +257,8 @@ export default function CellConfigPage() {
                     name="widthMeters"
                     type="number"
                     step="0.01"
+                    min="1"
+                    max="50"
                     value={form.widthMeters}
                     onChange={handleChange}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"

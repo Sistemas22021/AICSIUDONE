@@ -452,6 +452,7 @@ export default function ControlDashboardPage() {
                                 <textarea
                                     value={observaciones}
                                     onChange={e => setObservaciones(e.target.value)}
+                                    maxLength={500}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600"
                                     rows={4}
                                     placeholder={actionModal.type === 'cumplida' ? "Detalles de la presentación..." : "Motivo del incumplimiento (si se conoce)..."}
@@ -498,6 +499,7 @@ export default function ControlDashboardPage() {
                                     id="textarea-obs-n1"
                                     value={obsN1}
                                     onChange={e => setObsN1(e.target.value)}
+                                    maxLength={500}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                                     rows={3}
                                     placeholder="Acción tomada por el oficial..."
