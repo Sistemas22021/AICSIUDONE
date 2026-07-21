@@ -440,6 +440,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
                   id="textarea-obs-atencion"
                   value={obsAtencion}
                   onChange={e => setObsAtencion(e.target.value)}
+                  maxLength={500}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                   rows={3}
                   placeholder="Ej: Se realizó llamada de seguimiento, el egresado presentó justificación..."

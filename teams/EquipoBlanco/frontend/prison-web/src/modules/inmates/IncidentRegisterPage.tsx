@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, ShieldAlert, CheckCircle, Users, FileText, AlertTriangle } from 'lucide-react'
 import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
+import { maxDateTimeNow } from '../../shared/validations'
 
 interface InmateData {
     id: string
@@ -276,9 +277,10 @@ export default function IncidentRegisterPage() {
                                 <input
                                     type="text"
                                     value={reporter}
-                                    onChange={e => setReporter(e.target.value)}
+                                    onChange={e => setReporter(e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s.]/g, ''))}
                                     className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                                     placeholder="Ej. Sup. Gómez / S.G."
+                                    maxLength={80}
                                     required
                                 />
                             </div>
@@ -288,6 +290,7 @@ export default function IncidentRegisterPage() {
                                 <input
                                     type="datetime-local"
                                     value={incidentDate}
+                                    max={maxDateTimeNow()}
                                     onChange={e => setIncidentDate(e.target.value)}
                                     className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                                     required
@@ -301,10 +304,12 @@ export default function IncidentRegisterPage() {
                                 rows={4}
                                 value={description}
                                 onChange={e => setDescription(e.target.value)}
+                                minLength={30}
                                 className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
                                 placeholder="Narrativa de cómo se descubrió la escena, primeros auxilios prestados, y llamado a fiscalía..."
                                 required
                             />
+                            <p className="text-xs text-gray-500 mt-1">Mínimo 30 caracteres.</p>
                         </div>
 
                         {/* Cohabitants section */}
@@ -350,6 +355,7 @@ export default function IncidentRegisterPage() {
                                                             type="text"
                                                             value={mate.comments}
                                                             onChange={e => handleCommentsChange(mate.inmateId, e.target.value)}
+                                                            maxLength={300}
                                                             placeholder="Notas del estado físico o testimonios..."
                                                             className="w-full p-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-red-500 focus:border-red-500 text-xs"
                                                         />

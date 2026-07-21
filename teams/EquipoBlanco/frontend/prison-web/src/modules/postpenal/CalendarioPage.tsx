@@ -4,6 +4,7 @@ import { Calendar as CalendarIcon, ArrowLeft, Clock, CalendarDays, CheckCircle, 
 import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
 import { useAuth } from '../../shared/authContext'
+import { maxDateTimeNow } from '../../shared/validations'
 
 interface PresentacionData {
     id: string
@@ -428,8 +429,9 @@ export default function CalendarioPage() {
                                                             <>
                                                                 <button
                                                                     onClick={() => openRegisterModal(p)}
-                                                                    className="px-3 py-1.5 text-xs bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 rounded-lg font-bold transition-all shadow-xxs"
-                                                                    title="Registrar asistencia"
+                                                                    disabled={p.fechaProgramada > new Date().toISOString().split('T')[0]}
+                                                                    className="px-3 py-1.5 text-xs bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 rounded-lg font-bold transition-all shadow-xxs disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                    title={p.fechaProgramada > new Date().toISOString().split('T')[0] ? "La fecha aún no llega" : "Registrar asistencia"}
                                                                 >
                                                                     Registrar
                                                                 </button>
@@ -591,6 +593,7 @@ export default function CalendarioPage() {
                                             <input
                                                 type="datetime-local"
                                                 required
+                                                max={maxDateTimeNow()}
                                                 value={fechaIncumplimiento}
                                                 onChange={e => setFechaIncumplimiento(e.target.value)}
                                                 className="w-full p-2.5 border border-gray-300 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
