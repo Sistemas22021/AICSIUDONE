@@ -1,0 +1,40 @@
+
+
+services:
+  localstack:
+    container_name: localstack-s3
+    image: localstack/localstack:3.8.0
+    ports:
+      - "127.0.0.1:4566:4566"
+    environment:
+      - SERVICES=s3
+      - DEBUG=1
+      - AWS_DEFAULT_REGION=us-east-1
+      - ACTIVATE_PRO=false
+      - LOCALSTACK_ACKNOWLEDGE_ACCOUNT_REQUIREMENT=1
+    volumes:
+      - "./localstack-init:/etc/localstack/init/ready.d"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  app:
+    container_name: sistema-balistico-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      # Override host defaults so the container reaches LocalStack by service name
+      AWS_S3_ENDPOINT: http://localstack:4566
+      STORAGE_TYPE: s3
+    depends_on:
+      localstack:
+        condition: service_healthy
