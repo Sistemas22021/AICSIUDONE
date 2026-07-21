@@ -4,7 +4,7 @@
 # Valida automáticamente los cambios realizados en el backend.
 #
 # Flujo:
-# Compile → Unit Tests → Feedback
+# Build → Test → Feedback
 #
 # No incluye despliegue porque el backend se ejecuta localmente.
 # ─────────────────────────────────────────────────────────────
@@ -36,10 +36,10 @@ on:
 jobs:
 
 
-  compile:
+  build:
 
 
-    name: "Compile Backend"
+    name: "Build Backend"
 
 
     runs-on: ubuntu-latest
@@ -73,21 +73,21 @@ jobs:
 
 
 
-      - name: Compilar proyecto
+      - name: Construir proyecto
         run: ./mvnw compile
 
 
 
-  tests:
+  test:
 
 
-    name: "Unit Tests Backend"
+    name: "Tests Unitarios Backend"
 
 
     runs-on: ubuntu-latest
 
 
-    needs: compile
+    needs: build
 
 
     defaults:
