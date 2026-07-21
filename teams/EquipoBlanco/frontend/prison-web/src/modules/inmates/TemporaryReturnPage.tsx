@@ -275,10 +275,14 @@ export default function TemporaryReturnPage() {
                                 <input 
                                     type="datetime-local" 
                                     value={fechaRetorno}
+                                    min={selectedInmate?.fechaSalidaTemporal?.slice(0, 16) || ''}
                                     onChange={e => setFechaRetorno(e.target.value)}
-                                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                    className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${selectedInmate?.fechaSalidaTemporal && new Date(fechaRetorno) < new Date(selectedInmate.fechaSalidaTemporal) ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
                                     required
                                 />
+                                {selectedInmate?.fechaSalidaTemporal && new Date(fechaRetorno) < new Date(selectedInmate.fechaSalidaTemporal) && (
+                                    <p className="text-xs text-red-600 mt-1">La fecha de retorno no puede ser anterior a la fecha de salida.</p>
+                                )}
                             </div>
 
                             <div>
@@ -287,9 +291,11 @@ export default function TemporaryReturnPage() {
                                     rows={3}
                                     value={observaciones}
                                     onChange={e => setObservaciones(e.target.value)}
+                                    maxLength={1000}
                                     placeholder="Detalles sobre el estado del recluso al regresar, si recibió atención médica, etc..."
                                     className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                                 />
+                                <p className="text-xs text-gray-500 mt-1 text-right">{observaciones.length}/1000</p>
                             </div>
 
                             <div className="pt-4 border-t border-gray-100 flex gap-3">

@@ -2,27 +2,83 @@
 
 Este es el microservicio principal encargado de la gestión interna penitenciaria, desarrollado con Spring Boot.
 
-## Cómo Levantar el Proyecto
+---
 
-1. **Clonar el repositorio** (si no lo has hecho):
-   ```bash
-   cd .../AICSIUDONE/teams/EquipoBlanco/backend/prision-service
-   ```
+## Instalación Desde Cero
 
-2. **Asegúrate de tener configurado el `.env`** con las credenciales de la base de datos (ya incluido en el proyecto).
+Si ya tienes instalado alguna herramienta, omite el paso.
 
-3. **Ejecutar la aplicación** con Maven Wrapper:
-   ```bash
-   
-   ```
+### 1. Instalar Java 21
 
-   La aplicación se levantará en `http://localhost:8081`.
+**Eclipse Temurin:**
+```bash
+# Descargar desde: https://adoptium.net/es/temurin/releases/?version=21
+# Ejecutar el .msi y seguir los pasos
 
-4. **Verificar** que el servicio está activo accediendo a:
-   - Health check: `http://localhost:8081/actuator/health`
-   - Swagger UI: `http://localhost:8081/swagger-ui.html`
+# Verificar instalación:
+java -version
+# Debería mostrar: openjdk version "21.0.x"
+```
 
-> **Nota:** Requiere Java 21 y una conexión a Internet para descargar dependencias Maven. La base de datos PostgreSQL ya está configurada en Supabase (nube), no requiere instalación local.
+### 2. Instalar Git
+
+```bash
+# Descargar desde: https://git-scm.com/download/win
+# Ejecutar el .exe y seguir los pasos (opciones por defecto)
+
+# Verificar:
+git --version
+```
+
+### 3. Configurar Variable de Entorno JAVA_HOME
+
+```bash
+# Windows (PowerShell como Administrador):
+[System.Environment]::SetEnvironmentVariable('JAVA_HOME', 'C:\Program Files\Amazon Corretto\jdk21.0.x_xx', 'Machine')
+[System.Environment]::SetEnvironmentVariable('PATH', "$env:JAVA_HOME\bin;$env:PATH", 'Machine')
+
+# Cerrar y reabrir terminal. Verificar:
+echo $env:JAVA_HOME
+java -version
+```
+
+### 4. Clonar el Repositorio
+
+```bash
+git clone https://github.com/tu-usuario/AICSIUDONE.git
+cd AICSIUDONE/teams/EquipoBlanco/backend/prision-service
+```
+
+### 5. Configurar Variables de Entorno
+
+El archivo `.env` ya está incluido en el proyecto con las credenciales de Supabase. Si necesitas crear el tuyo:
+
+```bash
+# Copiar el archivo de ejemplo y renombrarlo:
+cp .env.example .env
+# Editar .env con tus credenciales de Supabase
+```
+
+**Nota:** La base de datos PostgreSQL ya está configurada en Supabase (nube), no requiere instalación local.
+
+### 6. Ejecutar el Backend
+
+Maven Wrapper descargará automáticamente Maven y las dependencias:
+
+```bash
+# Windows:
+.\mvnw.cmd spring-boot:run
+
+# Linux / macOS:
+./mvnw spring-boot:run
+```
+
+La aplicación se levantará en `http://localhost:8081`.
+
+### 7. Verificar que Funciona
+
+- Health check: `http://localhost:8081/actuator/health`
+- Swagger UI: `http://localhost:8081/swagger-ui.html`
 
 ---
 
@@ -51,6 +107,7 @@ Este es el microservicio principal encargado de la gestión interna penitenciari
 prision-service/
 ├── pom.xml                          # Configuración Maven (Spring Boot 3.2.4, Java 21)
 ├── .env                             # Variables de entorno (credenciales BD PostgreSQL)
+├── .env.example                     # Ejemplo de variables de entorno
 ├── mvnw / mvnw.cmd                  # Maven Wrapper (Linux / Windows)
 │
 └── src/
@@ -106,34 +163,52 @@ prision-service/
                 └── postpenal/service/PostPenalServiceTest.java # Tests de PostPenalService
 ```
 
+---
+
 ## Pipelines Implementados (CI/CD)
 
 El proyecto cuenta con integración continua configurada a través de GitHub Actions.
 
-- **Archivo que lo constituye:** `.github/workflows/equipoblanco-prision-service.yml` ubicado en la raíz del repositorio.
-- **Cómo ejecutarlo:** 
-  - Se ejecuta automáticamente ante cada evento `push` o `pull_request` hacia las ramas `main` y `develop` (siempre que existan modificaciones dentro de la carpeta `prision-service`).
-  - También puede lanzarse de manera manual desde la pestaña *Actions* de GitHub seleccionando el flujo y presionando *Run workflow* (`workflow_dispatch`).
-- **Qué hace el pipeline:** Prepara un entorno Linux con Java 21, ejecuta las pruebas unitarias con Maven, compila y empaqueta el código (`mvn package`) y finalmente sube el artefacto resultante (`.jar`) para posteriores despliegues.
+### Ejecución automática
+Se ejecuta automáticamente ante cada evento `push` o `pull_request` hacia las ramas `main` y `develop` (siempre que existan modificaciones dentro de `teams/EquipoBlanco/backend/prision-service/**`).
+
+### Ejecución manual desde GitHub UI
+Ir al repositorio en GitHub → **Actions** → **"Equipo Blanco - Prision Service CI"** → **Run workflow** → seleccionar rama → **Run workflow**.
+
+### Ejecución manual desde terminal (CLI)
+Requiere [GitHub CLI](https://cli.github.com/) instalada y autenticada (`gh auth login`):
+```bash
+gh workflow run equipoblanco-prision-service.yml --ref main
+```
+
+### ¿Qué hace el pipeline?
+1. Prepara un entorno Linux con Java 21
+2. Ejecuta las pruebas unitarias con Maven (`.\mvnw.cmd test`)
+3. Compila y empaqueta el código (`.\mvnw.cmd package`)
+4. Sube el artefacto `.jar` generado
+
+---
 
 ## Tests Implementados
 
 Se han desarrollado pruebas unitarias garantizando un **aislamiento total (100%)** utilizando la librería Mockito, evitando que interactúen con la base de datos real y siguiendo rigurosamente el patrón **AAA (Arrange, Act, Assert)**.
 
-- **Módulos probados:** 
-  - `cells` (`CellServiceTest`)
-  - `inmates` (`InmateServiceTest`)
-  - `postpenal` (`PostPenalServiceTest`)
-  - `control` (`AlertaModelTest`)
-- **Cómo ejecutarlos:** 
-  Desde la carpeta raíz del servicio (`prision-service`), ejecuta el wrapper de Maven en tu terminal:
-  ```bash
-  .\mvnw.cmd test
-  ```
-  Si necesitas correr un test específico, puedes utilizar el parámetro de clase: 
-  ```bash
-  .\mvnw.cmd test -Dtest=CellServiceTest
-  ```
+### Módulos probados
+- `cells` (`CellServiceTest`)
+- `inmates` (`InmateServiceTest`)
+- `postpenal` (`PostPenalServiceTest`)
+- `control` (`AlertaModelTest`)
+
+### Ejecutar todos los tests
+```bash
+# Desde la carpeta prision-service:
+.\mvnw.cmd test
+```
+
+### Ejecutar un test específico
+```bash
+.\mvnw.cmd test -Dtest=CellServiceTest
+```
 
 ## Regla de Organización de Módulos y Cómo Agregar un Nuevo Endpoint
 

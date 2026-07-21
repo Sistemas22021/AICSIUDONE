@@ -4,6 +4,7 @@ import { Search, UserMinus, ArrowLeft, ArrowRight, CheckCircle, AlertCircle } fr
 import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
 import { useAuth } from '../../shared/authContext'
+import { maxDateTimeNow, formatCedulaIntelligent, cedulaKeyFilter } from '../../shared/validations'
 
 interface InmateData {
     id: string
@@ -75,8 +76,13 @@ export default function DischargePage() {
         if (!selectedInmate) return
 
         if (motivoEgreso === 'Fallecimiento') {
-            if (!deathDescription.trim()) {
-                setError('La descripción de los hechos es obligatoria.')
+            if (!deathDescription.trim() || deathDescription.trim().length < 20) {
+                setError('La descripción de los hechos es obligatoria y debe tener al menos 20 caracteres.')
+                return
+            }
+            const hallazgo = new Date(deathDateTimeFound)
+            if (hallazgo > new Date()) {
+                setError('La fecha de hallazgo no puede ser futura.')
                 return
             }
             if (!confirm(`¿Está seguro de registrar el deceso de ${selectedInmate.firstName} ${selectedInmate.firstLastname}? Esta acción no se puede deshacer.`)) {
@@ -164,9 +170,13 @@ export default function DischargePage() {
                                 <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                 <input
                                     type="text"
-                                    placeholder="Buscar por nombre o cédula..."
+                                    placeholder="Ej: V-12345678"
                                     value={query}
-                                    onChange={e => setQuery(e.target.value)}
+                                    onChange={e => {
+                                        setQuery(formatCedulaIntelligent(e.target.value));
+                                        setError('');
+                                    }}
+                                    onKeyDown={cedulaKeyFilter}
                                     className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 />
                             </div>
@@ -261,6 +271,7 @@ export default function DischargePage() {
                                         <input 
                                             type="datetime-local" 
                                             value={deathDateTimeFound}
+                                            max={maxDateTimeNow()}
                                             onChange={e => setDeathDateTimeFound(e.target.value)}
                                             className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
                                             required
@@ -273,10 +284,12 @@ export default function DischargePage() {
                                             rows={4}
                                             value={deathDescription}
                                             onChange={e => setDeathDescription(e.target.value)}
+                                            minLength={20}
                                             placeholder="Detalle exhaustivo del hallazgo y estado del cuerpo..."
                                             className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
                                             required
                                         />
+                                        <p className="text-xs text-gray-500 mt-1">Mínimo 20 caracteres.</p>
                                     </div>
                                 </>
                             ) : (
@@ -286,6 +299,7 @@ export default function DischargePage() {
                                         <input 
                                             type="datetime-local" 
                                             value={fechaEgreso}
+                                            max={maxDateTimeNow()}
                                             onChange={e => setFechaEgreso(e.target.value)}
                                             className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
                                             required
@@ -298,9 +312,11 @@ export default function DischargePage() {
                                             rows={3}
                                             value={observacionesEgreso}
                                             onChange={e => setObservacionesEgreso(e.target.value)}
+                                            maxLength={1000}
                                             placeholder="Detalles adicionales sobre la liberación o traslado..."
                                             className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
                                         />
+                                        <p className="text-xs text-gray-500 mt-1 text-right">{observacionesEgreso.length}/1000</p>
                                     </div>
                                 </>
                             )}
