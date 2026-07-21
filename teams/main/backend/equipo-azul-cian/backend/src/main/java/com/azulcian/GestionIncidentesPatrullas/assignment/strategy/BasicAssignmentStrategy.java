@@ -9,18 +9,18 @@ import com.azulcian.GestionIncidentesPatrullas.incident.repository.IncidentRepos
 import com.azulcian.GestionIncidentesPatrullas.patrol.model.Patrol;
 import com.azulcian.GestionIncidentesPatrullas.patrol.model.PatrolStatus;
 import com.azulcian.GestionIncidentesPatrullas.patrol.repository.PatrolRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-// =============================================================
-// PRINCIPIO SOLID: L - Liskov Substitution Principle (LSP)
-// -------------------------------------------------------------
-// Implementa AssignmentStrategy respetando su contrato, por lo que
-// puede ser sustituida por cualquier otra estrategia compatible.
-//
-// ✔ Permite intercambiar estrategias sin afectar al sistema.
-// =============================================================
+/**
+ * Estrategia de asignación básica.
+ * Cumple con LSP al implementar el contrato de AssignmentStrategy, permitiendo intercambiar estrategias sin alterar la lógica global.
+ */
 @Component
 public class BasicAssignmentStrategy implements AssignmentStrategy {
+
+    private static final Logger logger = LoggerFactory.getLogger(BasicAssignmentStrategy.class);
 
     private final AssignmentRepository assignmentRepository;
     private final IncidentRepository incidentRepository;
@@ -39,21 +39,53 @@ public class BasicAssignmentStrategy implements AssignmentStrategy {
     @Override
     public Assignment execute(AssignmentRequestDTO dto) {
 
+        logger.debug(
+                "Iniciando asignación. Incidente={}, Patrulla={}",
+                dto.getIncidentId(),
+                dto.getPatrolId()
+        );
+
         Incident incident = incidentRepository.findById(dto.getIncidentId())
-                .orElseThrow(() -> new RuntimeException("Incident not found"));
+                .orElseThrow(() -> {
+                    logger.error(
+                            "No existe el incidente con ID={}",
+                            dto.getIncidentId()
+                    );
+                    return new RuntimeException("Incident not found");
+                });
 
         Patrol patrol = patrolRepository.findById(dto.getPatrolId())
-                .orElseThrow(() -> new RuntimeException("Patrol not found"));
+                .orElseThrow(() -> {
+                    logger.error(
+                            "No existe la patrulla con ID={}",
+                            dto.getPatrolId()
+                    );
+                    return new RuntimeException("Patrol not found");
+                });
 
         if (assignmentRepository.findByIncident(incident).isPresent()) {
+            logger.warn(
+                    "Intento de asignar nuevamente el incidente {}",
+                    incident.getId()
+            );
             throw new RuntimeException("Incident already has a patrol assigned");
         }
 
         if (incident.getStatus() != IncidentStatus.ACTIVE) {
+            logger.warn(
+                    "El incidente {} no está ACTIVE. Estado actual={}",
+                    incident.getId(),
+                    incident.getStatus()
+            );
             throw new RuntimeException("Incident must be ACTIVE");
         }
 
         if (patrol.getStatus() != PatrolStatus.AVAILABLE) {
+            logger.warn(
+                    "La patrulla {} no está disponible. Estado actual={}",
+                    patrol.getCode(),
+                    patrol.getStatus()
+            );
             throw new RuntimeException("Patrol must be AVAILABLE");
         }
 
@@ -65,6 +97,14 @@ public class BasicAssignmentStrategy implements AssignmentStrategy {
 
         Assignment assignment = new Assignment(incident, patrol);
 
-        return assignmentRepository.save(assignment);
+        Assignment saved = assignmentRepository.save(assignment);
+
+        logger.info(
+                "Patrulla {} asignada correctamente al incidente {}",
+                patrol.getCode(),
+                incident.getId()
+        );
+
+        return saved;
     }
 }

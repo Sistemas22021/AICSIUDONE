@@ -8,14 +8,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;
 
-// =============================================================
-// PRINCIPIO SOLID: I - Interface Segregation Principle (ISP)
-// -------------------------------------------------------------
-// Define métodos específicos para la gestión de asignaciones,
-// evitando depender de operaciones innecesarias.
-//
-// ✔ Mantiene una interfaz pequeña y enfocada al dominio.
-// =============================================================
+/**
+ * Repositorio de Asignaciones.
+ * Cumple con ISP al exponer métodos específicos para el dominio de asignaciones sin sobrecargar la interfaz.
+ */
 public interface AssignmentRepository extends JpaRepository<Assignment, Long> {
 
     Optional<Assignment> findByIncident(Incident incident);

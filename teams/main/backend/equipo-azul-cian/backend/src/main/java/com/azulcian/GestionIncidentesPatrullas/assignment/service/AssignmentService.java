@@ -8,37 +8,12 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+/**
+ * Servicio para la gestión de asignaciones (CU-03: Asignación Operativa).
+ * Cumple con SRP (coordinación del caso de uso), DIP (depende de la abstracción AssignmentStrategy),
+ * OCP y LSP (permite extender e intercambiar estrategias sin alterar el servicio).
+ */
 @Service
-
-// =============================================================
-// PRINCIPIO SOLID: S - Single Responsibility Principle (SRP)
-// -------------------------------------------------------------
-// Coordina el Caso de Uso CU-03 "Asignación Operativa",
-// delegando la lógica de negocio a la estrategia correspondiente.
-//
-// ✔ Mantiene una única responsabilidad.
-// =============================================================
-// PRINCIPIO SOLID: D - Dependency Inversion Principle (DIP)
-// -------------------------------------------------------------
-// Depende de abstracciones como AssignmentStrategy,
-// reduciendo el acoplamiento con implementaciones concretas.
-//
-// ✔ Facilita mantenimiento y pruebas.
-// =============================================================
-// PRINCIPIO SOLID: O - Open/Closed Principle (OCP)
-// -------------------------------------------------------------
-// Permite cambiar o agregar estrategias de asignación sin
-// modificar la lógica del servicio.
-//
-// ✔ Facilita la extensión del sistema.
-// =============================================================
-// PRINCIPIO SOLID: L - Liskov Substitution Principle (LSP)
-// -------------------------------------------------------------
-// Al trabajar con AssignmentStrategy, cualquier implementación
-// compatible puede sustituir a otra sin afectar el servicio.
-//
-// ✔ Permite intercambiar estrategias manteniendo el contrato.
-// =============================================================
 public class AssignmentService {
 
     private final AssignmentStrategy assignmentStrategy;
@@ -52,18 +27,12 @@ public class AssignmentService {
         this.assignmentRepository = assignmentRepository;
     }
 
-    // ==========================================================
-    // CU-03: ASIGNACIÓN OPERATIVA
-    // ----------------------------------------------------------
-    // Punto de entrada del caso de uso. Toda la lógica de asignación se delega a la estrategia.
-    // ==========================================================
+    // Punto de entrada del CU-03: delega la lógica de asignación a la estrategia.
     public Assignment assign(AssignmentRequestDTO dto) {
         return assignmentStrategy.execute(dto);
     }
 
-    // ==========================================================
-    // CONSULTA DE ASIGNACIONES ACTIVAS
-    // ==========================================================
+    // Consulta de asignaciones activas
     public List<Assignment> getAllAssignments() {
         return assignmentRepository.findByFinishedAtIsNull();
     }
