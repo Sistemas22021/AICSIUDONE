@@ -35,19 +35,19 @@ interface CohabitantState {
 export default function IncidentRegisterPage() {
     const { inmateId } = useParams<{ inmateId: string }>()
     const navigate = useNavigate()
-    
+
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [error, setError] = useState('')
-    
+
     const [deceased, setDeceased] = useState<InmateData | null>(null)
     const [, setDeathReport] = useState<DeathReportData | null>(null)
-    
+
     const [description, setDescription] = useState('')
     const [reporter, setReporter] = useState('')
     const [incidentDate, setIncidentDate] = useState(new Date().toISOString().slice(0, 16))
     const [cohabitants, setCohabitants] = useState<CohabitantState[]>([])
-    
+
     const [successCode, setSuccessCode] = useState('')
     const [successId, setSuccessId] = useState('')
 
@@ -191,7 +191,7 @@ export default function IncidentRegisterPage() {
                             <div>
                                 <h4 className="font-bold text-amber-900 text-sm">Protocolo de Emergencia Activado</h4>
                                 <p className="text-amber-800 text-xs mt-1">
-                                    La celda {deceased?.cellIdentifier} ha sido **clausurada y bloqueada** para fines de investigación judicial. 
+                                    La celda {deceased?.cellIdentifier} ha sido **clausurada y bloqueada** para fines de investigación judicial.
                                     Los sobrevivientes (co-habitantes) se encuentran en estado de **Reubicación de Emergencia Pendiente**.
                                 </p>
                             </div>
@@ -235,7 +235,7 @@ export default function IncidentRegisterPage() {
         <SidebarLayout>
             <div className="max-w-4xl mx-auto space-y-6">
                 <div>
-                    <button onClick={() => navigate('/egresos')} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 mb-4 transition-colors">
+                    <button onClick={() => navigate('/internos/egreso')} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 mb-4 transition-colors">
                         <ArrowLeft className="w-4 h-4" />
                         Volver a Egresos
                     </button>
@@ -318,7 +318,7 @@ export default function IncidentRegisterPage() {
                                 <Users className="w-5 h-5 text-gray-600" />
                                 <h3 className="font-bold text-gray-800">Co-habitantes y Testigos (Sobrevivientes)</h3>
                             </div>
-                            
+
                             {cohabitants.length === 0 ? (
                                 <p className="text-sm text-gray-500 italic bg-gray-50 p-4 rounded-lg border border-gray-100">
                                     El recluso se encontraba solo en esta celda. No hay co-habitantes para procesar.
@@ -371,7 +371,7 @@ export default function IncidentRegisterPage() {
                         <div className="pt-4 border-t border-gray-100 flex justify-end gap-3">
                             <button
                                 type="button"
-                                onClick={() => navigate('/egresos')}
+                                onClick={() => navigate('/internos/egreso')}
                                 className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
                             >
                                 Cancelar

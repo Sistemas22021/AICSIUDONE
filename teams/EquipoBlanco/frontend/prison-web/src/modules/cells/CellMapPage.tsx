@@ -974,7 +974,7 @@ export default function CellMapPage() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            {auth.hasRole('Oficial Penitenciario') && (
+                            {auth.hasRole('Oficial Penitenciario', 'Supervisor') && (
                               <Link
                                 to={`/internos/expediente/${recluso.id}`}
                                 state={{ from: '/mapa' }}
@@ -1082,8 +1082,8 @@ export default function CellMapPage() {
               <div className="p-6 space-y-5">
                 <div className="flex items-center gap-3">
                   <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${reclusoExpediente.status === 'ACTIVO_CON_CELDA' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' :
-                      reclusoExpediente.status === 'ACTIVO_SALIDA_TEMPORAL' ? 'bg-amber-100 text-amber-800 border border-amber-200' :
-                        'bg-gray-100 text-gray-800 border border-gray-200'
+                    reclusoExpediente.status === 'ACTIVO_SALIDA_TEMPORAL' ? 'bg-amber-100 text-amber-800 border border-amber-200' :
+                      'bg-gray-100 text-gray-800 border border-gray-200'
                     }`}>
                     {reclusoExpediente.status === 'ACTIVO_CON_CELDA' ? 'Activo - Asignado' :
                       reclusoExpediente.status === 'ACTIVO_SALIDA_TEMPORAL' ? 'Salida Temporal' :
