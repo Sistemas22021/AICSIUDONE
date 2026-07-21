@@ -65,7 +65,19 @@ jobs:
 
 
 
+      # Otorgar permisos al Maven Wrapper
+      #
+      # Linux requiere permiso de ejecución para archivos .sh.
+      # Este paso garantiza que mvnw pueda ejecutarse dentro del runner.
+      - name: Dar permisos al Maven Wrapper
+        run: chmod +x mvnw
+
+
+
       # Compilar y ejecutar pruebas
+      #
+      # Ejecuta las pruebas unitarias del backend.
+      # Si existe un error de compilación o una prueba falla,
+      # el Pull Request recibe feedback negativo.
       - name: Ejecutar pruebas del backend
         run: ./mvnw test
-
