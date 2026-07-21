@@ -42,13 +42,9 @@ import java.util.List;
 // =============================================================
 public interface IncidentRepository extends JpaRepository<Incident, Long> {
 
-    // =========================================
     // RECENT CREATED INCIDENTS
-    // =========================================
     List<Incident> findTop10ByOrderByCreatedAtDesc();
 
-    // =========================================
     // RECENT UPDATED INCIDENTS
-    // =========================================
     List<Incident> findTop10ByOrderByUpdatedAtDesc();
 }
