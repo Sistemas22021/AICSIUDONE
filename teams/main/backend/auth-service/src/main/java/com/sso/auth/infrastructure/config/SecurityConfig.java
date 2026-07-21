@@ -41,7 +41,7 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
 
             // CORS: permite peticiones desde el Login MFE y Consumer App
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            //.cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
             // Rutas públicas y protegidas
             .authorizeHttpRequests(auth -> auth

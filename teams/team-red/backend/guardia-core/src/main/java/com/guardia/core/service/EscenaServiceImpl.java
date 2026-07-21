@@ -29,6 +29,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -147,7 +148,7 @@ public class EscenaServiceImpl implements EscenaService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<EscenaResponse> obtenerPorInvestigador(Long usuarioId) {
+    public List<EscenaResponse> obtenerPorInvestigador(UUID usuarioId) {
         return escenaRepository.findByLevantadaPorId(usuarioId).stream().map(this::toResponse).toList();
     }
 
@@ -270,7 +271,7 @@ public class EscenaServiceImpl implements EscenaService {
         LocalDateTime horaCierre = LocalDateTime.now();
 
         String hash = hashStrategy.calcular(
-                id + "|" + investigador.getId() + "|" + investigador.getNombre() + "|" +
+                id + "|" + investigador.getId() + "|" + investigador.getFullName() + "|" +
                         horaCierre + "|" + (request.observaciones() == null ? "" : request.observaciones())
         );
 
@@ -298,8 +299,8 @@ public class EscenaServiceImpl implements EscenaService {
 
     public EscenaResponse toResponse(Escena e) {
         UsuarioResponse investigador = e.getLevantadaPor() == null ? null :
-                new UsuarioResponse(e.getLevantadaPor().getId(), e.getLevantadaPor().getNombre(),
-                        e.getLevantadaPor().getIdentificacion(), e.getLevantadaPor().getCorreo());
+                new UsuarioResponse(e.getLevantadaPor().getId(), e.getLevantadaPor().getUsername(),
+                        e.getLevantadaPor().getFullName(), e.getLevantadaPor().getProfilePhotoUrl());
 
         Long expedienteId = e.getExpediente() != null ? e.getExpediente().getId() : null;
 
@@ -313,7 +314,7 @@ public class EscenaServiceImpl implements EscenaService {
                         e.getId(),
                         ev.getHashIntegridad(),
                         ev.getTimestampRegistro(),
-                        ev.getInvestigador() != null ? ev.getInvestigador().getNombre() : null
+                        ev.getInvestigador() != null ? ev.getInvestigador().getFullName() : null
                 ))
                 .toList();
 
@@ -325,8 +326,8 @@ public class EscenaServiceImpl implements EscenaService {
                         .toList();
 
         UsuarioResponse liberadaPor = e.getLiberadaPor() == null ? null :
-                new UsuarioResponse(e.getLiberadaPor().getId(), e.getLiberadaPor().getNombre(),
-                        e.getLiberadaPor().getIdentificacion(), e.getLiberadaPor().getCorreo());
+                new UsuarioResponse(e.getLiberadaPor().getId(), e.getLiberadaPor().getUsername(),
+                        e.getLiberadaPor().getFullName(), e.getLiberadaPor().getProfilePhotoUrl());
 
         return new EscenaResponse(
                 e.getId(),

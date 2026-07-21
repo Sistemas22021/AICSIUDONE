@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/escenas")
@@ -48,7 +49,7 @@ public class EscenaController {
     }
 
     @GetMapping("/por-investigador/{usuarioId}")
-    public ResponseEntity<ApiResponse<List<EscenaResponse>>> obtenerPorInvestigador(@PathVariable Long usuarioId) {
+    public ResponseEntity<ApiResponse<List<EscenaResponse>>> obtenerPorInvestigador(@PathVariable UUID usuarioId) {
         return ResponseEntity.ok(ApiResponse.ok(escenaService.obtenerPorInvestigador(usuarioId)));
     }
 

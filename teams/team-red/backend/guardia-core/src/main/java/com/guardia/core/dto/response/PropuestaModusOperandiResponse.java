@@ -4,6 +4,7 @@ import com.guardia.core.model.enums.EstadoPropuestaMO;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * DTO de respuesta con el contenido de la propuesta de MO generada por IA
@@ -26,7 +27,7 @@ public record PropuestaModusOperandiResponse(
         LocalDateTime fechaGeneracion,
         List<ExpedienteSimilarResponse> expedientesSimilares,
         boolean revisadoPorExperto,
-        Long analistaRevisorId,
+        UUID  analistaRevisorId,
         String analistaRevisorNombre,
         String justificacionRevision,
         String clasificacionManual,

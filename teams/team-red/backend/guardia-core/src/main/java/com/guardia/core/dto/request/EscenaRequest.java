@@ -2,6 +2,8 @@ package com.guardia.core.dto.request;
 
 import jakarta.validation.constraints.NotNull;
 
+import java.util.UUID;
+
 /**
  * DTO de solicitud para crear una escena de levantamiento asociada a un expediente.
  * Contiene expedienteId y levantadaPorId (investigador responsable).
@@ -11,8 +13,8 @@ public record EscenaRequest(
         Long expedienteId,
 
         @NotNull(message = "El investigador responsable es obligatorio")
-        Long levantadaPorId
+        UUID levantadaPorId
 ) {
     public Long getExpedienteId() { return this.expedienteId; }
-    public Long getLevantadaPorId() { return this.levantadaPorId; }
+    public UUID getLevantadaPorId() { return this.levantadaPorId; }
 }

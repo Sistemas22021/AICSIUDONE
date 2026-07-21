@@ -1,5 +1,5 @@
-// Estado global del formulario: involucrados, ubicación, denunciante, tipo de registro
 import { createContext, useContext, useState, type ReactNode } from 'react'
+import { useAuth } from './AuthContext'
 
 // ─── Tipo de Registro ─────────────────────────────────────────────────────────
 
@@ -117,7 +117,7 @@ const FormContext = createContext<FormContextType | undefined>(undefined)
 
 // ─── Estado inicial ───────────────────────────────────────────────────────────
 
-const getInitialFormData = (): FormData => ({
+const getInitialFormData = (investigadorNombre: string): FormData => ({
   tipoRegistro: '',
 
   involucrados: [
@@ -149,7 +149,7 @@ const getInitialFormData = (): FormData => ({
 
 
   agenteRegistrador: new Date().toLocaleDateString('es-VE'),
-  investigador:      'Agt. Ramírez',
+  investigador:      investigadorNombre,
 
   denuncianteNombre:         '',
   denuncianteTelefono:       '',
@@ -162,7 +162,8 @@ const getInitialFormData = (): FormData => ({
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 export const FormProvider = ({ children }: { children: ReactNode }) => {
-  const [formData, setFormData] = useState<FormData>(getInitialFormData())
+  const { username } = useAuth()
+  const [formData, setFormData] = useState<FormData>(() => getInitialFormData(username))
 
   const updateFormData = (data: Partial<FormData>) =>
       setFormData(prev => ({ ...prev, ...data }))
@@ -199,7 +200,7 @@ export const FormProvider = ({ children }: { children: ReactNode }) => {
         involucrados: prev.involucrados.map(v => (v.id === id ? { ...v, ...data } : v)),
       }))
 
-  const resetForm = () => setFormData(getInitialFormData())
+  const resetForm = () => setFormData(getInitialFormData(username))
 
   return (
       <FormContext.Provider

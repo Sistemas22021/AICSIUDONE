@@ -1,8 +1,9 @@
 // Barra superior con el logo ZAC, datos del expediente activo y menú de opciones
 import { useState, useEffect, useRef } from 'react'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, LogOut  } from 'lucide-react'
 import { NeonPanel } from './ui/NeonPanel'
 import { useFormContext } from '../context/FormContext'
+import { useAuth } from '../context/AuthContext'
 import { SellarExpedienteButton } from './ui/SellarExpedienteButton'
 
 interface HeaderProps {
@@ -12,6 +13,7 @@ interface HeaderProps {
 
 export const Header = ({ onSearchClick, onSellarClick }: HeaderProps) => {
   const { formData, resetForm } = useFormContext()
+  const { logout } = useAuth()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -99,11 +101,20 @@ export const Header = ({ onSearchClick, onSellarClick }: HeaderProps) => {
 
       {/* Panel Derecho - Información del Expediente */}
       <NeonPanel className="flex-1 flex flex-col justify-between h-full">
+        <div className="flex items-center justify-between mb-3">
         <div
           className="text-xs uppercase tracking-[0.15em] text-cyan-300 mb-3"
           style={{ textShadow: '0 0 12px rgba(51,153,255,0.7), 0 0 25px rgba(51,153,255,0.4)' }}
         >
           EXP — {new Date().getFullYear()} — EN PROGRESO
+        </div>
+          <button
+              onClick={logout}
+              className="px-3 py-1.5 border-2 border-red-400/50 rounded text-[10px] uppercase tracking-[0.12em] text-red-400 hover:bg-red-400/10 hover:border-red-400 transition-all flex items-center gap-1.5"
+          >
+            <LogOut size={12} />
+            Cerrar Sesión
+          </button>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

@@ -5,11 +5,12 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.util.List;
+import java.util.UUID;
 
 public record CasoRequest(
 
         @NotNull(message = "Debe indicar el usuario que realiza la agrupación.")
-        String creadoPorIdentificacion,
+        String creadoPorUsername,
 
         @NotNull(message = "Debe indicar al menos dos expedientes.")
         @Size(min = 2, message = "Un caso debe agrupar al menos dos expedientes.")
@@ -18,6 +19,6 @@ public record CasoRequest(
         @NotBlank(message = "El motivo de la agrupación es obligatorio.")
         String motivo,
 
-        Long alertaOrigenId
+        UUID alertaOrigenId
 ) {
 }

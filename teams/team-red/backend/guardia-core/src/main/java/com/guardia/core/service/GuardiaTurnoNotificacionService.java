@@ -1,4 +1,4 @@
-package com.guardia.core.notification;
+package com.guardia.core.service;
 
 import com.guardia.core.model.Escena;
 import org.slf4j.Logger;
@@ -18,7 +18,7 @@ public class GuardiaTurnoNotificacionService implements NotificacionService {
     @Override
     public void notificarLiberacionEscena(Escena escena) {
         String folio = escena.getExpediente() != null ? escena.getExpediente().getFolio() : "N/A";
-        String investigador = escena.getLiberadaPor() != null ? escena.getLiberadaPor().getNombre() : "N/A";
+        String investigador = escena.getLiberadaPor() != null ? escena.getLiberadaPor().getFullName() : "N/A";
 
         log.info("[NOTIFICACION -> GUARDIA DE TURNO] Escena {} (expediente {}) liberada formalmente por {} el {}.",
                 escena.getId(), folio, investigador, escena.getHoraLiberacion());

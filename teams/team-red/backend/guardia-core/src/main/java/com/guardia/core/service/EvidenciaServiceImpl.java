@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -108,7 +109,7 @@ public class EvidenciaServiceImpl implements EvidenciaService {
     }
 
     @Override
-    public EvidenciaResponse firmarLevantamiento(Long id, Long investigadorId) {
+    public EvidenciaResponse firmarLevantamiento(Long id, UUID investigadorId) {
         Evidencia evidencia = findById(id);
         Usuario investigador = usuarioRepository.findById(investigadorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario", investigadorId));
@@ -128,7 +129,7 @@ public class EvidenciaServiceImpl implements EvidenciaService {
 
     private EvidenciaResponse toResponse(Evidencia e) {
         String investigadorNombre = e.getInvestigador() != null
-                ? e.getInvestigador().getNombre() : null;
+                ? e.getInvestigador().getFullName() : null;
         return new EvidenciaResponse(
                 e.getId(),
                 e.getNumeroItem(),

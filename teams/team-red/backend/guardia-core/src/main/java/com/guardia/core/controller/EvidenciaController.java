@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/evidencias")
@@ -67,7 +68,7 @@ public class EvidenciaController {
 
     @PatchMapping("/{id}/firmar/{investigadorId}")
     public ResponseEntity<ApiResponse<EvidenciaResponse>> firmarLevantamiento(@PathVariable Long id,
-                                                                               @PathVariable Long investigadorId) {
+                                                                              @PathVariable UUID investigadorId) {
         return ResponseEntity.ok(ApiResponse.ok("Levantamiento firmado.",
                 evidenciaService.firmarLevantamiento(id, investigadorId)));
     }

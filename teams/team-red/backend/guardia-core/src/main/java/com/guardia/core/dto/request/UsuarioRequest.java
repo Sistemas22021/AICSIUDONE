@@ -1,27 +1,25 @@
 package com.guardia.core.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 /**
  * DTO de solicitud para crear o actualizar un usuario del sistema.
  * Campos: nombre, identificación, credenciales y correo.
  */
 public record UsuarioRequest(
-        @NotBlank(message = "El nombre es obligatorio")
-        String nombre,
+        @NotBlank(message = "El nombre de usuario es obligatorio")
+        @Size(min = 3, max = 50, message = "El username debe tener entre 3 y 50 caracteres")
+        String username,
 
-        @NotBlank(message = "La identificación es obligatoria")
-        String identificacion,
+        @NotBlank(message = "La contraseña es obligatoria")
+        @Size(min = 8, message = "La contraseña debe tener al menos 8 caracteres")
+        String password,
 
-        @NotBlank(message = "Las credenciales son obligatorias")
-        String credenciales,
+        @NotBlank(message = "El nombre completo es obligatorio")
+        @Size(max = 100, message = "El nombre completo no puede superar los 100 caracteres")
+        String fullName,
 
-        @NotBlank(message = "El correo es obligatorio")
-        String correo
-) {
-    public String getNombre() { return this.nombre; }
-    public String getIdentificacion() { return this.identificacion; }
-    public String getCredenciales() { return this.credenciales; }
-    public String getCorreo() { return this.correo; }
-}
+        @Size(max = 500, message = "La URL de la foto no puede superar los 500 caracteres")
+        String profilePhotoUrl
+) { }
