@@ -1,0 +1,71 @@
+# ─────────────────────────────────────────────────────────────
+# Pipeline: Backend Equipo Azul-Cian
+#
+# Este pipeline valida automáticamente los cambios realizados
+# en el backend antes de integrarlos.
+#
+# Flujo:
+# Compile → Tests → Feedback
+#
+# No realiza despliegue porque el backend se ejecuta localmente.
+# ─────────────────────────────────────────────────────────────
+
+name: "[Backend] Equipo Azul-Cian"
+
+
+on:
+
+  push:
+    branches:
+      - rama-equipo-cian
+    paths:
+      - "teams/main/backend/equipo-azul-cian/backend/**"
+
+
+  pull_request:
+    branches:
+      - rama-equipo-cian
+    paths:
+      - "teams/main/backend/equipo-azul-cian/backend/**"
+
+
+  workflow_dispatch:
+
+
+jobs:
+
+  build-test:
+
+    name: "Build y Tests Backend"
+
+    runs-on: ubuntu-latest
+
+
+    defaults:
+      run:
+        working-directory: teams/main/backend/equipo-azul-cian/backend
+
+
+    steps:
+
+
+      # Descargar código del repositorio
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+
+
+      # Configurar Java
+      - name: Configurar Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: maven
+
+
+
+      # Compilar y ejecutar pruebas
+      - name: Ejecutar pruebas del backend
+        run: ./mvnw test
+
