@@ -18,8 +18,11 @@ public class Sha256SelloStrategy implements SelloStrategy {
     public void aplicar(Expediente expediente, Usuario agente, LocalDateTime timestamp) {
         String hash = construirHash(expediente, timestamp);
         String infoAgente = String.format(
-                "{\"id\":%d,\"nombre\":\"%s\",\"identificacion\":\"%s\",\"timestamp\":\"%s\"}",
-                agente.getId(), agente.getNombre(), agente.getIdentificacion(), timestamp
+                "{\"id\":\"%s\",\"username\":\"%s\",\"fullName\":\"%s\",\"timestamp\":\"%s\"}",
+                agente.getId(),
+                agente.getUsername(),
+                agente.getFullName(),
+                timestamp
         );
         expediente.setHashIntegridad(hash);
         expediente.setAgenteSelladorInfo(infoAgente);

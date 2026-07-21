@@ -64,7 +64,6 @@ public class JwtSsoTokenValidator implements SsoTokenValidator {
                     ? Optional.empty()
                     : Optional.of(username);
         } catch (JwtException | IllegalArgumentException e) {
-            // Firma inválida, token expirado o mal formado.
             return Optional.empty();
         }
     }

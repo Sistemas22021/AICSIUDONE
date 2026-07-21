@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 /**
@@ -19,7 +20,7 @@ import java.util.Optional;
 public interface ExpedienteRepository extends JpaRepository<Expediente, Long> {
     Optional<Expediente> findByFolio(String folio);
     List<Expediente> findByEstadoExpediente(EstadoExpediente estado);
-    List<Expediente> findByCreadoPorId(Long creadoPorId);
+    List<Expediente> findByCreadoPorId(UUID creadoPorId);
 
     @Query("""
             SELECT e, cosine_distance(e.embedding, :embedding)

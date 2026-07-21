@@ -4,6 +4,7 @@ import com.guardia.core.dto.request.EvidenciaRequest;
 import com.guardia.core.dto.response.EvidenciaResponse;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Servicio para gestionar evidencias: registro, asignación de número y verificación de integridad.
@@ -16,7 +17,7 @@ public interface EvidenciaService {
     EvidenciaResponse actualizar(Long id, EvidenciaRequest request);
     void eliminar(Long id);
     EvidenciaResponse asignarNumero(Long id, String numero);
-    EvidenciaResponse firmarLevantamiento(Long id, Long investigadorId);
+    EvidenciaResponse firmarLevantamiento(Long id, UUID  investigadorId);
     boolean validarIntegridad(Long id);
     boolean verificarHash(Long id);
 }

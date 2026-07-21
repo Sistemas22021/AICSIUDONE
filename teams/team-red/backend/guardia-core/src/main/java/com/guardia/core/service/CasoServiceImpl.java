@@ -38,10 +38,9 @@ public class CasoServiceImpl implements CasoService {
             throw new BusinessException("Un caso debe agrupar al menos dos expedientes distintos.");
         }
 
-        Usuario creadoPor = usuarioRepository.findByIdentificacion(request.creadoPorIdentificacion())
+        Usuario creadoPor = usuarioRepository.findByUsername(request.creadoPorUsername())
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Usuario con identificación '" + request.creadoPorIdentificacion() + "' no encontrado."));
-
+                        "Usuario con username '" + request.creadoPorUsername() + "' no encontrado."));
 
         List<Expediente> expedientes = idsUnicos.stream()
                 .map(id -> expedienteRepository.findById(id)
@@ -101,8 +100,8 @@ public class CasoServiceImpl implements CasoService {
 
     private CasoResponse toResponse(Caso caso) {
         UsuarioResponse creadoPor = caso.getCreadoPor() == null ? null : new UsuarioResponse(
-                caso.getCreadoPor().getId(), caso.getCreadoPor().getNombre(),
-                caso.getCreadoPor().getIdentificacion(), caso.getCreadoPor().getCorreo());
+                caso.getCreadoPor().getId(), caso.getCreadoPor().getUsername(),
+                caso.getCreadoPor().getFullName(), caso.getCreadoPor().getProfilePhotoUrl());
 
         List<ExpedienteResumenResponse> expedientes = caso.getExpedientes().stream()
                 .map(this::toResumen).toList();
@@ -119,7 +118,7 @@ public class CasoServiceImpl implements CasoService {
                 e.getTipoDelito() != null ? e.getTipoDelito().getNombre() : null,
                 e.getSubtipoDelito() != null ? e.getSubtipoDelito().getNombre() : null,
                 e.getEstadoExpediente(), e.getFechaHecho(),
-                e.getCreadoPor() != null ? e.getCreadoPor().getNombre() : "Sin asignar",
+                e.getCreadoPor() != null ? e.getCreadoPor().getFullName() : "Sin asignar",
                 e.getLocalizacion() != null ? e.getLocalizacion().getMunicipio() : null);
     }
 }

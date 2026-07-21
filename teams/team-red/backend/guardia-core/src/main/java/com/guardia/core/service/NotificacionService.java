@@ -1,4 +1,4 @@
-package com.guardia.core.notification;
+package com.guardia.core.service;
 
 import com.guardia.core.model.Escena;
 

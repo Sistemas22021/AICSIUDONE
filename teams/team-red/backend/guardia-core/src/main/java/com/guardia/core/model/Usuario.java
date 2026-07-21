@@ -3,10 +3,12 @@ package com.guardia.core.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
-@Table(name = "usuario")
+@Table(name = "users")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -14,25 +16,28 @@ import java.util.List;
 @Builder
 /**
  * Entidad que representa un usuario del sistema (investigador/agente).
- * Incluye credenciales, correo y relaciones con expedientes y escenas.
+ * Mapea la tabla compartida `users`, la misma que usa el login SSO
+ * (main/backend/auth-service). El id es UUID, no autoincremental.
  */
 public class Usuario {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private UUID id;
 
-    @Column(nullable = false)
-    private String nombre;
+    @Column(name = "username", nullable = false, unique = true)
+    private String username;
 
-    @Column(nullable = false, unique = true)
-    private String identificacion;
+    @Column(name = "password", nullable = false)
+    private String password;
 
-    @Column(nullable = false)
-    private String credenciales;
+    @Column(name = "full_name", nullable = false)
+    private String fullName;
 
-    @Column(nullable = false, unique = true)
-    private String correo;
+    @Column(name = "profile_photo_url")
+    private String profilePhotoUrl;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime createdAt;
 
     @OneToMany(mappedBy = "creadoPor", fetch = FetchType.LAZY)
     private List<Expediente> expedientesCreados;
@@ -59,5 +64,4 @@ public class Usuario {
                 .findFirst()
                 .orElse(null);
     }
-
 }
