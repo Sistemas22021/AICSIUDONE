@@ -449,7 +449,7 @@ export default function InmateRegisterPage() {
               <input type="date" name="birthDate" className={inputClass('birthDate')}
                 value={form.birthDate} onChange={handleChange} onBlur={handleBlur}
                 max={maxDateToday()} />
-              {age && !errors.birthDate && <p className="text-xs text-gray-500 mt-1">Edad: {age} años</p>}
+              {age !== '' && !errors.birthDate && <p className="text-xs text-gray-500 mt-1">Edad: {age} años</p>}
               <FieldError field="birthDate" />
             </div>
           </div>

@@ -180,9 +180,11 @@ export function validateBirthDate(value: string): string {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   if (birth > today) return 'La fecha no puede ser futura'
+  
   const minAge = new Date(today)
-  minAge.setFullYear(minAge.getFullYear() - 14)
-  if (birth > minAge) return 'El recluso debe tener al menos 14 años'
+  minAge.setFullYear(minAge.getFullYear() - 18)
+  if (birth > minAge) return 'El recluso debe ser mayor de edad (al menos 18 años)'
+  
   const maxAge = new Date(today)
   maxAge.setFullYear(maxAge.getFullYear() - 120)
   if (birth < maxAge) return 'Fecha de nacimiento inválida'
