@@ -20,6 +20,12 @@ public class MiddlewareInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws IOException {
+
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            response.setStatus(HttpServletResponse.SC_OK);
+            return false;
+        }
+
         AuthenticationHandler auth = new AuthenticationHandler(ssoTokenValidator);
         RequestLoggingHandler loggerHandler = new RequestLoggingHandler();
         auth.setNext(loggerHandler);
