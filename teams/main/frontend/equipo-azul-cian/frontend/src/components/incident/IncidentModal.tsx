@@ -11,12 +11,20 @@ const IncidentsModal: React.FC<Props> = ({ onClose, onCreated }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [form, setForm] = useState({
-    type: 'ROBO',
+    type: 'Robo',
     description: '',
     priority: 'MEDIUM',
     latitude: 0,
     longitude: 0
   });
+
+  // 1. Estado para almacenar el tipo personalizado cuando se selecciona "Otro"
+  const [customType, setCustomType] = useState('');
+
+  // 3. Función de validación: solo permite letras, espacios, tildes y la letra Ñ
+  const validateIncidentType = (text: string) => {
+    return /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(text);
+  };
 
   const handleMapSelect = (lat: number, lng: number) => {
     setForm((prev) => ({
@@ -29,9 +37,25 @@ const IncidentsModal: React.FC<Props> = ({ onClose, onCreated }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!form.description) {
-      alert('Completa la descripción');
+    // 1. Validación de la descripción (.trim() evita puros espacios vacíos)
+    if (!form.description.trim()) {
+      alert('Completa la descripción del incidente');
       return;
+    }
+
+    // 4. Cambiar validación del tipo personalizado
+    if (form.type === "Personalizado") {
+      const cleanType = customType.trim();
+
+      if (!cleanType) {
+        alert("Especifique el tipo de incidente");
+        return;
+      }
+
+      if (!validateIncidentType(cleanType)) {
+        alert("El tipo de incidente solo puede contener letras y espacios");
+        return;
+      }
     }
 
     if (form.latitude === 0 && form.longitude === 0) {
@@ -41,6 +65,12 @@ const IncidentsModal: React.FC<Props> = ({ onClose, onCreated }) => {
 
     setIsSubmitting(true);
 
+    // Conversión de datos final antes de enviar al backend
+    const incidentData = {
+      ...form,
+      type: form.type === "Personalizado" ? customType.trim() : form.type
+    };
+
     try {
       const res = await fetch(
         `${API_BASE_URL}/incidents`,
@@ -49,7 +79,7 @@ const IncidentsModal: React.FC<Props> = ({ onClose, onCreated }) => {
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(form)
+          body: JSON.stringify(incidentData)
         }
       );
 
@@ -61,13 +91,15 @@ const IncidentsModal: React.FC<Props> = ({ onClose, onCreated }) => {
 
       onCreated(created);
 
+      // Reinicio del formulario al estado inicial limpio
       setForm({
-        type: 'ROBO',
+        type: 'Robo',
         description: '',
         priority: 'MEDIUM',
         latitude: 0,
         longitude: 0
       });
+      setCustomType('');
 
       onClose();
     } catch (err: any) {
@@ -104,7 +136,7 @@ const IncidentsModal: React.FC<Props> = ({ onClose, onCreated }) => {
         </h2>
 
         <form onSubmit={handleSubmit}>
-          {/* TIPO */}
+          {/* SELECT DE TIPOS DE INCIDENTE */}
           <select
             value={form.type}
             onChange={(e) =>
@@ -115,24 +147,38 @@ const IncidentsModal: React.FC<Props> = ({ onClose, onCreated }) => {
             }
             style={inputStyle}
           >
-            <option value="ROBO">Robo</option>
-
-            <option value="ACCIDENTE">
-              Accidente de tránsito
-            </option>
-
-            <option value="DISTURBIO">
-              Disturbio
-            </option>
-
-            <option value="EMERGENCIA_MEDICA">
-              Emergencia médica
-            </option>
-
-            <option value="VANDALISMO">
-              Vandalismo
-            </option>
+            <option value="Robo">Robo</option>
+            <option value="Hurto">Hurto</option>
+            <option value="Accidente de tránsito">Accidente de tránsito</option>
+            <option value="Emergencia médica">Emergencia médica</option>
+            <option value="Incendio">Incendio</option>
+            <option value="Disturbio">Disturbio</option>
+            <option value="Vandalismo">Vandalismo</option>
+            <option value="Violencia doméstica">Violencia doméstica</option>
+            <option value="Persona desaparecida">Persona desaparecida</option>
+            <option value="Persona sospechosa">Persona sospechosa</option>
+            <option value="Alteración del orden público">Alteración del orden público</option>
+            <option value="Fuga de gas">Fuga de gas</option>
+            <option value="Desastre natural">Desastre natural</option>
+            <option value="Apoyo policial">Apoyo policial</option>
+            <option value="Amenaza">Amenaza</option>
+            <option value="Secuestro">Secuestro</option>
+            <option value="Riña">Riña</option>
+            <option value="Persona lesionada">Persona lesionada</option>
+            <option value="Objeto sospechoso">Objeto sospechoso</option>
+            <option value="Personalizado">Otro</option>
           </select>
+
+          {/* Input condicional para escribir un tipo personalizado */}
+          {form.type === "Personalizado" && (
+            <input
+              type="text"
+              placeholder="Escriba el tipo de incidente"
+              value={customType}
+              onChange={(e) => setCustomType(e.target.value)}
+              style={inputStyle}
+            />
+          )}
 
           {/* PRIORIDAD */}
           <select

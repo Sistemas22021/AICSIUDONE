@@ -446,12 +446,15 @@ const Patrullas: React.FC = () => {
                 <label style={styles.formLabel}>Estado Inicial</label>
                 <select
                   value={newPatrol.status}
-                  onChange={(e) => setNewPatrol({ ...newPatrol, status: e.target.value as PatrolStatus })}
+                  onChange={(e) =>
+                    setNewPatrol({
+                      ...newPatrol,
+                      status: e.target.value as PatrolStatus,
+                    })
+                  }
                   style={styles.formInput}
                 >
                   <option value="AVAILABLE">Disponible</option>
-                  <option value="EN_ROUTE">En Ruta</option>
-                  <option value="BUSY">Ocupada</option>
                   <option value="OUT_OF_SERVICE">Fuera de Servicio</option>
                 </select>
               </div>
