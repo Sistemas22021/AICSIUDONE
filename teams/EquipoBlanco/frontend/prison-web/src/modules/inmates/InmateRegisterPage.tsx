@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Camera, Upload, Trash2, Fingerprint, AlertCircle, Info } from 'lucide-react'
+import { Camera, Upload, Trash2, Fingerprint, AlertCircle, Info, Search } from 'lucide-react'
 import api from '../../shared/api'
+import { nexoService, type NexoPersona } from '../../shared/nexoService'
 import SidebarLayout from '../../shared/SidebarLayout'
 import {
   cedulaKeyFilter, validateCedula, validateExpediente, formatCedulaIntelligent,
@@ -95,6 +96,44 @@ export default function InmateRegisterPage() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const [cameraTarget, setCameraTarget] = useState<keyof FormData | null>(null)
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null)
+
+  const [showNexoModal, setShowNexoModal] = useState(false)
+  const [nexoSuspects, setNexoSuspects] = useState<NexoPersona[]>([])
+  const [loadingNexo, setLoadingNexo] = useState(false)
+  const [nexoError, setNexoError] = useState('')
+
+  async function loadNexoSuspects() {
+    setLoadingNexo(true)
+    setNexoError('')
+    try {
+      const suspects = await nexoService.getSospechosos()
+      setNexoSuspects(suspects)
+    } catch (err) {
+      setNexoError('Error al cargar sospechosos de la API externa')
+    } finally {
+      setLoadingNexo(false)
+    }
+  }
+
+  function handleSelectNexoSuspect(suspect: any) {
+    let rawCedula = String(suspect.cedula || suspect.dni || suspect.identificacion || suspect.documento || '').trim().toUpperCase()
+    if (rawCedula && !rawCedula.startsWith('V-') && !rawCedula.startsWith('E-')) {
+      if (rawCedula.startsWith('V') || rawCedula.startsWith('E')) {
+        rawCedula = rawCedula.charAt(0) + '-' + rawCedula.substring(1).replace(/\D/g, '')
+      } else {
+        rawCedula = 'V-' + rawCedula.replace(/\D/g, '')
+      }
+    }
+    setForm(prev => ({
+      ...prev,
+      cedula: rawCedula,
+      firstName: suspect.nombre || '',
+      firstLastname: suspect.apellido || ''
+    }))
+    setShowNexoModal(false)
+    setCedulaChecked(false)
+    setCedulaExists(false)
+  }
 
   useEffect(() => {
     if (form.court && form.crime) {
@@ -343,6 +382,13 @@ export default function InmateRegisterPage() {
       <div className="w-full">
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Registro de interno</h1>
       <p className="text-sm text-gray-500 mb-6">Ingrese los datos del nuevo recluso en el sistema</p>
+
+      <div className="flex justify-end mb-4">
+        <button type="button" onClick={() => { setShowNexoModal(true); loadNexoSuspects(); }}
+          className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 flex items-center gap-2">
+          <Search className="w-4 h-4" /> Importar Sospechoso (Nexo Criminal)
+        </button>
+      </div>
 
       {success && <div className="bg-green-100 border border-green-400 text-green-800 px-4 py-3 rounded-lg mb-4">{success}</div>}
       {globalError && <div className="bg-red-100 border border-red-400 text-red-800 px-4 py-3 rounded-lg mb-4">{globalError}</div>}
@@ -675,6 +721,55 @@ export default function InmateRegisterPage() {
                   Capturar foto
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Nexo */}
+      {showNexoModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl overflow-hidden shadow-xl w-full max-w-2xl flex flex-col max-h-[80vh]">
+            <div className="bg-indigo-900 text-white px-4 py-3 flex items-center justify-between shrink-0">
+              <span className="font-bold text-sm flex items-center gap-2"><Search className="w-4 h-4" /> Seleccionar Sospechoso</span>
+              <button onClick={() => setShowNexoModal(false)} className="text-white/70 hover:text-white text-xl leading-none">×</button>
+            </div>
+            <div className="p-4 overflow-y-auto flex-1">
+              <div className="bg-blue-50 border border-blue-200 text-blue-800 rounded-lg p-3 mb-4 flex items-start gap-3">
+                <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+                <div className="text-sm leading-relaxed">
+                  <span className="font-semibold block mb-1">Nota Informativa</span>
+                  Al importar un sospechoso desde Nexo Criminal, el sistema únicamente extraerá los datos básicos de identidad que ellos tienen registrados. Usted, como Oficial Penitenciario, es responsable de verificar la cédula y completar obligatoriamente el resto de los campos (expediente, condena, características y biométricos) para finalizar el ingreso del recluso.
+                </div>
+              </div>
+              {loadingNexo ? (
+                <div className="text-center py-8 text-gray-500">Cargando datos desde Nexo Criminal...</div>
+              ) : nexoError ? (
+                <div className="text-center py-8 text-red-500">{nexoError}</div>
+              ) : nexoSuspects.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">No se encontraron sospechosos.</div>
+              ) : (
+                <div className="space-y-2">
+                  {nexoSuspects.map(s => (
+                    <div key={s.id} className="flex justify-between items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                      <div>
+                        <p className="font-semibold text-gray-800">{s.nombre} {s.apellido}</p>
+                        <p className="text-sm text-gray-500">Cédula: {s.cedula || s.dni || s.identificacion || s.documento || 'No registrada'}</p>
+                      </div>
+                      <button onClick={() => handleSelectNexoSuspect(s)}
+                        className="bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-md text-sm font-medium hover:bg-indigo-200">
+                        Seleccionar
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="p-4 border-t border-gray-100 shrink-0 flex justify-end">
+              <button type="button" onClick={() => setShowNexoModal(false)}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200">
+                Cerrar
+              </button>
             </div>
           </div>
         </div>
