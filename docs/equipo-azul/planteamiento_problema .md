@@ -1,4 +1,4 @@
-S# Planteamiento del Problema
+# Planteamiento del Problema
 
 ## Descripción general del área
 
