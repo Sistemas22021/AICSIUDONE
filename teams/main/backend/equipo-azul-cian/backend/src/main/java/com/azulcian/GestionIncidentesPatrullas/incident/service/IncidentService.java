@@ -10,12 +10,16 @@ import com.azulcian.GestionIncidentesPatrullas.incident.repository.IncidentRepos
 import com.azulcian.GestionIncidentesPatrullas.patrol.model.Patrol;
 import com.azulcian.GestionIncidentesPatrullas.patrol.model.PatrolStatus;
 import com.azulcian.GestionIncidentesPatrullas.patrol.repository.PatrolRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
 public class IncidentService {
+
+    private static final Logger logger = LoggerFactory.getLogger(IncidentService.class);
 
     private final IncidentRepository incidentRepository;
     private final AssignmentRepository assignmentRepository;
@@ -35,8 +39,22 @@ public class IncidentService {
     // CREATE INCIDENT
     // =========================================
     public Incident createIncident(Incident incident) {
+        logger.debug(
+                "Creando incidente de tipo {}",
+                incident.getType()
+        );
+
         incident.setStatus(IncidentStatus.ACTIVE);
-        return incidentRepository.save(incident);
+        Incident saved = incidentRepository.save(incident);
+
+        logger.info(
+                "Nuevo incidente registrado. ID={}, Tipo={}, Prioridad={}",
+                saved.getId(),
+                saved.getType(),
+                saved.getPriority()
+        );
+
+        return saved;
     }
 
     // =========================================
@@ -54,8 +72,16 @@ public class IncidentService {
     // GET BY ID (INTERNAL / ENTITY)
     // =========================================
     public Incident getIncidentById(Long id) {
+        logger.debug("Buscando incidente con ID={}", id);
+
         return incidentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Incident not found with id: " + id));
+                .orElseThrow(() -> {
+                    logger.error(
+                            "No se encontró el incidente con ID={}",
+                            id
+                    );
+                    return new RuntimeException("Incident not found with id: " + id);
+                });
     }
 
     // =========================================
@@ -131,13 +157,31 @@ public class IncidentService {
         Incident incident = getIncidentById(id);
 
         if (newStatus == IncidentStatus.CLOSED) {
+            logger.warn(
+                    "Intento de cerrar el incidente {} a través de updateStatus en lugar del endpoint de cierre.",
+                    id
+            );
             throw new RuntimeException(
                     "Use close endpoint to close incidents"
             );
         }
 
+        logger.debug(
+                "Actualizando estado del incidente {} a {}",
+                id,
+                newStatus
+        );
+
         incident.setStatus(newStatus);
-        return incidentRepository.save(incident);
+        Incident updated = incidentRepository.save(incident);
+
+        logger.info(
+                "Estado del incidente {} actualizado a {}",
+                id,
+                newStatus
+        );
+
+        return updated;
     }
 
     // =========================================
@@ -149,6 +193,11 @@ public class IncidentService {
 
         // 2. Validar estado del incidente
         if (incident.getStatus() != IncidentStatus.IN_PROGRESS) {
+            logger.warn(
+                    "Intento de cerrar el incidente {} en estado {}",
+                    id,
+                    incident.getStatus()
+            );
             throw new RuntimeException(
                     "Only IN_PROGRESS incidents can be closed"
             );
@@ -157,15 +206,23 @@ public class IncidentService {
         // 3. Buscar assignment relacionado
         Assignment assignment = assignmentRepository
                 .findByIncident(incident)
-                .orElseThrow(() ->
-                        new RuntimeException("Assignment not found")
-                );
+                .orElseThrow(() -> {
+                    logger.error(
+                            "No se encontró la asignación para el incidente ID={}",
+                            id
+                    );
+                    return new RuntimeException("Assignment not found");
+                });
 
         // 4. Obtener patrulla
         Patrol patrol = assignment.getPatrol();
 
         // 5. Validar que la patrulla esté atendiendo
         if (patrol.getStatus() != PatrolStatus.BUSY) {
+            logger.warn(
+                    "Intento de cerrar incidente {} cuando la patrulla aún no estaba BUSY",
+                    id
+            );
             throw new RuntimeException(
                     "Incident can only be closed when patrol is BUSY"
             );
@@ -184,8 +241,15 @@ public class IncidentService {
         // 9. Guardar cambios
         patrolRepository.save(patrol);
         assignmentRepository.save(assignment);
+        Incident closedIncident = incidentRepository.save(incident);
 
-        return incidentRepository.save(incident);
+        logger.info(
+                "Incidente {} cerrado correctamente. Patrulla {} liberada.",
+                incident.getId(),
+                patrol.getCode()
+        );
+
+        return closedIncident;
     }
 
     // =========================================

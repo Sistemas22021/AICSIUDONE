@@ -2,13 +2,16 @@
 # Pipeline: Frontend Equipo Azul-Cian
 #
 # IMPORTANTE: Este pipeline es INDEPENDIENTE de todos los demás equipos.
-# Solo se activa cuando hay cambios dentro de la carpeta del frontend
-# del equipo Azul-Cian Y en la rama rama-equipo-cian.
+# Solo se activa cuando existen cambios dentro de la carpeta del frontend
+# del equipo Azul-Cian en la rama principal main.
 #
-# Sin el filtro `paths`, cualquier commit en rama-equipo-cian (incluso del
-# backend u otros equipos) activaría este pipeline innecesariamente.
+# El filtro paths evita ejecuciones innecesarias cuando otros equipos
+# modifican diferentes módulos del repositorio.
 #
-# Flujo de Jobs: Build → Lint → Test → Deploy (comentado) → Smoke Test (comentado)
+# Sin el filtro `paths`, cualquier commit realizado sobre main,
+# incluso cambios pertenecientes a otros equipos, ejecutaría este pipeline.
+#
+# Flujo de Jobs: Build → Lint → Test → Deploy (Vercel) → Smoke Test
 # ─────────────────────────────────────────────────────────────────────────────
 
 name: "[Frontend] Equipo Azul-Cian"
@@ -16,14 +19,16 @@ name: "[Frontend] Equipo Azul-Cian"
 on:
   push:
     branches:
-      - rama-equipo-cian
+      - main
     paths:
       - "teams/main/frontend/equipo-azul-cian/frontend/**"
+
   pull_request:
     branches:
-      - rama-equipo-cian
+      - main
     paths:
       - "teams/main/frontend/equipo-azul-cian/frontend/**"
+
   # Permite ejecutar el pipeline manualmente desde la UI de GitHub,
   # útil para re-ejecutar tras configurar Secrets o para depurar.
   workflow_dispatch:
@@ -147,18 +152,11 @@ jobs:
   # ─────────────────────────────────────────────────────────────────────────
   # Job 4: Deploy
   #
-  # ESTADO: Desactivado temporalmente — el destino de despliegue (Vercel,
-  # S3 u otra plataforma) aún no ha sido definido por el equipo.
-  # Esto NO es un error del pipeline, sino una decisión de implementación.
-  #
-  # Cuando se decida la plataforma y se configuren los Secrets en GitHub,
-  # se deben descomentar los steps correspondientes (Vercel o S3).
+  # El despliegue a producción es gestionado de manera automática por Vercel
+  # al detectar nuevos commits en la rama main.
   #
   # Solo se ejecuta en eventos `push`, nunca en Pull Requests, porque
   # desplegar desde una PR significaría publicar código no revisado aún.
-  #
-  # NOTA: Este Job no necesita working-directory porque sus steps run
-  # son simples comandos de infraestructura, no de código fuente.
   # ─────────────────────────────────────────────────────────────────────────
   deploy:
     name: "Deploy"
@@ -175,54 +173,15 @@ jobs:
           name: frontend-dist
           path: teams/main/frontend/equipo-azul-cian/frontend/dist/
 
-      # ── Opción A: Deploy a Vercel ──────────────────────────────────────
-      # Requiere los Secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
-      # - name: Deploy a Vercel
-      #   working-directory: teams/main/frontend/equipo-azul-cian/frontend
-      #   run: |
-      #     npm install -g vercel
-      #     vercel --token=${{ secrets.VERCEL_TOKEN }} --yes
-      #   env:
-      #     VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      #     VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_CIAN_FRONTEND }}
-
-      # ── Opción B: Deploy a S3 (AWS) ────────────────────────────────────
-      # Requiere los Secrets: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, S3_BUCKET
-      # - name: Configurar credenciales AWS
-      #   uses: aws-actions/configure-aws-credentials@v4
-      #   with:
-      #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      #     aws-region: us-east-1
-      # - name: Deploy a S3
-      #   run: |
-      #     aws s3 sync teams/main/frontend/equipo-azul-cian/frontend/dist/ s3://${{ secrets.S3_BUCKET_CIAN_FRONTEND }} \
-      #       --delete \
-      #       --cache-control "max-age=31536000,immutable" \
-      #       --exclude "index.html"
-      #     aws s3 cp teams/main/frontend/equipo-azul-cian/frontend/dist/index.html s3://${{ secrets.S3_BUCKET_CIAN_FRONTEND }}/index.html \
-      #       --cache-control "no-cache,no-store,must-revalidate"
-
-      - name: Deploy pendiente de configuración
-        run: echo "Deploy comentado. Descomentar los steps de Vercel o S3 cuando se defina la plataforma."
+      - name: Deploy gestionado por Vercel
+        run: echo "El despliegue automático es gestionado por Vercel al detectar cambios en main."
 
   # ─────────────────────────────────────────────────────────────────────────
   # Job 5: Smoke Test (Test de Aprobación)
   #
-  # El Smoke Test es el Test de Aprobación del pipeline. A diferencia de los
-  # tests unitarios (que validan lógica interna), el Smoke Test valida el
-  # comportamiento observable por el usuario una vez finalizado el despliegue:
-  # comprueba que la URL pública responde con HTTP 200, confirmando que la
-  # aplicación quedó efectivamente publicada y accesible.
-  #
-  # Si falla, indica que el Deploy técnicamente "funcionó" (no falló el Job),
-  # pero algo salió mal en la plataforma (CDN, DNS, configuración, etc.).
-  #
-  # ESTADO: Comentado — se activa junto con el Deploy cuando se defina
-  # la plataforma y se configure el Secret FRONTEND_URL.
-  #
-  # NOTA: Este Job no necesita working-directory. El curl corre en el
-  # workspace raíz del runner, no en la carpeta del frontend.
+  # El Smoke Test es el Test de Aprobación del pipeline. Valida que la URL
+  # pública responda con HTTP 200, confirmando que la aplicación quedó
+  # efectivamente publicada y accesible en Vercel.
   # ─────────────────────────────────────────────────────────────────────────
   smoke-test:
     name: "Smoke Test (Test de Aprobación)"
@@ -231,16 +190,15 @@ jobs:
     if: github.event_name == 'push'
 
     steps:
-      # - name: Verificar que la app responde (HTTP 200)
-      #   run: |
-      #     URL="${{ secrets.FRONTEND_URL }}"
-      #     STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
-      #     echo "Código de respuesta recibido: $STATUS"
-      #     if [ "$STATUS" != "200" ]; then
-      #       echo "ERROR: La app no responde correctamente. Se esperaba 200, se obtuvo $STATUS."
-      #       exit 1
-      #     fi
-      #     echo "OK: La app está en línea y responde con HTTP 200."
+      - name: Verificar disponibilidad del frontend
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://equipo-cian-frontend.vercel.app/)
 
-      - name: Smoke Test pendiente de configuración
-        run: echo "Smoke Test comentado. Descomentar cuando se configure FRONTEND_URL en los Secrets de GitHub."
+          echo "Código HTTP recibido: $STATUS"
+
+          if [ "$STATUS" != "200" ]; then
+            echo "ERROR: El frontend no responde correctamente."
+            exit 1
+          fi
+
+          echo "OK: El frontend está disponible."
