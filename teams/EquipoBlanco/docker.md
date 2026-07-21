@@ -72,6 +72,18 @@ VITE_API_GATEWAY_URL=url_del_api_gateway
 
 ## Comandos
 
+### 1. Crear network si no existe
+
+```powershell
+docker compose --env-file .env -f docker/docker-compose.common.yml up -d
+```
+
+Esto construye y levanta en orden:
+1. `sso-eureka` (Service Discovery) → puerto `8761`
+2. `sso-config` (Config Server) → puerto `8888`
+3. `sso-auth` (Auth Service) → puerto `8080`
+4. `sso-gateway` (API Gateway) → puerto `8090`
+
 ### Levantar todos los servicios
 
 ```powershell
@@ -80,12 +92,8 @@ docker compose --env-file .env -f docker/docker-compose.equipoblanco.yml up -d
 ```
 
 Esto construye y levanta en orden:
-1. `sso-eureka` (Service Discovery) → puerto `8761`
-2. `sso-config` (Config Server) → puerto `8888`
-3. `sso-auth` (Auth Service) → puerto `8080`
-4. `sso-gateway` (API Gateway) → puerto `8090`
-5. `prision-service` (Backend) → puerto `8081`
-6. `prison-web` (Frontend) → puerto `3002`
+1. `prision-service` (Backend) → puerto `8081`
+2. `prison-web` (Frontend) → puerto `3002`
 
 ### Ver estado de los servicios
 
