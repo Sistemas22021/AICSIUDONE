@@ -21,6 +21,8 @@ import {
   getBullets, createBullet, updateBullet, deleteBullet,
   getBulletImageUrl, searchCalibers, CaliberDTO, BackendApiError
 } from '../services/bulletService';
+import { getExpedientes } from '../services/expedienteService';
+import { ExpedienteDTO } from '../types/expediente';
 
 // Límite de peso aceptado (5 MB)
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
@@ -87,6 +89,13 @@ export const RegistroPage = () => {
   const [caliberLoading, setCaliberLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ── Estados para Autocomplete de Expediente ──────────────────────────────────
+  const [expedienteOptions, setExpedienteOptions] = useState<ExpedienteDTO[]>([]);
+  const [expedienteInputValue, setExpedienteInputValue] = useState('');
+  const [expedienteSelected, setExpedienteSelected] = useState<ExpedienteDTO | null>(null);
+  const [expedienteLoading, setExpedienteLoading] = useState(false);
+  const debounceExpRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     if (viewMode === 'list') {
       loadBullets();
@@ -112,6 +121,26 @@ export const RegistroPage = () => {
   useEffect(() => {
     fetchCalibers(caliberInputValue);
   }, [caliberInputValue, fetchCalibers]);
+
+  // Búsqueda de expedientes con debounce 300ms
+  const fetchExpedientes = useCallback((q: string) => {
+    if (debounceExpRef.current) clearTimeout(debounceExpRef.current);
+    debounceExpRef.current = setTimeout(async () => {
+      setExpedienteLoading(true);
+      try {
+        const page = await getExpedientes(q, 0, 20);
+        setExpedienteOptions(page.content);
+      } catch {
+        setExpedienteOptions([]);
+      } finally {
+        setExpedienteLoading(false);
+      }
+    }, 300);
+  }, []);
+
+  useEffect(() => {
+    fetchExpedientes(expedienteInputValue);
+  }, [expedienteInputValue, fetchExpedientes]);
 
   const loadBullets = async () => {
     try {
@@ -150,6 +179,8 @@ export const RegistroPage = () => {
       marca: record.marca
     });
     setEditingId(record.id);
+    setExpedienteSelected(record.expediente ? { caseNumber: record.expediente } as ExpedienteDTO : null);
+    setExpedienteInputValue(record.expediente || '');
     if (record.previewUrl) {
       setPreviewUrl(record.previewUrl);
       setSelectedFile(new File([""], "evidencia-previa.png", { type: "image/png" }));
@@ -365,6 +396,8 @@ export const RegistroPage = () => {
     setStatus(FormStatus.IDLE);
     setCaliberSelected(null);
     setCaliberInputValue('');
+    setExpedienteSelected(null);
+    setExpedienteInputValue('');
     removeFile();
   };
 
@@ -484,17 +517,39 @@ export const RegistroPage = () => {
 
             <Box className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-grow">
               {/* Expediente */}
-              <TextField
+              <Autocomplete
                 fullWidth
-                label="N° de Expediente"
-                placeholder="EXP-2026-089"
-                value={formData.expediente}
-                onChange={(e) => handleInputChange('expediente', e.target.value)}
-                error={!!errors.expediente}
-                helperText={errors.expediente}
-                variant="outlined"
-                size="medium"
-                sx={premiumInputStyles}
+                options={expedienteOptions}
+                getOptionLabel={(opt) => opt.caseNumber}
+                isOptionEqualToValue={(opt, val) => opt.caseNumber === val.caseNumber}
+                value={expedienteSelected}
+                inputValue={expedienteInputValue}
+                loading={expedienteLoading}
+                noOptionsText={expedienteInputValue.length === 0 ? 'Escribe para buscar expedientes…' : 'Sin resultados'}
+                onInputChange={(_e, newInput) => {
+                  setExpedienteInputValue(newInput);
+                  if (!newInput) {
+                    setExpedienteSelected(null);
+                    handleInputChange('expediente', '');
+                  }
+                }}
+                onChange={(_e, newValue) => {
+                  setExpedienteSelected(newValue);
+                  handleInputChange('expediente', newValue ? newValue.caseNumber : '');
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    fullWidth
+                    label="N° de Expediente"
+                    placeholder="Ej. EXP-2026-089"
+                    error={!!errors.expediente}
+                    helperText={errors.expediente}
+                    variant="outlined"
+                    size="medium"
+                    sx={premiumInputStyles}
+                  />
+                )}
               />
 
               {/* ── Calibre — campo de búsqueda ────────────────────────────── */}

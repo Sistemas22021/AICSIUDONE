@@ -3,6 +3,7 @@ import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
 import { AuthGuard } from './guards/AuthGuard';
 import { DashboardLayout } from './components/DashboardLayout';
 import { RegistroPage } from './pages/RegistroPage';
+import { ExpedientePage } from './pages/ExpedientePage';
 import { CorrelacionPage } from './pages/CorrelacionPage';
 import { AuditoriaPage } from './pages/AuditoriaPage';
 
@@ -47,6 +48,7 @@ function App() {
         <DashboardLayout>
           <Routes>
             <Route path="/" element={<RegistroPage />} />
+            <Route path="/expedientes" element={<ExpedientePage />} />
             <Route path="/correlacion" element={<CorrelacionPage />} />
             <Route path="/auditoria" element={<AuditoriaPage />} />
           </Routes>

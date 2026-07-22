@@ -19,7 +19,8 @@ import {
   Menu as MenuIcon, 
   PlusCircle, 
   Search, 
-  ShieldCheck 
+  ShieldCheck,
+  FolderOpen
 } from 'lucide-react';
 
 const drawerWidth = 260;
@@ -40,6 +41,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   const menuItems = [
     { text: 'Registro Evidencia', icon: <PlusCircle size={20} />, path: '/' },
+    { text: 'Gestión Expedientes', icon: <FolderOpen size={20} />, path: '/expedientes' },
     { text: 'Motor Correlación', icon: <Search size={20} />, path: '/correlacion' },
     { text: 'Cadena de Custodia', icon: <ShieldCheck size={20} />, path: '/auditoria' },
   ];

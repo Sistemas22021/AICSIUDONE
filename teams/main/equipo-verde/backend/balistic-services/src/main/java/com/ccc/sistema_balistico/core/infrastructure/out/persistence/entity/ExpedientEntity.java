@@ -8,18 +8,29 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.Builder;
+import org.hibernate.envers.Audited;
 
 import java.time.LocalDateTime;
 
 @Entity
+@Audited
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class ExpedientEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long idCaliber;
+    private Long idExpedient;
+    
+    private String caseNumber;
+    private String description;
+    private String status;
+    
     private LocalDateTime createdAt;
-    private Boolean isDelete;
+    
+    @Builder.Default
+    private Boolean isDelete = false;
 }
