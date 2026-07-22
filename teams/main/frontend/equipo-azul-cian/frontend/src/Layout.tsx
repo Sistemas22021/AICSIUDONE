@@ -53,6 +53,8 @@ export const IconUser: React.FC = () => (
   </svg>
 );
 
+import { useAuth, MOCK_USERS, UserRole } from './shared/authContext';
+
 interface LayoutProps {
   children: React.ReactNode;
   currentView: string;
@@ -63,16 +65,21 @@ interface MenuItem {
   id: string;
   label: string;
   icon: React.ReactNode;
+  allowedRoles?: UserRole[];
 }
 
 const Layout: React.FC<LayoutProps> = ({ children, currentView, onViewChange }) => {
+  const { currentUser, setRoleUser, hasRole } = useAuth();
+
   const menuItems: MenuItem[] = [
     { id: 'inicio', label: 'Inicio', icon: <IconHome /> },
-    { id: 'incidentes', label: 'Incidentes', icon: <IconIncident /> },
-    { id: 'patrullas', label: 'Patrullas', icon: <IconCar /> },
-    { id: 'mapa', label: 'Mapa', icon: <IconMap /> },
-    { id: 'asignaciones', label: 'Asignaciones', icon: <IconLink /> },
+    { id: 'incidentes', label: 'Incidentes', icon: <IconIncident />, allowedRoles: ['SUPERVISOR', 'CENTRO_MANDO', 'OFICIAL_PATRULLA'] },
+    { id: 'patrullas', label: 'Patrullas', icon: <IconCar />, allowedRoles: ['SUPERVISOR', 'CENTRO_MANDO'] },
+    { id: 'mapa', label: 'Mapa', icon: <IconMap />, allowedRoles: ['SUPERVISOR', 'CENTRO_MANDO', 'OFICIAL_PATRULLA'] },
+    { id: 'asignaciones', label: 'Asignaciones', icon: <IconLink />, allowedRoles: ['SUPERVISOR', 'CENTRO_MANDO'] },
   ];
+
+  const filteredMenuItems = menuItems.filter(item => !item.allowedRoles || hasRole(item.allowedRoles));
 
   return (
     <div style={styles.container}>
@@ -89,7 +96,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onViewChange }) 
         </div>
 
         <nav style={styles.nav}>
-          {menuItems.map((item) => {
+          {filteredMenuItems.map((item) => {
             const isActive = currentView === item.id;
             return (
               <button
@@ -127,11 +134,36 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onViewChange }) 
             Sistema de Gestión de Incidentes y Patrullaje Policial
           </h2>
           <div style={styles.headerRight}>
+            {/* Selector de Usuario / Rol Mock */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Simular Rol:</span>
+              <select
+                value={currentUser.username}
+                onChange={(e) => setRoleUser(e.target.value)}
+                style={{
+                  backgroundColor: '#1e293b',
+                  color: '#ffffff',
+                  border: '1px solid var(--border)',
+                  borderRadius: '6px',
+                  padding: '4px 8px',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  outline: 'none',
+                }}
+              >
+                {MOCK_USERS.map((user) => (
+                  <option key={user.id} value={user.username}>
+                    {user.name} ({user.role})
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div style={styles.statusIndicator}>
               <span style={styles.statusDot}></span>
-              <span style={styles.statusText}>En línea</span>
+              <span style={styles.statusText}>{currentUser.role}</span>
             </div>
-            <div style={styles.profileBox}>
+            <div style={styles.profileBox} title={`Usuario: ${currentUser.name}`}>
               <IconUser />
             </div>
           </div>

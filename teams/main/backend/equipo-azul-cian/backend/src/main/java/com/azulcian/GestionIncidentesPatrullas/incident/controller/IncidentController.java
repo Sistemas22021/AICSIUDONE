@@ -11,12 +11,14 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/incidents")
+@PreAuthorize("hasAnyRole('ROLE_SUPERVISOR', 'ROLE_CENTRO_MANDO', 'ROLE_OFICIAL_PATRULLA')")
 @Tag(
         name = "Incidentes",
         description = "Gestión de incidentes: creación, consulta, actualización de estado y cierre operativo"

@@ -16,9 +16,19 @@ export async function fetchWithRetry(
   retries: number = 3,
   delayMs: number = 1500
 ): Promise<Response> {
+  const requestHeaders = new Headers(options?.headers);
+  if (!requestHeaders.has('Bypass-Tunnel-Reminder')) {
+    requestHeaders.set('Bypass-Tunnel-Reminder', 'true');
+  }
+
+  const finalOptions: RequestInit = {
+    ...options,
+    headers: requestHeaders
+  };
+
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      const res = await fetch(url, options);
+      const res = await fetch(url, finalOptions);
 
       // Si la respuesta es OK, la devolvemos directamente
       if (res.ok) {

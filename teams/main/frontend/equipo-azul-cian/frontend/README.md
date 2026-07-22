@@ -213,9 +213,19 @@ npm run dev
 Crear un archivo `.env` en la raíz de `frontend` utilizando como referencia `.env.example`:
 
 ```env
-VITE_API_URL=http://localhost:8080
+# Para desarrollo local tradicional con backend local:
+# VITE_API_BASE_URL=http://localhost:8080/api
 
+# Para conectar la app desplegada en Vercel con el backend local mediante localtunnel (subdominio reservado):
+VITE_API_BASE_URL=https://equipo-cian-backend.loca.lt/api
 ```
+
+> 💡 **Conexión entre Vercel (HTTPS) y Backend Local (Localtunnel):**  
+> Debido a las restricciones de seguridad de contenido mixto (*Mixed Content*), el frontend desplegado en Vercel no puede enviar peticiones a `http://localhost:8080`. Se utiliza **localtunnel** reservando un subdominio fijo:  
+> ```cmd
+> npx localtunnel --port 8080 --subdomain equipo-cian-backend
+> ```  
+> Esto genera la URL tunelada segura `https://equipo-cian-backend.loca.lt`, permitiendo que la app de Vercel consuma la API sin necesidad de re-desplegar o actualizar variables a cada momento.
 
 ---
 
@@ -291,7 +301,7 @@ Cierra el incidente al finalizar la atención
 
 El frontend se despliega utilizando **Vercel**.
 
-Para conectarlo con un backend ejecutándose localmente se utiliza un túnel SSH mediante `localhost.run`, permitiendo que la aplicación desplegada consuma la API durante la demostración del proyecto.
+Para conectarlo con un backend ejecutándose localmente durante presentaciones o pruebas, se utiliza **localtunnel** (`npx localtunnel --port 8080 --subdomain equipo-cian-backend`), permitiendo que la aplicación en producción consuma la API en tiempo real de forma segura.
 
 ---
 

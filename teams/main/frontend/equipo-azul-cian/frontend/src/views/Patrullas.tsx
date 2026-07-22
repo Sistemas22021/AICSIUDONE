@@ -66,6 +66,7 @@ const Patrullas: React.FC = () => {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          'Bypass-Tunnel-Reminder': 'true'
         },
         body: JSON.stringify({ status: newStatus }),
       });
@@ -169,6 +170,7 @@ const Patrullas: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Bypass-Tunnel-Reminder': 'true'
         },
         body: JSON.stringify({
           code: newPatrol.code,
