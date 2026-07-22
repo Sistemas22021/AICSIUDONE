@@ -203,56 +203,33 @@ Antes de ejecutar el backend es necesario contar con:
 
 # Instalación del Backend
 
-1. **Clonar el repositorio y acceder al directorio:**
+1. **Clonar el repositorio y acceder al directorio del backend:**
 ```bash
 git clone <URL_DEL_REPOSITORIO>
-cd backend
-
+cd teams/main/backend/equipo-azul-cian/backend
 ```
 
+2. **Configuración de Base de Datos:**
+   Por defecto, el archivo `src/main/resources/application.properties` viene preconfigurado para conectarse a la base de datos en la nube de **Supabase PostgreSQL**, por lo que **no es necesario instalar PostgreSQL localmente** si se cuenta con conexión a Internet.
 
-2. **Configurar las variables de entorno o archivo de propiedades.**
-3. **Compilar y ejecutar en desarrollo:**
-* En Linux/macOS:
-```bash
-./mvnw spring-boot:run
+   *(En caso de requerir ejecución offline, modifique `src/main/resources/application.properties` para apuntar a un PostgreSQL local en `localhost:5432` e importe los archivos `schema.sql` y `seed_margarita.sql`).*
 
-```
+3. **Compilar y ejecutar el servidor:**
+   Utilice el ejecutable wrapper de Maven incluido en el proyecto (no requiere tener Maven instalado globalmente):
 
+   * En Linux / macOS:
+   ```bash
+   ./mvnw spring-boot:run
+   ```
 
-* En Windows (CMD/PowerShell):
-```cmd
-.\mvnw.cmd spring-boot:run
+   * En Windows (CMD / PowerShell):
+   ```cmd
+   .\mvnw.cmd spring-boot:run
+   ```
 
-```
-
-
-
-
-
----
-
-# Variables de Entorno
-
-Crear un archivo `.env` en la raíz del backend tomando como base `.env.example`:
-
-```env
-DB_URL=jdbc:postgresql://tu-instancia-supabase.supabase.co:5432/postgres
-DB_USERNAME=postgres
-DB_PASSWORD=tu_contraseña_secreta
-
-```
-
-Enlazadas en `src/main/resources/application.properties`:
-
-```properties
-spring.datasource.url=${DB_URL}
-spring.datasource.username=${DB_USERNAME}
-spring.datasource.password=${DB_PASSWORD}
-spring.datasource.driver-class-name=org.postgresql.Driver
-spring.jpa.hibernate.ddl-auto=update
-
-```
+4. **Verificación del Backend:**
+   Una vez iniciado el servidor en el puerto `8080`, puede verificar que esté activo accediendo a la documentación Swagger:
+   🔗 [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
 
 ---
 

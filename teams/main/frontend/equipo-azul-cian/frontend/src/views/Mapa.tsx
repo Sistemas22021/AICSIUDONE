@@ -5,6 +5,7 @@ import type { Assignment } from '../types/assignment';
 
 import { createMapAdapter } from '../adapters/MapAdapterFactory';
 import { API_BASE_URL } from '../config';
+import { fetchWithRetry } from '../utils/fetchWithRetry';
 
 const Mapa: React.FC = () => {
   const [incidents, setIncidents] = useState<Incident[]>([]);
@@ -18,9 +19,9 @@ const Mapa: React.FC = () => {
       setLoading(true);
 
       const [incidentsRes, patrolsRes, assignmentsRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/incidents`),
-        fetch(`${API_BASE_URL}/patrols`),
-        fetch(`${API_BASE_URL}/assignments`)
+        fetchWithRetry(`${API_BASE_URL}/incidents`),
+        fetchWithRetry(`${API_BASE_URL}/patrols`),
+        fetchWithRetry(`${API_BASE_URL}/assignments`)
       ]);
 
       if (!incidentsRes.ok || !patrolsRes.ok || !assignmentsRes.ok) {
