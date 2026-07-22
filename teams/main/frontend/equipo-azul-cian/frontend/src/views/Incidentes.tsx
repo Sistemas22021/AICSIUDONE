@@ -25,7 +25,7 @@ const Incidentes: React.FC = () => {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Estado para los mensajes de notificación
   const [message, setMessage] = useState<{
     type: 'success' | 'error';
@@ -146,7 +146,7 @@ const Incidentes: React.FC = () => {
         }
         return currentIncidents;
       });
-      
+
     } catch (err) {
       // Captura el mensaje lanzado (ej: "No se puede cerrar un incidente mientras la patrulla sigue en ruta")
       if (err instanceof Error) {
@@ -229,7 +229,7 @@ const Incidentes: React.FC = () => {
 
       {/* CONTROLES DE FILTRADO */}
       <div style={{ display: 'flex', gap: 10 }}>
-        {([ 'ALL', 'ACTIVE', 'IN_PROGRESS', 'CLOSED' ] as IncidentFilterStatus[]).map((status) => (
+        {(['ALL', 'ACTIVE', 'IN_PROGRESS', 'CLOSED'] as IncidentFilterStatus[]).map((status) => (
           <button
             key={status}
             onClick={() => setFilter(status)}
@@ -246,10 +246,10 @@ const Incidentes: React.FC = () => {
             {status === 'ALL'
               ? 'Todos'
               : status === 'ACTIVE'
-              ? 'Activos'
-              : status === 'IN_PROGRESS'
-              ? 'En Proceso'
-              : 'Cerrados'}
+                ? 'Activos'
+                : status === 'IN_PROGRESS'
+                  ? 'En Proceso'
+                  : 'Cerrados'}
           </button>
         ))}
       </div>
@@ -266,11 +266,10 @@ const Incidentes: React.FC = () => {
               message.type === 'success'
                 ? '#10b981'
                 : '#ef4444',
-            border: `1px solid ${
-              message.type === 'success'
+            border: `1px solid ${message.type === 'success'
                 ? '#10b981'
                 : '#ef4444'
-            }`,
+              }`,
             padding: '12px 16px',
             borderRadius: 8,
             fontWeight: 600
@@ -631,7 +630,7 @@ const StatusBadge: React.FC<
 > = ({ status }) => {
   const config = {
     ACTIVE: {
-      text: 'Activo',
+      text: 'Sin asignar patrulla',
       color: '#ef4444',
       bg: 'rgba(239,68,68,.15)'
     },
