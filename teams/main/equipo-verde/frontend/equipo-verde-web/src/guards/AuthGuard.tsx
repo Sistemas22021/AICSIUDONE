@@ -11,21 +11,21 @@ export function AuthGuard({ children }: AuthGuardProps) {
   const [authState, setAuthState] = useState<AuthState>('loading');
 
   useEffect(() => {
-    async function checkAuth() {
-      const token = await resolveToken();
-
-      if (token) {
-        setAccessToken(token);
-        setAuthState('authenticated');
-      } else {
-        setAuthState('unauthenticated');
-        redirectToLogin();
-      }
-    }
+    // async function checkAuth() {
+    //   const token = await resolveToken();
+    //
+    //   if (token) {
+    //     setAccessToken(token);
+    //     setAuthState('authenticated');
+    //   } else {
+    //     setAuthState('unauthenticated');
+    //     redirectToLogin();
+    //   }
+    // }
 
     // Modo Maquetación: Forzar inicio de sesión
-    checkAuth();
-    // setAuthState('authenticated');
+    // checkAuth();
+    setAuthState('authenticated');
   }, []);
 
   if (authState === 'loading') {
