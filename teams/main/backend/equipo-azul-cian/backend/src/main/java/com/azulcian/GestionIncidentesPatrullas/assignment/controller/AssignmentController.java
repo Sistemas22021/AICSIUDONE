@@ -9,12 +9,14 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/assignments")
+@PreAuthorize("hasAnyRole('ROLE_SUPERVISOR', 'ROLE_CENTRO_MANDO')")
 @Tag(
         name = "Asignaciones",
         description = "Gestión de asignación de patrullas a incidentes y ejecución del flujo operativo"

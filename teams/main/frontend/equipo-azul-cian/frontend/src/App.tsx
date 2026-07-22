@@ -6,8 +6,10 @@ import Incidentes from './views/Incidentes';
 import Patrullas from './views/Patrullas';
 import Mapa from './views/Mapa';
 import Asignaciones from './views/Asignaciones';
+import { AuthProvider } from './shared/authContext';
+import ProtectedRoute from './shared/ProtectedRoute';
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
   const [currentView, setCurrentView] = useState<string>('inicio');
 
   const renderView = (): React.ReactNode => {
@@ -15,13 +17,29 @@ const App: React.FC = () => {
       case 'inicio':
         return <Inicio />;
       case 'incidentes':
-        return <Incidentes />;
+        return (
+          <ProtectedRoute allowedRoles={['SUPERVISOR', 'CENTRO_MANDO', 'OFICIAL_PATRULLA']}>
+            <Incidentes />
+          </ProtectedRoute>
+        );
       case 'patrullas':
-        return <Patrullas />;
+        return (
+          <ProtectedRoute allowedRoles={['SUPERVISOR', 'CENTRO_MANDO']}>
+            <Patrullas />
+          </ProtectedRoute>
+        );
       case 'mapa':
-        return <Mapa />;
+        return (
+          <ProtectedRoute allowedRoles={['SUPERVISOR', 'CENTRO_MANDO', 'OFICIAL_PATRULLA']}>
+            <Mapa />
+          </ProtectedRoute>
+        );
       case 'asignaciones':
-        return <Asignaciones />;
+        return (
+          <ProtectedRoute allowedRoles={['SUPERVISOR', 'CENTRO_MANDO']}>
+            <Asignaciones />
+          </ProtectedRoute>
+        );
       default:
         return <Inicio />;
     }
@@ -34,4 +52,13 @@ const App: React.FC = () => {
   );
 };
 
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
+};
+
 export default App;
+
