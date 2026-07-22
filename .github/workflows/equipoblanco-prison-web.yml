@@ -1,12 +1,29 @@
 name: "[Equipo Blanco][Frontend] Prison Web"
 
+# ─── CONFIGURACIÓN DEL PIPELINE ──────────────────────────────────────────────
+# Ramas que activan el pipeline:
+#   equipoBlanco  → Push o PR ejecutan test + build + deploy PREVIEW (no afecta prod)
+#   main          → Push o PR ejecutan test + build + deploy PRODUCCIÓN
+#
+# Ramas que NO activan el pipeline (ej: equipoblanco-dev):
+#   Cualquier rama que no esté listada abajo no dispara nada automáticamente.
+#   Sin embargo, desde GitHub UI o CLI (workflow_dispatch) se puede ejecutar
+#   manualmente seleccionando cualquier rama, pero el deploy a producción
+#   (--prod) solo ocurre si la rama es 'main' (ver línea 57).
+#
+# Ramas para pull_request:
+#   Solo se permiten PRs hacia equipoBlanco o main. PRs desde equipoblanco-dev
+#   hacia main NO ejecutarán tests ni deploys porque la rama destino 'main'
+#   no está en la lista de PR triggers.
+# ──────────────────────────────────────────────────────────────────────────────
+
 on:
   push:
-    branches: [main, develop]
+    branches: [main, equipoBlanco]
     paths:
       - "teams/EquipoBlanco/frontend/prison-web/**"
   pull_request:
-    branches: [main, develop]
+    branches: [equipoBlanco, main]
     paths:
       - "teams/EquipoBlanco/frontend/prison-web/**"
   workflow_dispatch:
@@ -23,10 +40,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
           cache: npm
           cache-dependency-path: teams/EquipoBlanco/frontend/prison-web/package-lock.json
-      - run: npm ci
+      - run: npm install
       - run: npm test
 
   build-and-deploy:
@@ -38,15 +55,15 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
           cache: npm
           cache-dependency-path: teams/EquipoBlanco/frontend/prison-web/package-lock.json
-      - run: npm ci
+      - run: npm install
       - run: npm run build
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
       - name: Deploy a Vercel (DEV)
-        if: github.ref == 'refs/heads/develop'
+        if: github.ref == 'refs/heads/equipoBlanco'
         run: |
           npm install -g vercel
           vercel --token=${{ secrets.VERCEL_TOKEN }} --yes

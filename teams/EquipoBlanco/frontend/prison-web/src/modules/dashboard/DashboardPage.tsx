@@ -4,6 +4,7 @@ import { MapPin, AlertTriangle, Info, DoorOpen, Gauge, X, Clock, UserPlus, Searc
 import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
 import { useAuth } from '../../shared/authContext'
+import { cedulaKeyFilter, formatCedulaIntelligent } from '../../shared/validations'
 
 interface CellData {
   id: string
@@ -49,6 +50,8 @@ export default function DashboardPage() {
   const [rejectionReason, setRejectionReason] = useState('')
   const [rejectionError, setRejectionError] = useState('')
   const [actionLoading, setActionLoading] = useState(false)
+  const [searchModalOpen, setSearchModalOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
 
   const currentUser = sessionStorage.getItem('username') || 'Oficial'
   const auth = useAuth()
@@ -138,10 +141,8 @@ export default function DashboardPage() {
   }
 
   const handleSearchExpediente = () => {
-    const id = prompt('Ingrese la Cédula o el ID del recluso:')
-    if (id && id.trim() !== '') {
-      navigate(`/internos/expediente/${id.trim()}`)
-    }
+    setSearchQuery('')
+    setSearchModalOpen(true)
   }
 
   const isToday = (dateString?: string) => {
@@ -474,6 +475,68 @@ export default function DashboardPage() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para Buscar Expediente */}
+      {searchModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[70] p-4 transition-all duration-300 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-250">
+            <div className="flex items-center justify-between px-5 py-3.5 bg-indigo-600 text-white">
+              <h3 className="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
+                <Search className="w-4 h-4" />
+                Consultar Expediente
+              </h3>
+              <button onClick={() => setSearchModalOpen(false)} className="p-1 hover:bg-indigo-700 rounded-lg text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <form onSubmit={e => {
+              e.preventDefault();
+              if (searchQuery.trim()) {
+                setSearchModalOpen(false);
+                navigate(`/internos/expediente/${searchQuery.trim()}`);
+              }
+            }} className="p-5 space-y-4">
+              <p className="text-gray-500 leading-relaxed font-semibold text-xs">
+                Ingrese la Cédula del recluso para consultar su expediente y estatus general dentro del sistema.
+              </p>
+
+              <div className="space-y-1">
+                <label className="block text-gray-700 font-bold uppercase tracking-wide text-xs">Cédula de Identidad</label>
+                <div className="relative">
+                  <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    autoFocus
+                    type="text"
+                    placeholder="Ej: V-12345678"
+                    value={searchQuery}
+                    onKeyDown={cedulaKeyFilter}
+                    onChange={e => setSearchQuery(formatCedulaIntelligent(e.target.value))}
+                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setSearchModalOpen(false)}
+                  className="flex-1 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-100 font-bold uppercase tracking-wider text-xs transition-colors bg-white cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={!searchQuery.trim()}
+                  className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-bold uppercase tracking-wider text-xs transition-all disabled:bg-gray-300 disabled:cursor-not-allowed shadow-sm flex items-center justify-center cursor-pointer"
+                >
+                  Buscar Expediente
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

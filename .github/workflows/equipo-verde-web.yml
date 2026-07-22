@@ -36,7 +36,7 @@ jobs:
     name: "Build & Deploy"
     runs-on: ubuntu-latest
     needs: test
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v3
@@ -51,5 +51,20 @@ jobs:
       - name: Build de producción
         run: pnpm run build
         env:
-          VITE_API_GATEWAY_URL: ${{ secrets.API_GATEWAY_URL }}
-          VITE_LOGIN_MFE_URL: ${{ secrets.LOGIN_MFE_URL }}
+          VITE_API_GATEWAY_URL: ${{ secrets.API_GATEWAY_URL_BALISTIC }}
+          VITE_LOGIN_MFE_URL: ${{ secrets.LOGIN_MFE_URL_BALISTIC }}
+      - name: Deploy a Vercel (DEV / Preview)
+        if: github.ref == 'refs/heads/develop'
+        run: |
+          pnpm dlx vercel --token=${{ secrets.VERCEL_TOKEN_BALISTIC }} --yes
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID_BALISTIC }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_BALISTIC }}
+      - name: Deploy a Vercel (PROD)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          pnpm dlx vercel --token=${{ secrets.VERCEL_TOKEN_BALISTIC }} --prod --yes
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID_BALISTIC }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_BALISTIC }}
+

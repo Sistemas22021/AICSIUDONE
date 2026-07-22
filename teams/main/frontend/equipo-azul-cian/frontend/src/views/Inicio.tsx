@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { fetchWithRetry } from '../utils/fetchWithRetry';
+import { API_BASE_URL } from '../config';
 
 type IncidentStatus = 'ACTIVE' | 'IN_PROGRESS' | 'CLOSED';
 type PatrolStatus = 'AVAILABLE' | 'EN_ROUTE' | 'BUSY' | 'OUT_OF_SERVICE';
@@ -98,7 +99,7 @@ const formatTime = (dateStr?: string): string => {
   }
 };
 
-const API_BASE = 'http://localhost:8080/api';
+const API_BASE = API_BASE_URL;
 
 const Inicio: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);

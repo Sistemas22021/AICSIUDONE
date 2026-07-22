@@ -1,0 +1,42 @@
+include:
+  - docker-compose.common.yml
+
+services:
+  config-server:
+    volumes:
+      - ../config-repo:/workspace/config-repo:rw
+    environment:
+      - SPRING_CLOUD_CONFIG_SERVER_GIT_DEFAULT_LABEL=main
+
+  prision-service:
+    build:
+      context: ../teams/EquipoBlanco/backend/prision-service
+      dockerfile: Dockerfile
+    container_name: prision-service
+    env_file:
+      - ../teams/EquipoBlanco/backend/prision-service/.env
+    ports:
+      - "8081:8081"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://sso-eureka:8761/eureka/
+      - API_GATEWAY_URL=http://sso-gateway:8090
+      - EUREKA_HOST=sso-eureka
+    networks:
+      - sso-network
+
+  prison-web:
+    build:
+      context: ../teams/EquipoBlanco/frontend/prison-web
+      dockerfile: Dockerfile
+    container_name: prison-web
+    ports:
+      - "3002:3002"
+    environment:
+      - VITE_API_GATEWAY_URL=http://localhost:8081
+      - API_GATEWAY_URL=http://sso-gateway:8090
+    networks:
+      - sso-network
+
+networks:
+  sso-network:
+    external: true

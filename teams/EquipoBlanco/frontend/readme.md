@@ -1,30 +1,136 @@
 # Frontend — Sistema Integral de Gestión Penitenciaria (SIGP)
 
-## Cómo Levantar el Proyecto
+---
 
-1. **Ir a la carpeta del frontend:**
-   ```bash
-   cd .../AICSIUDONE/teams/EquipoBlanco/frontend/prison-web
-   ```
+## Instalación Desde Cero (PC Limpia)
 
-2. **Instalar dependencias:**
-   ```bash
-   npm install
-   ```
+Sigue estos pasos si tu computadora no tiene ningún programa instalado.
 
-3. **Ejecutar en modo desarrollo:**
-   ```bash
-   npm run dev
-   ```
+### 1. Instalar Node.js 20+
 
-   La aplicación se levantará en `http://localhost:5173`.
+**Instalador oficial (recomendado):**
+```bash
+# Descargar desde: https://nodejs.org/ (versión 20.x LTS)
+# Ejecutar el .msi y seguir los pasos. Marcar "Add to PATH".
 
-4. **Para ejecutar los tests:**
-   ```bash
-   npm test
-   ```
+# Luego en terminal:
+nvm install 20
+nvm use 20
+```
 
-> **Nota:** Requiere Node.js 20+. Si no tienes configurada la variable `VITE_API_GATEWAY_URL` en `.env`, el frontend apuntará por defecto a `http://localhost:8081` (backend local).
+**Verificar instalación:**
+```bash
+node --version   # Debe mostrar v20.x.x
+npm --version    # Debe mostrar 10.x.x
+```
+
+### 2. Instalar Git
+
+```bash
+# Descargar desde: https://git-scm.com/download/win
+# Ejecutar el .exe y seguir los pasos (opciones por defecto)
+
+# Verificar:
+git --version
+```
+
+### 3. Clonar el Repositorio
+
+```bash
+git clone https://github.com/tu-usuario/AICSIUDONE.git
+cd AICSIUDONE/teams/EquipoBlanco/frontend/prison-web
+```
+
+### 4. Instalar Dependencias
+
+```bash
+npm install
+```
+
+Esto descargará todas las dependencias definidas en `package.json` (React, Vite, Tailwind, Axios, etc.).
+
+### 5. Configurar Variables de Entorno
+
+```bash
+# Copiar el archivo de ejemplo:
+cp .env.example .env
+# O en Windows:
+# Copy-Item .env.example .env
+```
+
+### 6. Ejecutar en Modo Desarrollo
+
+```bash
+npm run dev
+```
+
+La aplicación se levantará en `http://localhost:5173`.
+
+---
+
+## Uso en Producción (Vercel + Túnel SSH)
+
+Para que el frontend desplegado en Vercel pueda consumir tu backend local, necesitas exponer `localhost:8081` mediante un túnel SSH con **localhost.run**.
+
+### Paso 1: Iniciar el Backend
+
+```bash
+# En la carpeta del backend:
+cd AICSIUDONE/teams/EquipoBlanco/backend/prision-service
+.\mvnw.cmd spring-boot:run
+```
+
+### Paso 2: Crear el Túnel SSH
+
+```bash
+# En OTRA terminal (debe quedarse abierta):
+ssh -R 80:localhost:8081 nokey@localhost.run
+```
+
+Te devolverá una URL como `https://XXXXX.lhr.life`. **Guarda esta URL, la necesitarás.**
+
+### Paso 3: Configurar Variable de Entorno en Vercel (CLI)
+
+```bash
+# 1. Instalar Vercel CLI si no la tienes:
+npm install -g vercel
+
+# 2. Iniciar sesión (primera vez):
+vercel login
+
+# 3. Vincular (solo la primera vez después de clonar):
+vercel link
+
+# Te pedirá:
+# 1. Confirmar la carpeta actual (`prison-web`)
+# 2. Seleccionar tu cuenta de Vercel (scope)
+# 3. Elegir **el proyecto existente** `prison-web`
+
+Esto genera `.vercel/project.json` y permite que los comandos `vercel env` funcionen.
+
+# 4. Agregar la variable de entorno (reemplazar XXXXX con la URL del túnel):
+vercel env add VITE_API_GATEWAY_URL production
+# Te pedirá el valor: pega https://XXXXX.lhr.life y presiona Enter
+
+# 5. Si necesitas eliminar una variable existente para reemplazarla:
+vercel env rm VITE_API_GATEWAY_URL production
+# Confirma con 'y'
+
+# 6. Compilar
+vercel build --prod && vercel --prod --prebuilt --yes   
+```
+
+### Paso 4: Probar en Desarrollo Local
+
+Si quieres probar la conexión antes de subir a Vercel, edita el archivo `.env` local:
+
+```
+VITE_API_GATEWAY_URL=https://XXXXX.lhr.life
+```
+
+Luego reinicia el servidor de desarrollo (`npm run dev`). El frontend local ahora consumirá el backend a través del túnel.
+
+> **Importante:** Cada vez que reinicias el túnel SSH, la URL cambia. Deberás actualizar `VITE_API_GATEWAY_URL` en las Environment Variables de Vercel y redeployar.
 
 ---
 
@@ -46,11 +152,10 @@
 
 ## Estructura del Proyecto
 
-El proyecto está diseñado bajo una arquitectura modular que separa cada funcionalidad en su propio directorio:
-
 ```
 prison-web/
 ├── .env                                 # Variables de entorno (VITE_API_GATEWAY_URL)
+├── .env.example                         # Ejemplo de variables de entorno
 ├── index.html                           # HTML entry point
 ├── package.json                         # Dependencias y scripts
 ├── vite.config.ts                       # Configuración de Vite + alias @cell-component + Vitest
@@ -83,11 +188,46 @@ prison-web/
 
 El proyecto cuenta con integración y despliegue continuos configurados a través de GitHub Actions.
 
-- **Archivo que lo constituye:** `.github/workflows/equipoblanco-prison-web.yml` ubicado en la raíz del repositorio.
-- **Cómo ejecutarlo:**
-  - Se ejecuta automáticamente ante cada evento `push` o `pull_request` hacia las ramas `main` y `develop` (siempre que existan modificaciones dentro de `teams/EquipoBlanco/frontend/prison-web/**`).
-  - También puede lanzarse de manera manual desde la pestaña *Actions* de GitHub seleccionando el flujo y presionando *Run workflow* (`workflow_dispatch`).
-- **Qué hace el pipeline:** Prepara un entorno Linux con Node 20, instala dependencias exactas (`npm ci`), ejecuta las pruebas unitarias con Vitest (`npm test`), compila el código a producción con Vite (`npm run build`) y despliega a Vercel (preview en develop, producción en main).
+### Ramas y comportamientos
+
+| Rama | Push / PR automático | Deploy a Vercel |
+|------|---------------------|-----------------|
+| `equipoblanco-dev` | ❌ No ejecuta pipeline | — |
+| `equipoBlanco` | ✅ Ejecuta test + build | Preview (`vercel --yes`) |
+| `main` | ✅ Ejecuta test + build | **Producción** (`vercel --prod`) |
+
+**Importante:** La rama `equipoblanco-dev` **no está configurada como trigger** en el pipeline. Los PRs desde `-dev` hacia `main` **tampoco ejecutan tests** ni deploys. El flujo correcto es: `equipoblanco-dev` → PR a `equipoBlanco` → PR a `main`.
+
+### Ejecución manual desde GitHub UI
+Ir al repositorio en GitHub → **Actions** → **"Equipo Blanco - Prison Web CI/CD"** → **Run workflow** → seleccionar rama → **Run workflow**.
+
+### Ejecución manual desde terminal (CLI)
+Requiere [GitHub CLI](https://cli.github.com/) instalada y autenticada (`gh auth login`):
+
+```bash
+# Deploy preview desde equipoBlanco (no afecta producción)
+gh workflow run equipoblanco-prison-web.yml --ref equipoBlanco
+
+# Deploy a producción desde main (el único que deploya con --prod)
+gh workflow run equipoblanco-prison-web.yml --ref main
+```
+
+### ¿Qué hace el pipeline?
+1. **Test:** Prepara Node 20, instala dependencias (`npm ci`), ejecuta tests (`npm test`)
+2. **Build & Deploy:** Compila con Vite (`npm run build`) y despliega a Vercel
+   - Si la rama es `equipoBlanco`/`develop`: preview (URL temporal)
+   - Si la rama es `main`: **producción** (URL definitiva)
+
+### ¿Puedo deployar a producción sin pasar por `main`?
+**No.** El deploy a producción (`--prod`) solo se ejecuta en la rama `main`. Para reflejar cambios en producción el flujo correcto es:
+
+```
+equipoblanco-dev (trabajo local — NO hace PR directo a main)
+  → PR a equipoBlanco (preview para verificar)
+    → PR a main (deploy automático a producción)
+```
+
+Forzar un deploy de producción desde otra rama requeriría modificar el workflow, pero no es recomendable porque saltas las verificaciones de código.
 
 ---
 
@@ -95,17 +235,25 @@ El proyecto cuenta con integración y despliegue continuos configurados a travé
 
 Se han desarrollado pruebas unitarias utilizando **Vitest** + **React Testing Library** con un entorno simulado via **jsdom**, garantizando el correcto funcionamiento del enrutamiento y la protección por roles.
 
-- **Archivo de test:** `src/App.test.tsx` — cubre los siguientes casos:
-  - **Renderizado:** Verifica que la aplicación renderiza el branding "SIGP" sin errores.
-  - **Redirección por rol:** Comprueba que `Oficial Penitenciario` es redirigido a `/dashboard` y `Administrador del Sistema` a `/celdas/configurar` al acceder a la raíz.
-  - **Protección de rutas:** Verifica que un `Oficial Penitenciario` no puede acceder a rutas exclusivas de `Supervisor` (ej: `/incidentes`).
-- **Configuración global:** `src/test/setup.ts` — importa `@testing-library/jest-dom`.
-- **Configuración en Vite:** definida en `vite.config.ts` con `globals: true`, `environment: 'jsdom'` y `setupFiles`.
-- **Cómo ejecutarlos:**
-  Desde la carpeta raíz del frontend (`prison-web`), ejecuta:
-  ```bash
-  npm test
-  ```
+### Archivo de test
+`src/App.test.tsx` — cubre los siguientes casos:
+- **Renderizado:** Verifica que la aplicación renderiza el branding "SIGP" sin errores.
+- **Redirección por rol:** Comprueba que `Oficial Penitenciario` es redirigido a `/dashboard` y `Administrador del Sistema` a `/celdas/configurar` al acceder a la raíz.
+- **Protección de rutas:** Verifica que un `Oficial Penitenciario` no puede acceder a rutas exclusivas de `Supervisor` (ej: `/incidentes`).
+
+### Configuración global
+- `src/test/setup.ts` — importa `@testing-library/jest-dom`
+- Configuración en Vite: definida en `vite.config.ts` con `globals: true`, `environment: 'jsdom'` y `setupFiles`
+
+### Ejecutar todos los tests
+```bash
+npm test
+```
+
+### Ejecutar tests en modo watch
+```bash
+npm test -- --watch
+```
 
 ---
 

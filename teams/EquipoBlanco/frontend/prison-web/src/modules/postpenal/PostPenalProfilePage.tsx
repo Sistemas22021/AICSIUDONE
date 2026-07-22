@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { FileText, Save, ArrowLeft, User, MapPin, Phone, AlertTriangle, CalendarDays, CheckCircle2, XCircle } from 'lucide-react'
 import api from '../../shared/api'
 import SidebarLayout from '../../shared/SidebarLayout'
+import { ESTADOS_MUNICIPIOS } from '../../shared/venezuela-data'
 
 interface ExpedienteData {
     id: string
@@ -233,14 +234,21 @@ export default function PostPenalProfilePage() {
                                         <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">
                                             Municipio *
                                         </label>
-                                        <input
+                                        <select
                                             required
-                                            type="text"
                                             value={formData.municipio}
                                             onChange={e => setFormData({ ...formData, municipio: e.target.value })}
-                                            className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
-                                            placeholder="Ej. Municipio Sucre"
-                                        />
+                                            className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all bg-white"
+                                        >
+                                            <option value="">Seleccione un municipio...</option>
+                                            {Object.entries(ESTADOS_MUNICIPIOS).map(([estado, municipios]) => (
+                                                <optgroup key={estado} label={estado}>
+                                                    {municipios.map(m => (
+                                                        <option key={m} value={m}>{m}</option>
+                                                    ))}
+                                                </optgroup>
+                                            ))}
+                                        </select>
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">
@@ -249,6 +257,8 @@ export default function PostPenalProfilePage() {
                                         <textarea
                                             required
                                             rows={2}
+                                            minLength={10}
+                                            maxLength={300}
                                             value={formData.domicilio}
                                             onChange={e => setFormData({ ...formData, domicilio: e.target.value })}
                                             className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
@@ -272,7 +282,8 @@ export default function PostPenalProfilePage() {
                                             required
                                             type="text"
                                             value={formData.contactoEmergenciaNombre}
-                                            onChange={e => setFormData({ ...formData, contactoEmergenciaNombre: e.target.value })}
+                                            onChange={e => setFormData({ ...formData, contactoEmergenciaNombre: e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '') })}
+                                            maxLength={80}
                                             className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
                                         />
                                     </div>
@@ -284,9 +295,12 @@ export default function PostPenalProfilePage() {
                                             required
                                             type="text"
                                             value={formData.contactoEmergenciaTelefono}
-                                            onChange={e => setFormData({ ...formData, contactoEmergenciaTelefono: e.target.value })}
+                                            onChange={e => setFormData({ ...formData, contactoEmergenciaTelefono: e.target.value.replace(/[^0-9]/g, '') })}
+                                            pattern="^(0412|0416|0426|0414|0424|0212)\d{7}$"
+                                            title="Debe ser un número celular o 0212 válido (Ej: 04141234567)"
+                                            maxLength={11}
                                             className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
-                                            placeholder="0414-0000000"
+                                            placeholder="04140000000"
                                         />
                                     </div>
                                 </div>

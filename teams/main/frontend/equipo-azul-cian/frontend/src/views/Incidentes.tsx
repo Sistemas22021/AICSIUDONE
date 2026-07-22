@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import IncidentsModal from '../components/incident/IncidentModal';
 import { fetchWithRetry } from '../utils/fetchWithRetry';
+import { API_BASE_URL } from '../config';
 
 type IncidentStatus = 'ACTIVE' | 'IN_PROGRESS' | 'CLOSED';
 type IncidentFilterStatus = 'ALL' | 'ACTIVE' | 'IN_PROGRESS' | 'CLOSED';
@@ -44,7 +45,7 @@ const Incidentes: React.FC = () => {
       setLoading(true);
 
       const res = await fetchWithRetry(
-        'http://localhost:8080/api/incidents'
+        `${API_BASE_URL}/incidents`
       );
 
       const data: Incident[] = await res.json();
@@ -84,12 +85,12 @@ const Incidentes: React.FC = () => {
 
       if (status === 'CLOSED') {
         res = await fetch(
-          `http://localhost:8080/api/incidents/${id}/close`,
+          `${API_BASE_URL}/incidents/${id}/close`,
           { method: 'PATCH' }
         );
       } else {
         res = await fetch(
-          `http://localhost:8080/api/incidents/${id}/status`,
+          `${API_BASE_URL}/incidents/${id}/status`,
           {
             method: 'PATCH',
             headers: {

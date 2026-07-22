@@ -1,12 +1,26 @@
 name: "[Equipo Blanco][Backend] Prision Service"
 
+# ─── CONFIGURACIÓN DEL PIPELINE ──────────────────────────────────────────────
+# Ramas que activan el pipeline:
+#   equipoBlanco  → Push o PR ejecutan test + build
+#   main          → Push o PR ejecutan test + build
+#
+# Ramas que NO activan el pipeline (ej: equipoblanco-dev):
+#   Cualquier rama que no esté listada abajo no dispara nada automáticamente.
+#   Se puede ejecutar manualmente desde GitHub UI o CLI (workflow_dispatch).
+#
+# Ramas para pull_request:
+#   Solo se permiten PRs hacia equipoBlanco o main. PRs desde equipoblanco-dev
+#   hacia main NO ejecutarán tests porque 'main' no está en la lista de PR triggers.
+# ──────────────────────────────────────────────────────────────────────────────
+
 on:
   push:
-    branches: [main, develop]
+    branches: [main, equipoBlanco]
     paths:
       - "teams/EquipoBlanco/backend/prision-service/**"
   pull_request:
-    branches: [main, develop]
+    branches: [equipoBlanco, main]
     paths:
       - "teams/EquipoBlanco/backend/prision-service/**"
   workflow_dispatch:

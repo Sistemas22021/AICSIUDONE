@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './Asignaciones.css';
 import { fetchWithRetry } from '../utils/fetchWithRetry';
+import { API_BASE_URL } from '../config';
 
 interface Incident {
   id: number;
@@ -36,9 +37,9 @@ const Asignaciones: React.FC = () => {
     try {
       setLoading(true);
       const [resIncidents, resPatrols, resAssignments] = await Promise.all([
-        fetchWithRetry('http://localhost:8080/api/incidents'),
-        fetchWithRetry('http://localhost:8080/api/patrols'),
-        fetchWithRetry('http://localhost:8080/api/assignments')
+        fetchWithRetry(`${API_BASE_URL}/incidents`),
+        fetchWithRetry(`${API_BASE_URL}/patrols`),
+        fetchWithRetry(`${API_BASE_URL}/assignments`)
       ]);
 
       if (!resIncidents.ok || !resPatrols.ok || !resAssignments.ok) {
@@ -100,7 +101,7 @@ const Asignaciones: React.FC = () => {
     if (!selectedIncident || !selectedPatrol) return;
     
     try {
-      const res = await fetch('http://localhost:8080/api/assignments', {
+      const res = await fetch(`${API_BASE_URL}/assignments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -131,7 +132,7 @@ const Asignaciones: React.FC = () => {
   const handleMarkArrival = async (patrolId: number): Promise<void> => {
     try {
       const res = await fetch(
-        `http://localhost:8080/api/patrols/${patrolId}/arrive`,
+        `${API_BASE_URL}/patrols/${patrolId}/arrive`,
         {
           method: 'PATCH'
         }

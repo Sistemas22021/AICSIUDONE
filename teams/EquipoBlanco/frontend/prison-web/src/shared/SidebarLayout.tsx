@@ -12,86 +12,77 @@ type MenuItem = {
 }
 
 const ALL_MENU_ITEMS: (MenuItem & { roles?: UserRole[] })[] = [
-  // Dashboard
-  { 
-    label: 'Dashboard', 
+  {
+    label: 'Dashboard',
     to: '/dashboard',
-    roles: [
-      'Oficial Penitenciario',
-      'Supervisor'
+    roles: ['Oficial Penitenciario', 'Supervisor']
+  },
+  {
+    label: 'Gestión de Internos',
+    roles: ['Oficial Penitenciario', 'Supervisor'],
+    children: [
+      {
+        label: 'Registro de recluso',
+        to: '/internos/registrar',
+        roles: ['Oficial Penitenciario']
+      },
+      {
+        label: 'Egreso temporal',
+        to: '/internos/egreso-temporal',
+        roles: ['Oficial Penitenciario']
+      },
+      {
+        label: 'Retorno',
+        to: '/internos/retorno-temporal',
+        roles: ['Oficial Penitenciario']
+      },
+      {
+        label: 'Registro de egreso',
+        to: '/internos/egreso',
+        roles: ['Oficial Penitenciario', 'Supervisor']
+      },
     ]
   },
-  // Gestión de Internos
-  { 
-    label: 'Registro de recluso', 
-    to: '/internos/registrar', 
-    roles: [
-      'Oficial Penitenciario'
-    ] 
-  },
-  { 
-    label: 'Egreso temporal', 
-    to: '/internos/egreso-temporal', 
-    roles: [
-      'Oficial Penitenciario',
-      'Supervisor'
-    ] 
-  },
-  { 
-    label: 'Retorno', 
-    to: '/internos/retorno-temporal', 
-    roles: [
-      'Oficial Penitenciario',
-      'Supervisor'
-    ] 
-  },
-  { 
-    label: 'Registro de egreso', 
-    to: '/internos/egreso', 
-    roles: [
-      'Oficial Penitenciario',
-      'Supervisor'
-    ] 
-  },
-  // Mapa de Celdas
   {
-    label: 'Mapa de Celdas',
-    roles: [
-      'Oficial Penitenciario', 
-      'Supervisor',
-      'Administrador del Sistema'
-    ],
+    label: 'Infraestructura',
+    roles: ['Oficial Penitenciario', 'Supervisor', 'Administrador del Sistema'],
     children: [
-      { label: 'Ver Mapa', to: '/mapa' },
-      { label: 'Configuración de Celdas', to: '/celdas/configurar', roles: ['Administrador del Sistema'] },
+      {
+        label: 'Ver Mapa de Celdas',
+        to: '/mapa'
+      },
+      {
+        label: 'Configuración de Celdas',
+        to: '/celdas/configurar',
+        roles: ['Administrador del Sistema']
+      },
     ],
   },
-  // seguimiento post-penitenciario
   {
-    label: 'Post-Penitenciario',
-    roles: [
-      'Oficial de Seguimiento', 
-      'Supervisor'
-    ],
+    label: 'Seguridad y Control',
+    roles: ['Oficial de Seguimiento', 'Supervisor', 'Oficial Penitenciario'],
     children: [
-      { label: 'Post-Penitenciario', to: '/post' },
+      {
+        label: 'Control y Disciplina',
+        to: '/control',
+        roles: ['Oficial de Seguimiento', 'Supervisor', 'Oficial Penitenciario']
+      },
+      {
+        label: 'Bitácora de Incidentes',
+        to: '/incidentes',
+        roles: ['Supervisor']
+      },
+    ]
+  },
+  {
+    label: 'Programas y Seguimiento',
+    roles: ['Oficial de Seguimiento', 'Supervisor'],
+    children: [
+      {
+        label: 'Post-Penitenciario',
+        to: '/post'
+      },
     ],
-  },
-  { 
-    label: 'Control y Disciplina', 
-    to: '/control', 
-    roles: [
-      'Oficial de Seguimiento', 
-      'Supervisor',
-      'Oficial Penitenciario'
-    ] 
-  },
-  { 
-    label: 'Bitácora de Incidentes', 
-    to: '/incidentes', 
-    roles: [
-      'Supervisor'
-    ] 
   },
 ]
 
@@ -201,8 +192,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
   }
 
   const linkBase = (isActive: boolean) =>
-    `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
-      isActive ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+    `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${isActive ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
     }`
 
   return (
@@ -243,9 +233,8 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
                 <div key={item.label} className="space-y-0.5">
                   <button
                     onClick={() => toggleMenu(item.label)}
-                    className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                      hasActiveChild ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                    }`}
+                    className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${hasActiveChild ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      }`}
                   >
                     <span className="truncate">{item.label}</span>
                     <svg
@@ -353,11 +342,10 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
                         <div key={a.id} className="px-4 py-3 hover:bg-gray-50 space-y-1">
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
-                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold mb-1 ${
-                                a.nivel === 1 ? 'bg-yellow-100 text-yellow-800' :
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold mb-1 ${a.nivel === 1 ? 'bg-yellow-100 text-yellow-800' :
                                 a.nivel === 2 ? 'bg-orange-100 text-orange-800' :
-                                'bg-red-100 text-red-800'
-                              }`}>
+                                  'bg-red-100 text-red-800'
+                                }`}>
                                 Nivel {a.nivel}
                               </span>
                               <p className="text-sm font-semibold text-gray-900 truncate">
@@ -440,6 +428,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
                   id="textarea-obs-atencion"
                   value={obsAtencion}
                   onChange={e => setObsAtencion(e.target.value)}
+                  maxLength={500}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                   rows={3}
                   placeholder="Ej: Se realizó llamada de seguimiento, el egresado presentó justificación..."

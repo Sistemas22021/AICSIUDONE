@@ -7,8 +7,8 @@ export const MOCK_DATABASE: EvidenceRecord[] = [
     expediente: 'EXP-2026-089',
     calibre: '9mm Parabellum',
     estrias: '6',
-    twist: TwistDirection.DEXTROGIRO,
-    percussion: PercussionType.FUEGO_CENTRAL,
+    twist: TwistDirection.DEXTRORSUM,
+    percussion: PercussionType.CENTRAL,
     marca: 'Glock',
     previewUrl: null
   },
@@ -18,8 +18,8 @@ export const MOCK_DATABASE: EvidenceRecord[] = [
     expediente: 'EXP-2026-055',
     calibre: '9mm Parabellum',
     estrias: '6',
-    twist: TwistDirection.DEXTROGIRO,
-    percussion: PercussionType.FUEGO_CENTRAL,
+    twist: TwistDirection.DEXTRORSUM,
+    percussion: PercussionType.CENTRAL,
     marca: 'Glock Inc.', // Same class, slight brand variation
     previewUrl: null
   },
@@ -29,8 +29,8 @@ export const MOCK_DATABASE: EvidenceRecord[] = [
     expediente: 'EXP-2025-410',
     calibre: '9mm Parabellum',
     estrias: '4', // Different estrias
-    twist: TwistDirection.LEVOGIRO, // Different twist
-    percussion: PercussionType.FUEGO_CENTRAL,
+    twist: TwistDirection.SINISTRORSUM, // Different twist
+    percussion: PercussionType.CENTRAL,
     marca: 'Smith & Wesson',
     previewUrl: null
   },
@@ -40,8 +40,8 @@ export const MOCK_DATABASE: EvidenceRecord[] = [
     expediente: 'EXP-2024-102',
     calibre: '.45 ACP', // Different caliber -> Should be discarded immediately
     estrias: '6',
-    twist: TwistDirection.DEXTROGIRO,
-    percussion: PercussionType.FUEGO_CENTRAL,
+    twist: TwistDirection.DEXTRORSUM,
+    percussion: PercussionType.CENTRAL,
     marca: 'Colt',
     previewUrl: null
   }
