@@ -4,6 +4,8 @@ export type PercussionType = 'Fuego Central' | 'Fuego Anular';
 
 export type EvidenceStatus = 'En Bóveda' | 'En Tribunal' | 'Destruida';
 
+export type MatchConfidence = 'Alta' | 'Media' | 'Baja';
+
 export interface BalisticMetadata {
   expediente: string;
   calibre: string;

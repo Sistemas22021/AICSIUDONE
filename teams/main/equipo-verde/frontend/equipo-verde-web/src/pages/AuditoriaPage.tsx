@@ -21,10 +21,8 @@ import {
   Terminal, 
   ShieldCheck, 
   User, 
-  Globe, 
-  Calendar, 
-  Search, 
-  Filter, 
+  Globe,
+  Search,
   Database,
   RefreshCw
 } from 'lucide-react';
@@ -38,7 +36,6 @@ export const AuditoriaPage = () => {
   // Pagination State
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
-  const [totalElements, setTotalElements] = useState(0);
 
   // Filters State
   const [searchQuery, setSearchQuery] = useState('');
@@ -55,7 +52,6 @@ export const AuditoriaPage = () => {
       // or we can paginate backend-side. Let's fetch 100 entries so we can filter them effectively on frontend.
       const data = await auditService.getAuditLogs(0, 100);
       setLogs(data.content);
-      setTotalElements(data.totalElements);
     } catch (err: any) {
       console.error(err);
       setError('No se pudieron obtener los logs del servidor de auditoría Envers.');

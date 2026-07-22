@@ -24,8 +24,8 @@ export function AuthGuard({ children }: AuthGuardProps) {
     }
 
     // Modo Maquetación: Forzar inicio de sesión
-    // checkAuth();
-    setAuthState('authenticated');
+    checkAuth();
+    // setAuthState('authenticated');
   }, []);
 
   if (authState === 'loading') {
