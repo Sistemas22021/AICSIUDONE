@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "main", "master", "develop" ]
     paths:
-      - 'teams/EquipoBlanco/**' # Ajustar si tu backend se ubica en otra ruta específica o raíz
+      - 'teams/amarrillo/**' # Ajustar si tu backend se ubica en otra ruta específica o raíz
       - '.github/workflows/Amarillo-backend.yml'
   pull_request:
     branches: [ "main", "master", "develop" ]
