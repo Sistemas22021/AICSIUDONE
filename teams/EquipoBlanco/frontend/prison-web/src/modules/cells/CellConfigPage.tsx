@@ -165,7 +165,7 @@ export default function CellConfigPage() {
                         ? `${cell.lengthMeters}x${cell.widthMeters}`
                         : '\u2014'}
                     </td>
-                    <td className="px-4 py-4 text-gray-600">{cell.currentOccupancy}/{cell.maxCapacity}</td>
+                    <td className="px-4 py-4 text-gray-600">{cell.currentOccupancy}-{cell.maxCapacity}</td>
                     <td className="px-4 py-4 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <button
