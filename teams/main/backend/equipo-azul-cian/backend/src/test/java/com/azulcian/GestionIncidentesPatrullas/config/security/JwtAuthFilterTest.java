@@ -43,6 +43,7 @@ class JwtAuthFilterTest {
         jwtAuthFilter.doFilterInternal(request, response, filterChain);
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
         assertNotNull(auth);
         assertEquals("mando_juan", auth.getName());
         assertTrue(auth.getAuthorities().stream()
@@ -52,7 +53,9 @@ class JwtAuthFilterTest {
     }
 
     @Test
-    void doFilterInternal_WithoutHeaders_DoesNotSetAuthentication() throws ServletException, IOException {
+    void doFilterInternal_WithoutHeaders_UsesDefaultSupervisorAuthentication()
+            throws ServletException, IOException {
+
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
         FilterChain filterChain = Mockito.mock(FilterChain.class);
@@ -60,7 +63,11 @@ class JwtAuthFilterTest {
         jwtAuthFilter.doFilterInternal(request, response, filterChain);
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        assertNull(auth);
+
+        assertNotNull(auth);
+        assertEquals("super_user", auth.getName());
+        assertTrue(auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_SUPERVISOR")));
 
         Mockito.verify(filterChain).doFilter(request, response);
     }
