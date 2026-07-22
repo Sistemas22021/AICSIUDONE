@@ -60,6 +60,48 @@ class PatrolServiceTest {
         verify(patrolRepository, times(1)).save(patrol);
     }
 
+    @Test
+    void createPatrol_shouldAllowOutOfServiceAsInitialStatus() {
+
+        patrol.setStatus(PatrolStatus.OUT_OF_SERVICE);
+
+        when(patrolRepository.save(any(Patrol.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        Patrol result = patrolService.createPatrol(patrol);
+
+        assertEquals(PatrolStatus.OUT_OF_SERVICE, result.getStatus());
+        verify(patrolRepository, times(1)).save(patrol);
+    }
+
+    @Test
+    void createPatrol_shouldRejectOperationalStatuses() {
+
+        PatrolStatus[] invalidStatuses = {
+                PatrolStatus.EN_ROUTE,
+                PatrolStatus.BUSY
+        };
+
+        for (PatrolStatus status : invalidStatuses) {
+
+            patrol.setStatus(status);
+
+            RuntimeException ex = assertThrows(
+                    RuntimeException.class,
+                    () -> patrolService.createPatrol(patrol)
+            );
+
+            assertEquals(
+                    "Una patrulla solo puede registrarse como AVAILABLE o OUT_OF_SERVICE.",
+                    ex.getMessage()
+            );
+
+            verify(patrolRepository, never()).save(any(Patrol.class));
+
+            reset(patrolRepository);
+        }
+    }
+
     // =========================================
     // GET ALL PATROLS
     // =========================================
