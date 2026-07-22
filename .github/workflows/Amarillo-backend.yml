@@ -31,3 +31,32 @@ jobs:
         run: mvn -B checkstyle:check || true
       - name: Test (pruebas unitarias)
         run: mvn -B test
+
+  deploy-y-approval:
+    name: "Deploy + Approval Test"
+    runs-on: ubuntu-latest
+    needs: build-lint-test
+    if: github.event_name == 'push'
+    steps:
+      - name: Disparar deploy en Render
+        run: |
+          curl -fsS -X POST "$RENDER_DEPLOY_HOOK_BACKEND" && echo "Deploy disparado"
+        env:
+          RENDER_DEPLOY_HOOK_BACKEND: ${{ secrets.RENDER_DEPLOY_HOOK_BACKEND }}
+      - name: Esperar propagacion
+        run: sleep 30
+      - name: Approval Test (verificar que la API responde, con reintentos por arranque en frio)
+        run: |
+          for i in $(seq 1 10); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "$DEPLOY_URL_BACKEND")
+            echo "Intento $i - HTTP $code"
+            if [ "$code" -ge 200 ] && [ "$code" -lt 400 ]; then
+              echo "APROBADO"
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "FALLO"
+          exit 1
+        env:
+          DEPLOY_URL_BACKEND: ${{ secrets.DEPLOY_URL_BACKEND }}
