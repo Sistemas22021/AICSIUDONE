@@ -2,14 +2,15 @@
 # Pipeline: Backend Equipo Azul-Cian
 #
 # Valida automáticamente los cambios realizados en el backend
-# del equipo Azul-Cian cuando existen modificaciones sobre main.
+# del equipo Azul-Cian cuando existen modificaciones sobre main
+# o sobre la rama de desarrollo (dev-rama-equipo-cian).
 #
 # Flujo:
 # Build → Test → Feedback
 #
 # No incluye despliegue porque el backend se ejecuta localmente.
-# El pipeline garantiza que los cambios integrados en main
-# mantengan la calidad y estabilidad del microservicio.
+# El pipeline garantiza que los cambios integrados en desarrollo
+# y producción mantengan la calidad y estabilidad del microservicio.
 # ─────────────────────────────────────────────────────────────
 
 name: "[Backend] Equipo Azul-Cian"
@@ -18,12 +19,14 @@ on:
   push:
     branches:
       - main
+      - dev-rama-equipo-cian
     paths:
       - "teams/main/backend/equipo-azul-cian/backend/**"
 
   pull_request:
     branches:
       - main
+      - dev-rama-equipo-cian
     paths:
       - "teams/main/backend/equipo-azul-cian/backend/**"
 

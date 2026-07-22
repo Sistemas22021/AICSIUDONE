@@ -2,16 +2,13 @@
 # Pipeline: Frontend Equipo Azul-Cian
 #
 # IMPORTANTE: Este pipeline es INDEPENDIENTE de todos los demás equipos.
-# Solo se activa cuando existen cambios dentro de la carpeta del frontend
-# del equipo Azul-Cian en la rama principal main.
+# Se activa cuando existen cambios dentro de la carpeta del frontend
+# del equipo Azul-Cian en las ramas main o dev-rama-equipo-cian.
 #
 # El filtro paths evita ejecuciones innecesarias cuando otros equipos
 # modifican diferentes módulos del repositorio.
 #
-# Sin el filtro `paths`, cualquier commit realizado sobre main,
-# incluso cambios pertenecientes a otros equipos, ejecutaría este pipeline.
-#
-# Flujo de Jobs: Build → Lint → Test → Deploy (Vercel) → Smoke Test
+# Flujo de Jobs: Build → Lint → Test → Deploy (Solo Main) → Smoke Test (Solo Main)
 # ─────────────────────────────────────────────────────────────────────────────
 
 name: "[Frontend] Equipo Azul-Cian"
@@ -20,12 +17,14 @@ on:
   push:
     branches:
       - main
+      - dev-rama-equipo-cian
     paths:
       - "teams/main/frontend/equipo-azul-cian/frontend/**"
 
   pull_request:
     branches:
       - main
+      - dev-rama-equipo-cian
     paths:
       - "teams/main/frontend/equipo-azul-cian/frontend/**"
 
@@ -155,14 +154,15 @@ jobs:
   # El despliegue a producción es gestionado de manera automática por Vercel
   # al detectar nuevos commits en la rama main.
   #
-  # Solo se ejecuta en eventos `push`, nunca en Pull Requests, porque
-  # desplegar desde una PR significaría publicar código no revisado aún.
+  # Solo se ejecuta cuando el evento es 'push' Y la rama de destino es 'main'.
+  # En Pull Requests o en la rama de desarrollo (dev-rama-equipo-cian),
+  # este job se omite.
   # ─────────────────────────────────────────────────────────────────────────
   deploy:
     name: "Deploy"
     runs-on: ubuntu-latest
     needs: test
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
       - uses: actions/checkout@v4
@@ -182,12 +182,14 @@ jobs:
   # El Smoke Test es el Test de Aprobación del pipeline. Valida que la URL
   # pública responda con HTTP 200, confirmando que la aplicación quedó
   # efectivamente publicada y accesible en Vercel.
+  #
+  # Al igual que el Deploy, solo se ejecuta en la rama main tras un push.
   # ─────────────────────────────────────────────────────────────────────────
   smoke-test:
     name: "Smoke Test (Test de Aprobación)"
     runs-on: ubuntu-latest
     needs: deploy
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
       - name: Verificar disponibilidad del frontend
