@@ -118,10 +118,19 @@ const Inicio: React.FC = () => {
         fetchWithRetry(`${API_BASE}/assignments`)
       ]);
 
-      const summaryData: IncidentSummary = await resSummary.json();
-      const patrolsData: Patrol[] = await resPatrols.json();
-      const incidentsData: Incident[] = await resIncidents.json();
-      const assignmentsData: Assignment[] = await resAssignments.json();
+      const rawSummary = await resSummary.json();
+      const rawPatrols = await resPatrols.json();
+      const rawIncidents = await resIncidents.json();
+      const rawAssignments = await resAssignments.json();
+
+      // Guardas defensivas: si la API devuelve algo inesperado (ej. HTML o un objeto)
+      // lo tratamos como vacío para evitar errores de runtime como "filter is not a function"
+      const summaryData: IncidentSummary = (rawSummary && typeof rawSummary === 'object' && !Array.isArray(rawSummary))
+        ? rawSummary
+        : { active: 0, inProgress: 0, closed: 0, total: 0 };
+      const patrolsData: Patrol[] = Array.isArray(rawPatrols) ? rawPatrols : [];
+      const incidentsData: Incident[] = Array.isArray(rawIncidents) ? rawIncidents : [];
+      const assignmentsData: Assignment[] = Array.isArray(rawAssignments) ? rawAssignments : [];
 
       setSummary(summaryData);
 

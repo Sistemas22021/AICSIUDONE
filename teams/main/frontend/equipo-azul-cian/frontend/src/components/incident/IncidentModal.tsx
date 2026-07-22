@@ -47,7 +47,8 @@ const IncidentsModal: React.FC<Props> = ({ onClose, onCreated }) => {
         {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Bypass-Tunnel-Reminder': 'true'
           },
           body: JSON.stringify(form)
         }

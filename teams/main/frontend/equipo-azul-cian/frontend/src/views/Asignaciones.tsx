@@ -104,7 +104,8 @@ const Asignaciones: React.FC = () => {
       const res = await fetch(`${API_BASE_URL}/assignments`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Bypass-Tunnel-Reminder': 'true'
         },
         body: JSON.stringify({
           incidentId: parseInt(selectedIncident),
@@ -134,7 +135,10 @@ const Asignaciones: React.FC = () => {
       const res = await fetch(
         `${API_BASE_URL}/patrols/${patrolId}/arrive`,
         {
-          method: 'PATCH'
+          method: 'PATCH',
+          headers: {
+            'Bypass-Tunnel-Reminder': 'true'
+          }
         }
       );
 

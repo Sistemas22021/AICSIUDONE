@@ -86,7 +86,12 @@ const Incidentes: React.FC = () => {
       if (status === 'CLOSED') {
         res = await fetch(
           `${API_BASE_URL}/incidents/${id}/close`,
-          { method: 'PATCH' }
+          {
+            method: 'PATCH',
+            headers: {
+              'Bypass-Tunnel-Reminder': 'true'
+            }
+          }
         );
       } else {
         res = await fetch(
@@ -94,7 +99,8 @@ const Incidentes: React.FC = () => {
           {
             method: 'PATCH',
             headers: {
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              'Bypass-Tunnel-Reminder': 'true'
             },
             body: JSON.stringify({ status })
           }
