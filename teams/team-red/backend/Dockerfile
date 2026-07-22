@@ -10,7 +10,10 @@ RUN mvn clean package -DskipTests
 FROM eclipse-temurin:21-jre-alpine AS runtime
 WORKDIR /app
 
-COPY --from=build /app/target/guardia-core-0.0.1-SNAPSHOT.jar app.jar
+# Copia cualquier .jar que genere Maven en la carpeta target
+COPY --from=build /app/target/*.jar app.jar
 
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+
+# Control de memoria para evitar OOM en los 512 MB de Render
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]
