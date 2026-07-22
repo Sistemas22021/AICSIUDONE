@@ -1,39 +1,33 @@
-name: [Backend] Nexo Criminal API
-
+name: "[Backend] Nexo Criminal API"
+ 
 on:
   push:
-    branches: [ "main", "master", "develop" ]
-    paths:
-      - 'teams/amarrillo/backend/**'
-      - '.github/workflows/Amarillo-backend.yml'
+    branches: [main, dev]
+    paths: ["teams/amarrillo/backend/**"]
   pull_request:
-    branches: [ "main", "master", "develop" ]
-
+    branches: [main, dev]
+    paths: ["teams/amarrillo/backend/**"]
+  workflow_dispatch:
+ 
+defaults:
+  run:
+    working-directory: teams/amarrillo/backend
+ 
 jobs:
-  Build-Lint-Test:
+  build-lint-test:
+    name: "Build - Lint - Test"
     runs-on: ubuntu-latest
-
-    defaults:
-      run:
-        working-directory: ./teams/amarrillo/backend
-
     steps:
-      - name: Checkout del código
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
       - name: Configurar JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'corretto'
-          java-version: '17'
-          cache: 'maven'
-          cache-dependency-path: teams/amarrillo/backend/pom.xml
-
+          java-version: "17"
+          distribution: "temurin"
+          cache: maven
       - name: Build (compilar)
         run: mvn -B clean compile
-
       - name: Lint (estilo de codigo)
-        run: mvn -B checkstyle:check || echo "Checkstyle no configurado o sin errores"
-
+        run: mvn -B checkstyle:check || true
       - name: Test (pruebas unitarias)
         run: mvn -B test
