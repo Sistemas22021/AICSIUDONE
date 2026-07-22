@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import {
   Box, TextField, MenuItem, Button, Typography, Snackbar,
-  CircularProgress, LinearProgress, IconButton, Grid, Paper, Chip
+  CircularProgress, LinearProgress, IconButton, Paper, Chip
 } from '@mui/material';
 import { SectionTitle } from '../components/SectionTitle';
 import { DataCard } from '../components/DataCard';
 import {
-  FolderOpen, FolderPlus, Search, Edit2, ArrowLeft, CheckCircle2, X
+  FolderOpen, FolderPlus, Edit2, ArrowLeft, CheckCircle2
 } from 'lucide-react';
 import {
   ExpedienteDTO
@@ -135,11 +135,15 @@ export const ExpedientePage = () => {
   if (viewMode === 'list') {
     return (
       <Box sx={{ maxWidth: '1200px', mx: 'auto', p: 4 }}>
-        <SectionTitle 
-          title="Gestión de Expedientes" 
-          subtitle="Administra los expedientes y casos forenses del sistema."
-          icon={<FolderOpen size={28} className="text-slate-600" />}
-        />
+        <SectionTitle>
+          <Box className="flex items-center gap-2">
+            <FolderOpen size={28} className="text-slate-600" />
+            Gestión de Expedientes
+          </Box>
+        </SectionTitle>
+        <Typography variant="body1" className="text-slate-500 mb-6">
+          Administra los expedientes y casos forenses del sistema.
+        </Typography>
 
         <Box sx={{ display: 'flex', gap: 2, mb: 4, alignItems: 'center' }}>
           <TextField
@@ -147,9 +151,6 @@ export const ExpedientePage = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             sx={{ ...premiumInputStyles, flex: 1 }}
-            InputProps={{
-              startAdornment: <Search size={20} className="text-slate-400 mr-2" />
-            }}
           />
           <Button
             variant="contained"
@@ -174,16 +175,16 @@ export const ExpedientePage = () => {
         {loading ? (
           <LinearProgress sx={{ borderRadius: 2, my: 4 }} />
         ) : (
-          <Grid container spacing={3}>
+          <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', lg: 'repeat(3, 1fr)' } }}>
             {expedientes.length === 0 && (
-              <Grid item xs={12}>
+              <Box sx={{ gridColumn: '1 / -1' }}>
                 <Paper sx={{ p: 6, textAlign: 'center', borderRadius: '16px', border: '1px dashed #cbd5e1', bgcolor: 'transparent', boxShadow: 'none' }}>
                   <Typography variant="h6" color="text.secondary">No se encontraron expedientes registrados.</Typography>
                 </Paper>
-              </Grid>
+              </Box>
             )}
             {expedientes.map(exp => (
-              <Grid item xs={12} md={6} lg={4} key={exp.idExpedient}>
+              <Box key={exp.idExpedient}>
                 <DataCard>
                   <Box sx={{ p: 3 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
@@ -211,9 +212,9 @@ export const ExpedientePage = () => {
                     </Box>
                   </Box>
                 </DataCard>
-              </Grid>
+              </Box>
             ))}
-          </Grid>
+          </Box>
         )}
       </Box>
     );
@@ -229,11 +230,15 @@ export const ExpedientePage = () => {
         Volver a la lista
       </Button>
 
-      <SectionTitle 
-        title={editingId ? "Editar Expediente" : "Registrar Nuevo Expediente"} 
-        subtitle="Ingresa la información detallada del caso forense."
-        icon={<FolderPlus size={28} className="text-slate-600" />}
-      />
+      <SectionTitle>
+        <Box className="flex items-center gap-2">
+          <FolderPlus size={28} className="text-slate-600" />
+          {editingId ? "Editar Expediente" : "Registrar Nuevo Expediente"}
+        </Box>
+      </SectionTitle>
+      <Typography variant="body1" className="text-slate-500 mb-6">
+        Ingresa la información detallada del caso forense.
+      </Typography>
 
       <DataCard>
         <Box sx={{ p: 4, display: 'flex', flexDirection: 'column', gap: 3 }}>
