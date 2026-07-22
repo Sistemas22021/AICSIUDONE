@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { resolveToken, redirectToLogin, setAccessToken } from '../services/tokenService';
 
 interface AuthGuardProps {
@@ -28,20 +28,20 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   if (authState === 'loading') {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full mx-auto mb-4" />
-          <p className="text-slate-500 text-sm">Verificando sesión segura...</p>
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full mx-auto mb-4" />
+            <p className="text-slate-500 text-sm">Verificando sesión segura...</p>
+          </div>
         </div>
-      </div>
     );
   }
 
   if (authState === 'unauthenticated') {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <p className="text-slate-500 text-sm">Redirigiendo al Login MFE...</p>
-      </div>
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+          <p className="text-slate-500 text-sm">Redirigiendo al Login MFE...</p>
+        </div>
     );
   }
 

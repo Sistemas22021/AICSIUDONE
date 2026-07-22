@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { Link } from 'react-router-dom';
 import Swal from 'sweetalert2';
@@ -123,7 +123,7 @@ export const UserList = () => {
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
                             {user.profilePhotoUrl ? (
-                                <img src={`http://localhost:8085${user.profilePhotoUrl}`} alt="avatar" className="w-10 h-10 rounded-full object-cover border border-slate-200" />
+                                <img src={'http://localhost:8085' + user.profilePhotoUrl} alt="avatar" className="w-10 h-10 rounded-full object-cover border border-slate-200" />
                             ) : (
                                 <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-500">
                                   {user.fullName.charAt(0)}
@@ -131,7 +131,7 @@ export const UserList = () => {
                             )}
                             <div>
                               <div className="font-semibold text-slate-800">{user.fullName}</div>
-                              <div className="text-xs text-slate-500 flex items-center gap-1"><Mail className="w-3 h-3"/> {user.email}</div>
+                              <div className="text-xs text-slate-500 flex items-center gap-1"><Mail className="w-3 h-3" /> {user.email}</div>
                             </div>
                           </div>
                         </td>
