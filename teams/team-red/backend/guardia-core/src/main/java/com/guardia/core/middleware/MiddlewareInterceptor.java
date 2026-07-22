@@ -23,6 +23,17 @@ public class MiddlewareInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws IOException {
 
+        String uri = request.getRequestURI();
+
+        if (uri.equals("/swagger")
+                || uri.startsWith("/swagger/")
+                || uri.startsWith("/swagger-ui/")
+                || uri.equals("/swagger-ui.html")
+                || uri.startsWith("/api-docs")
+                || uri.startsWith("/v3/api-docs")) {//
+            return true;
+        }
+
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
             response.setStatus(HttpServletResponse.SC_OK);
             return false;
