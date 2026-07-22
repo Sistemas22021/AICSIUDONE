@@ -3,15 +3,15 @@ name: "[Backend] Nexo Criminal API"
 on:
   push:
     branches: [main, dev]
-    paths: ["backend/**"]
+    paths: ["teams/amarrillo/backend/**"]
   pull_request:
     branches: [main, dev]
-    paths: ["backend/**"]
+    paths: ["teams/amarrillo/backend/**"]
   workflow_dispatch:
  
 defaults:
   run:
-    working-directory: backend
+    working-directory: teams/amarrillo/backend
  
 jobs:
   build-lint-test:
