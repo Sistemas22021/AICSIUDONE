@@ -11,7 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
+import java.util.UUID;
+
 
 @RestController
 @RequestMapping("/api/v1/usuarios")
@@ -25,20 +26,18 @@ public class UsuarioController {
 
     private final UsuarioService usuarioService;
 
-    @PostMapping
-    public ResponseEntity<ApiResponse<UsuarioResponse>> crear(@Valid @RequestBody UsuarioRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.ok("Usuario creado exitosamente.", usuarioService.crear(request)));
-    }
-
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<UsuarioResponse>> obtenerPorId(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<UsuarioResponse>> obtenerPorId(
+            @PathVariable UUID id
+    ) {
         return ResponseEntity.ok(ApiResponse.ok(usuarioService.obtenerPorId(id)));
     }
 
-    @GetMapping("/identificacion/{identificacion}")
-    public ResponseEntity<ApiResponse<UsuarioResponse>> obtenerPorIdentificacion(@PathVariable String identificacion) {
-        return ResponseEntity.ok(ApiResponse.ok(usuarioService.obtenerPorIdentificacion(identificacion)));
+    @GetMapping("/username/{username}")
+    public ResponseEntity<ApiResponse<UsuarioResponse>> obtenerPorUsername(
+            @PathVariable String username
+    ) {
+        return ResponseEntity.ok(ApiResponse.ok(usuarioService.obtenerPorUsername(username)));
     }
 
     @GetMapping
@@ -47,26 +46,21 @@ public class UsuarioController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<UsuarioResponse>> actualizar(@PathVariable Long id,
-                                                                    @Valid @RequestBody UsuarioRequest request) {
-        return ResponseEntity.ok(ApiResponse.ok("Usuario actualizado.", usuarioService.actualizar(id, request)));
+    public ResponseEntity<ApiResponse<UsuarioResponse>> actualizar(
+            @PathVariable UUID id,  // Long → UUID
+            @Valid @RequestBody UsuarioRequest request
+    ) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                "Usuario actualizado.",
+                usuarioService.actualizar(id, request)
+        ));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> eliminar(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> eliminar(
+            @PathVariable UUID id  // Long → UUID
+    ) {
         usuarioService.eliminar(id);
         return ResponseEntity.ok(ApiResponse.ok("Usuario eliminado.", null));
-    }
-
-    @PostMapping("/{id}/autenticar")
-    public ResponseEntity<ApiResponse<Boolean>> autenticar(@PathVariable Long id,
-                                                            @RequestBody Map<String, String> body) {
-        boolean resultado = usuarioService.autenticar(id, body.get("credenciales"));
-        return ResponseEntity.ok(ApiResponse.ok("Autenticación procesada.", resultado));
-    }
-
-    @GetMapping("/correo/{correo}")
-    public ResponseEntity<ApiResponse<UsuarioResponse>> obtenerPorCorreo(@PathVariable String correo) {
-        return ResponseEntity.ok(ApiResponse.ok(usuarioService.obtenerPorCorreo(correo)));
     }
 }

@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
@@ -36,7 +37,7 @@ public class ExpedienteController {
     @PatchMapping("/{id}/sellar")
     public ResponseEntity<ApiResponse<ExpedienteResponse>> sellar(
         @PathVariable Long id,
-        @RequestParam Long agenteSelladorId) {
+        @RequestParam UUID agenteSelladorId) {
         return ResponseEntity.ok(ApiResponse.ok("Expediente sellado.",
             expedienteService.sellar(id, agenteSelladorId)));
     }

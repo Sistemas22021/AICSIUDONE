@@ -15,7 +15,7 @@ export interface Evidencia {
     hashIntegridad?: string
     hashLocal?: string
     timestamp?: string
-    investigadorId?: number
+    investigadorId: string
     archivoNombre?: string
 }
 
@@ -38,7 +38,7 @@ export interface EscenaCrimenState {
     expedienteId: number | null          // ID numérico del expediente en el backend
     escenaId: number | null              // ID de la Escena creada en el backend
     sincronizado: boolean                // true = estado viene del backend
-    investigadorId: number | null
+    investigadorId: string | null
     investigadorNombre: string | null
     perimetro: {
         sellado: boolean
@@ -48,7 +48,7 @@ export interface EscenaCrimenState {
     evidencias: Evidencia[]
     liberacion: {
         hora: string
-        investigadorResponsableId: number | null
+        investigadorResponsableId: string | null
         observaciones: string
         hashLiberacion?: string
         investigadorNombre?: string
@@ -190,7 +190,7 @@ export function useEscenaCrimen() {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
             })
         })
-    }, [state.escenaId])
+    }, [state])
 
     const isPaso1Completado = state.paso1_completado
     const isPaso2Completado = state.paso2_completado
@@ -217,7 +217,7 @@ export function useEscenaCrimen() {
     const canCompletarPaso3 = state.tipoEscena === 'solo_evidencia' || state.paso2_completado
     const canCompletarPaso4 =
         state.liberacion.investigadorResponsableId !== null &&
-        state.liberacion.investigadorResponsableId > 0
+        state.liberacion.investigadorResponsableId !== ''
 
     // --- Acciones ---
 
@@ -225,7 +225,7 @@ export function useEscenaCrimen() {
         setState((prev: EscenaCrimenState) => ({ ...prev, folioExpediente: folio }))
     }
 
-    const setInvestigador = (id: number, nombre: string) => {
+    const setInvestigador = (id: string, nombre: string) => {
         setState((prev: EscenaCrimenState) => ({
             ...prev,
             investigadorId: id,
@@ -263,9 +263,12 @@ export function useEscenaCrimen() {
             }
             const { crearEscena, iniciarChecklistEscena } = await import('../services/escenaService')
 
+            if (!state.investigadorId) {
+                throw new Error('El ID del investigador es requerido')
+            }
             const nuevaEscena = await crearEscena({
                 expedienteId: state.expedienteId,
-                levantadaPorId: state.investigadorId,
+                levantadaPorId: Number(state.investigadorId),
             })
             escenaIdActual = nuevaEscena.id
 
@@ -331,8 +334,11 @@ export function useEscenaCrimen() {
 
         if (state.escenaId && state.liberacion.investigadorResponsableId) {
             const { liberarEscena } = await import('../services/escenaService')
+            if (!state.liberacion.investigadorResponsableId) {
+                throw new Error('El investigador responsable es requerido para liberar la escena')
+            }
             const resultado = await liberarEscena(state.escenaId, {
-                investigadorResponsableId: state.liberacion.investigadorResponsableId,
+                investigadorResponsableId: Number(state.liberacion.investigadorResponsableId),
                 observaciones: state.liberacion.observaciones || undefined,
             })
             setState((prev: EscenaCrimenState) => ({
@@ -384,6 +390,7 @@ export function useEscenaCrimen() {
                 horaRecoleccion: '',
                 hashIntegridad: undefined,
                 timestamp: undefined,
+                investigadorId: prev.investigadorId || '',
             }],
         }))
     }
@@ -399,7 +406,7 @@ export function useEscenaCrimen() {
                 tipo: ev.tipo,
                 descripcion: ev.descripcion,
                 escenaId: state.escenaId,
-                investigadorId: ev.investigadorId ?? undefined,
+                investigadorId: ev.investigadorId ? Number(ev.investigadorId) : undefined,
             }
             const saved = await crearEvidencia(dto)
             // Actualizar el ID local → ID del backend, y volcar el hash recibido
@@ -538,7 +545,7 @@ export function useEscenaCrimen() {
         }))
     }
 
-    const verificarIntegridad = async (_expedienteId?: string) => {
+    const verificarIntegridad = async () => {
         if (!state.escenaId) {
             console.warn('No hay escenaId — la escena aún no fue persistida en el backend.')
             return

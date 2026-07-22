@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -106,7 +107,7 @@ public class PropuestaModusOperandiServiceImpl implements PropuestaModusOperandi
                 .orElseThrow(() -> new ResourceNotFoundException("PropuestaModusOperandi", propuestaId));
     }
 
-    private Usuario findAnalista(Long analistaId) {
+    private Usuario findAnalista(UUID analistaId) {
         return usuarioRepository.findById(analistaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario", analistaId));
     }
@@ -139,7 +140,7 @@ public class PropuestaModusOperandiServiceImpl implements PropuestaModusOperandi
                 similares,
                 p.isRevisadoPorExperto(),
                 p.getAnalistaRevisor() != null ? p.getAnalistaRevisor().getId() : null,
-                p.getAnalistaRevisor() != null ? p.getAnalistaRevisor().getNombre() : null,
+                p.getAnalistaRevisor() != null ? p.getAnalistaRevisor().getFullName() : null,
                 p.getJustificacionRevision(),
                 p.getClasificacionManual(),
                 p.getFechaRevision());

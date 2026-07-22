@@ -2,6 +2,7 @@ package com.guardia.core.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import java.util.UUID;
 
 /**
  * Payload para corregir uno o más campos de clasificación de la propuesta de
@@ -11,7 +12,7 @@ import jakarta.validation.constraints.NotNull;
  */
 public record CorregirPropuestaMoRequest(
         @NotNull(message = "Debe indicar el analista que corrige la propuesta.")
-        Long analistaId,
+        UUID analistaId,
 
         String caracteristicasComunes,
         String posibleFirma,

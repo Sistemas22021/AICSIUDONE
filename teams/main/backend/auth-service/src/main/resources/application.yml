@@ -20,9 +20,9 @@ spring:
   # Formato Neon: postgresql://user:pass@host/db?sslmode=require
   # Formato Supabase: postgresql://postgres:pass@db.xxx.supabase.co:5432/postgres
   datasource:
-    url: ${DATASOURCE_URL:jdbc:postgresql://localhost:5432/sso_db}
-    username: ${DATASOURCE_USERNAME:sso_user}
-    password: ${DATASOURCE_PASSWORD:sso_password}
+    url: ${DATASOURCE_URL}
+    username: ${DATASOURCE_USERNAME}
+    password: ${DATASOURCE_PASSWORD:}
     hikari:
       connection-timeout: 30000
       maximum-pool-size: 5          # Pool pequeño para Free Tier (Neon/Supabase limita conexiones)
@@ -42,7 +42,7 @@ eureka:
 # Configuración JWT y tokens — sobreescribir en config-repo para producción
 sso:
   auth:
-    jwt-secret: ${JWT_SECRET:este-es-un-secreto-de-desarrollo-cambiar-en-produccion-32chars}
+    jwt-secret: ${JWT_SECRET}
     access-token-expiry-minutes: ${ACCESS_TOKEN_EXPIRY_MINUTES:15}
     refresh-token-expiry-days: ${REFRESH_TOKEN_EXPIRY_DAYS:7}
 

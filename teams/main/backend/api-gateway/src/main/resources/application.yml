@@ -13,6 +13,23 @@ spring:
         locator:
           enabled: true
           lower-case-service-id: true  # auth-service en lugar de AUTH-SERVICE en URL
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_UNIQUE
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns:
+              - "http://localhost:*"
+              - "https://*.vercel.app"
+              - "https://*.s3-website-*.amazonaws.com"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
 
 # Eureka
 eureka:

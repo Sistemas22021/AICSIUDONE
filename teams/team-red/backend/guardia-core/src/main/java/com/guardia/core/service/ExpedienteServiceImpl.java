@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.Comparator;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -247,7 +248,7 @@ public class ExpedienteServiceImpl implements ExpedienteService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ExpedienteResponse> obtenerPorCreador(Long usuarioId) {
+    public List<ExpedienteResponse> obtenerPorCreador(UUID usuarioId) {
         return expedienteRepository.findByCreadoPorId(usuarioId).stream().map(this::toResponse).toList();
     }
 
@@ -277,7 +278,7 @@ public class ExpedienteServiceImpl implements ExpedienteService {
     }
 
     @Override
-    public ExpedienteResponse sellar(Long id, Long agenteSelladorId) {
+    public ExpedienteResponse sellar(Long id, UUID agenteSelladorId) {
         Expediente expediente = findById(id);
         if (expediente.getEstadoExpediente() == EstadoExpediente.PROCESADO_Y_SELLADO)
             throw new BusinessException("El expediente ya está sellado.");
@@ -302,7 +303,7 @@ public class ExpedienteServiceImpl implements ExpedienteService {
     }
 
     @Override
-    public ExpedienteResponse asignarInvestigador(Long id, Long investigadorId) {
+    public ExpedienteResponse asignarInvestigador(Long id, UUID investigadorId) {
         Expediente expediente = findById(id);
         usuarioRepository.findById(investigadorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario", investigadorId));
@@ -338,12 +339,12 @@ public class ExpedienteServiceImpl implements ExpedienteService {
 
     public ExpedienteResponse toResponse(Expediente e) {
         UsuarioResponse creadoPor = e.getCreadoPor() == null ? null :
-                new UsuarioResponse(e.getCreadoPor().getId(), e.getCreadoPor().getNombre(),
-                        e.getCreadoPor().getIdentificacion(), e.getCreadoPor().getCorreo());
+                new UsuarioResponse(e.getCreadoPor().getId(), e.getCreadoPor().getUsername(),
+                        e.getCreadoPor().getFullName(), e.getCreadoPor().getProfilePhotoUrl(), e.getCreadoPor().getRol());
 
         UsuarioResponse selladoPor = e.getSelladoPor() == null ? null :
-                new UsuarioResponse(e.getSelladoPor().getId(), e.getSelladoPor().getNombre(),
-                        e.getSelladoPor().getIdentificacion(), e.getSelladoPor().getCorreo());
+                new UsuarioResponse(e.getSelladoPor().getId(), e.getSelladoPor().getUsername(),
+                        e.getSelladoPor().getFullName(), e.getSelladoPor().getProfilePhotoUrl(), e.getSelladoPor().getRol());
 
         TipoDelitoResponse tipoDelito = e.getTipoDelito() == null ? null :
                 new TipoDelitoResponse(e.getTipoDelito().getId(), e.getTipoDelito().getNombre(),

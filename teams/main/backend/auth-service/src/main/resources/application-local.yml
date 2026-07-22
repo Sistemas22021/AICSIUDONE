@@ -13,7 +13,7 @@ spring:
 
 sso:
   auth:
-    jwt-secret: este-es-un-secreto-de-desarrollo-cambiar-en-produccion-32chars
+    jwt-secret: ${JWT_SECRET}
 
 eureka:
   client:

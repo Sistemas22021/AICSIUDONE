@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 /**
@@ -16,7 +17,7 @@ import java.util.Optional;
  */
 public interface EscenaRepository extends JpaRepository<Escena, Long> {
     List<Escena> findByExpedienteId(Long expedienteId);
-    List<Escena> findByLevantadaPorId(Long usuarioId);
+    List<Escena> findByLevantadaPorId(UUID usuarioId);
     List<Escena> findByEstadoChecklist(String estado);
     @Query("SELECT e FROM Escena e LEFT JOIN FETCH e.levantadaPor WHERE e.id = :id")
     Optional<Escena> findByIdWithInvestigador(@Param("id") Long id);

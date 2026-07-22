@@ -125,10 +125,11 @@ export interface IncidentePayload {
 }
 
 export interface Usuario {
-  id:             number
-  nombre:         string
-  identificacion: string
-  correo:         string
+  id:             string
+  username:       string
+  fullName:       string
+  profilePhotoUrl: string | null
+  rol: 'OFICIAL' | 'ANALISTA'
 }
 
 export interface ExpedienteResumenDTO {
