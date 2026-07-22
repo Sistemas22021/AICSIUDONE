@@ -101,7 +101,7 @@ public class CasoServiceImpl implements CasoService {
     private CasoResponse toResponse(Caso caso) {
         UsuarioResponse creadoPor = caso.getCreadoPor() == null ? null : new UsuarioResponse(
                 caso.getCreadoPor().getId(), caso.getCreadoPor().getUsername(),
-                caso.getCreadoPor().getFullName(), caso.getCreadoPor().getProfilePhotoUrl());
+                caso.getCreadoPor().getFullName(), caso.getCreadoPor().getProfilePhotoUrl(),  caso.getCreadoPor().getRol());
 
         List<ExpedienteResumenResponse> expedientes = caso.getExpedientes().stream()
                 .map(this::toResumen).toList();

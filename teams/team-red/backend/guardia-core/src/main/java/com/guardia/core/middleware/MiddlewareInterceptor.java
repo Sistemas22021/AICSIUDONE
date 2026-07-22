@@ -13,9 +13,11 @@ import java.io.IOException;
 public class MiddlewareInterceptor implements HandlerInterceptor {
 
     private final SsoTokenValidator ssoTokenValidator;
+    private final RoleValidationHandler roleValidationHandler;
 
-    public MiddlewareInterceptor(SsoTokenValidator ssoTokenValidator) {
+    public MiddlewareInterceptor(SsoTokenValidator ssoTokenValidator, RoleValidationHandler roleValidationHandler) {
         this.ssoTokenValidator = ssoTokenValidator;
+        this.roleValidationHandler = roleValidationHandler;
     }
 
     @Override
@@ -26,32 +28,31 @@ public class MiddlewareInterceptor implements HandlerInterceptor {
             return false;
         }
 
-        AuthenticationHandler auth = new AuthenticationHandler(ssoTokenValidator);
-        RequestLoggingHandler loggerHandler = new RequestLoggingHandler();
-        auth.setNext(loggerHandler);
-
-        if (requiereRolEspecifico(request)) {
-            RoleValidationHandler roleValidator = new RoleValidationHandler();
-            loggerHandler.setNext(roleValidator);
+        // 1. Validar autenticación (JWT)
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return rechazar(response, "Debe iniciar sesión para acceder a este recurso.");
         }
 
-        auth.handle(request, response);
-
-        if (response.isCommitted() || response.getStatus() >= 400) {
-            return false;
+        String token = authHeader.substring(7);
+        var usernameOpt = ssoTokenValidator.validarYExtraerUsuario(token);
+        if (usernameOpt.isEmpty()) {
+            return rechazar(response, "La sesión no es válida o ha expirado. Inicie sesión nuevamente.");
         }
 
-        return true;
+        // Guardar username en el request para uso posterior
+        request.setAttribute(AuthenticationHandler.ATTR_AUTHENTICATED_USERNAME, usernameOpt.get());
+
+        // 2. Validar roles
+        return roleValidationHandler.preHandle(request, response, handler);
     }
 
-    private boolean requiereRolEspecifico(HttpServletRequest request) {
-        String method = request.getMethod();
-        String uri = request.getRequestURI();
-
-        return ("POST".equals(method) && uri.equals("/api/v1/expedientes"))
-                || ("PUT".equals(method) && uri.matches("^/api/v1/expedientes/\\d+/sellar$"))
-                || ("POST".equals(method) && uri.equals("/api/v1/evidencias"))
-                || ("POST".equals(method) && uri.matches("^/api/v1/escenas/\\d+/liberar$"));
+    private boolean rechazar(HttpServletResponse response, String mensaje) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write("{\"message\": \"" + mensaje + "\"}");
+        response.getWriter().flush();
+        return false;
     }
 
     @Override

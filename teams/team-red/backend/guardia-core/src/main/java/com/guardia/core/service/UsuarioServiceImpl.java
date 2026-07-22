@@ -83,7 +83,8 @@ public class UsuarioServiceImpl implements UsuarioService {
                 usuario.getId(),
                 usuario.getUsername(),
                 usuario.getFullName(),
-                usuario.getProfilePhotoUrl()
+                usuario.getProfilePhotoUrl(),
+                usuario.getRol()
         );
     }
 }

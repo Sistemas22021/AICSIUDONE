@@ -10,5 +10,6 @@ public record UsuarioResponse(
         UUID id,
         String username,
         String fullName,
-        String profilePhotoUrl
+        String profilePhotoUrl,
+        String rol
 ) {}

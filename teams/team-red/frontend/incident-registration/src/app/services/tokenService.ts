@@ -2,9 +2,26 @@ const API_GATEWAY_URL = import.meta.env.VITE_API_GATEWAY_URL || 'http://localhos
 const LOGIN_MFE_URL    = import.meta.env.VITE_LOGIN_MFE_URL    || 'http://localhost:3000'
 
 let _accessToken: string | null = null
+let _userRole: 'OFICIAL' | 'ANALISTA' | null = null
+let _username: string | null = null
 
 export function setAccessToken(token: string): void {
     _accessToken = token
+    const payload = decodeJwtPayload(token)
+    if (payload) {
+        _username = String(payload.sub)
+    }
+}
+export function setUserRole(role: 'OFICIAL' | 'ANALISTA'): void {
+    _userRole = role
+}
+
+export function getUserRole(): 'OFICIAL' | 'ANALISTA' | null {
+    return _userRole
+}
+
+export function getUsername(): string | null {
+    return _username
 }
 
 export function getAccessToken(): string | null {
@@ -17,6 +34,8 @@ export function hasValidToken(): boolean {
 
 export function clearAccessToken(): void {
     _accessToken = null
+    _userRole = null
+    _username = null
 }
 
 export async function resolveToken(): Promise<string | null> {

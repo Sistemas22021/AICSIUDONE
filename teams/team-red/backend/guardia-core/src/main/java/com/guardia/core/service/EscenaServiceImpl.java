@@ -299,8 +299,11 @@ public class EscenaServiceImpl implements EscenaService {
 
     public EscenaResponse toResponse(Escena e) {
         UsuarioResponse investigador = e.getLevantadaPor() == null ? null :
-                new UsuarioResponse(e.getLevantadaPor().getId(), e.getLevantadaPor().getUsername(),
-                        e.getLevantadaPor().getFullName(), e.getLevantadaPor().getProfilePhotoUrl());
+                new UsuarioResponse( e.getLevantadaPor().getId(),
+                        e.getLevantadaPor().getUsername(),
+                        e.getLevantadaPor().getFullName(),
+                        e.getLevantadaPor().getProfilePhotoUrl(),
+                        e.getLevantadaPor().getRol());
 
         Long expedienteId = e.getExpediente() != null ? e.getExpediente().getId() : null;
 
@@ -326,8 +329,11 @@ public class EscenaServiceImpl implements EscenaService {
                         .toList();
 
         UsuarioResponse liberadaPor = e.getLiberadaPor() == null ? null :
-                new UsuarioResponse(e.getLiberadaPor().getId(), e.getLiberadaPor().getUsername(),
-                        e.getLiberadaPor().getFullName(), e.getLiberadaPor().getProfilePhotoUrl());
+                new UsuarioResponse( e.getLevantadaPor().getId(),
+                        e.getLevantadaPor().getUsername(),
+                        e.getLevantadaPor().getFullName(),
+                        e.getLevantadaPor().getProfilePhotoUrl(),
+                        e.getLevantadaPor().getRol());
 
         return new EscenaResponse(
                 e.getId(),

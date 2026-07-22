@@ -48,6 +48,10 @@ public class Usuario {
     @OneToMany(mappedBy = "levantadaPor", fetch = FetchType.LAZY)
     private List<Escena> escenasLevantadas;
 
+    @Column(name = "rol", nullable = false)
+    @Builder.Default
+    private String rol = "OFICIAL";
+
     public boolean verificarAcceso(String permiso) {
         return permiso != null && !permiso.isBlank();
     }

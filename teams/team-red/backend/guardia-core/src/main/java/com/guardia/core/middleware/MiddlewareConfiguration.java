@@ -17,8 +17,7 @@ public class MiddlewareConfiguration implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(middlewareInterceptor)
-                .addPathPatterns("/api/v1/**")
-                .order(Integer.MIN_VALUE + 1);
+        // Register the middleware interceptor early in the chain
+        registry.addInterceptor(middlewareInterceptor).order(Integer.MIN_VALUE + 1);
     }
 }

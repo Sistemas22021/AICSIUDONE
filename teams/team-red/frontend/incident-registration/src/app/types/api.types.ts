@@ -129,6 +129,7 @@ export interface Usuario {
   username:       string
   fullName:       string
   profilePhotoUrl: string | null
+  rol: 'OFICIAL' | 'ANALISTA'
 }
 
 export interface ExpedienteResumenDTO {

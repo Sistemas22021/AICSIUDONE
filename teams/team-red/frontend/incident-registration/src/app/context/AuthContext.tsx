@@ -4,14 +4,19 @@ import {
     setAccessToken,
     clearAccessToken,
     redirectToLogin,
-    getAuthenticatedUsername,
+    getUsername,
+    setUserRole,
 } from '../services/tokenService'
+import type { Usuario } from '../types/api.types'
 
 type AuthState = 'verificando' | 'autenticado' | 'no-autenticado'
 
 interface AuthContextType {
     username: string
+    rol: 'OFICIAL' | 'ANALISTA' | null
     isAuthenticated: boolean
+    isOficial: boolean
+    isAnalista: boolean
     logout: () => void
 }
 
@@ -20,6 +25,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [authState, setAuthState] = useState<AuthState>('verificando')
     const [username, setUsername] = useState<string>('')
+    const [rol, setRol] = useState<'OFICIAL' | 'ANALISTA' | null>(null)
 
     useEffect(() => {
         let cancelado = false
@@ -31,8 +37,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
             if (token) {
                 setAccessToken(token)
-                const nombreUsuario = getAuthenticatedUsername() ?? 'Usuario'
+                const nombreUsuario = getUsername() ?? 'Usuario'
                 setUsername(nombreUsuario)
+                try {
+                    const { apiClient } = await import('../services/api')
+                    // Intentar obtener el usuario actual
+                    const response = await apiClient.get<{ data: Usuario }>('/usuarios/username/me')
+                    if (response.data) {
+                        setRol(response.data.rol)
+                        setUserRole(response.data.rol)
+                    }
+                } catch (error) {
+                    console.error('Error obteniendo rol:', error)
+                    // Fallback: intentar obtener de la lista de usuarios
+                    try {
+                        const { apiClient } = await import('../services/api')
+                        const usernameFromToken = getUsername()
+                        if (usernameFromToken) {
+                            const response = await apiClient.get<{ data: Usuario[] }>('/usuarios')
+                            const user = response.data.find(u => u.username === usernameFromToken)
+                            if (user) {
+                                setRol(user.rol)
+                                setUserRole(user.rol)
+                            }
+                        }
+                    } catch (fallbackError) {
+                        console.error('Error en fallback:', fallbackError)
+                        // Por defecto asumir OFICIAL
+                        setRol('OFICIAL')
+                        setUserRole('OFICIAL')
+                    }
+                }
+
                 setAuthState('autenticado')
             } else {
                 setAuthState('no-autenticado')
@@ -50,6 +86,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         clearAccessToken()
         redirectToLogin()
     }
+
+    const isOficial = rol === 'OFICIAL'
+    const isAnalista = rol === 'ANALISTA'
 
     if (authState === 'verificando') {
         return (
@@ -71,7 +110,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     return (
-        <AuthContext.Provider value={{ username, isAuthenticated: true, logout }}>
+        <AuthContext.Provider
+            value={{
+                username,
+                rol,
+                isAuthenticated: true,
+                isOficial,
+                isAnalista,
+                logout
+            }}
+        >
             {children}
         </AuthContext.Provider>
     )

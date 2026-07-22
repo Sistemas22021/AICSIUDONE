@@ -340,11 +340,11 @@ public class ExpedienteServiceImpl implements ExpedienteService {
     public ExpedienteResponse toResponse(Expediente e) {
         UsuarioResponse creadoPor = e.getCreadoPor() == null ? null :
                 new UsuarioResponse(e.getCreadoPor().getId(), e.getCreadoPor().getUsername(),
-                        e.getCreadoPor().getFullName(), e.getCreadoPor().getProfilePhotoUrl());
+                        e.getCreadoPor().getFullName(), e.getCreadoPor().getProfilePhotoUrl(), e.getCreadoPor().getRol());
 
         UsuarioResponse selladoPor = e.getSelladoPor() == null ? null :
                 new UsuarioResponse(e.getSelladoPor().getId(), e.getSelladoPor().getUsername(),
-                        e.getSelladoPor().getFullName(), e.getSelladoPor().getProfilePhotoUrl());
+                        e.getSelladoPor().getFullName(), e.getSelladoPor().getProfilePhotoUrl(), e.getSelladoPor().getRol());
 
         TipoDelitoResponse tipoDelito = e.getTipoDelito() == null ? null :
                 new TipoDelitoResponse(e.getTipoDelito().getId(), e.getTipoDelito().getNombre(),
