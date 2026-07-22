@@ -39,4 +39,4 @@ jobs:
           REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
           docker build -t ghcr.io/$REPO_LOWER/sso-backend-red:latest .
           docker push ghcr.io/$REPO_LOWER/sso-backend-red:latest
-        working-directory: ./teams/team-red/backend
+        working-directory: ./teams/team-red/backend/guardia-core
