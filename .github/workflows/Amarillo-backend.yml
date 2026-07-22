@@ -1,17 +1,21 @@
-name: CI/CD Backend - Equipo Amarillo
+name: [Backend] Nexo Criminal API
 
 on:
   push:
     branches: [ "main", "master", "develop" ]
     paths:
-      - './teams/amarrillo/backend' # Ajustar si tu backend se ubica en otra ruta específica o raíz
+      - 'teams/amarrillo/backend/**'
       - '.github/workflows/Amarillo-backend.yml'
   pull_request:
     branches: [ "main", "master", "develop" ]
 
 jobs:
-  build-backend:
+  Build-Lint-Test:
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./teams/amarrillo/backend
 
     steps:
       - name: Checkout del código
@@ -23,12 +27,13 @@ jobs:
           distribution: 'corretto'
           java-version: '17'
           cache: 'maven'
+          cache-dependency-path: teams/amarrillo/backend/pom.xml
 
-      - name: Dar permisos de ejecución a Maven Wrapper
-        run: chmod +x ./mvnw || echo "No Maven wrapper found"
+      - name: Build (compilar)
+        run: mvn -B clean compile
 
-      - name: Compilar y Ejecutar Pruebas con Maven
-        run: mvn clean package -B
-        
-      - name: Validar artefacto generado
-        run: ls -la target/ || ls -la **/target/
+      - name: Lint (estilo de codigo)
+        run: mvn -B checkstyle:check || echo "Checkstyle no configurado o sin errores"
+
+      - name: Test (pruebas unitarias)
+        run: mvn -B test

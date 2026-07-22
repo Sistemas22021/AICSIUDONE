@@ -1,21 +1,21 @@
-name: CI/CD Frontend - Equipo Amarillo
+name: [Frontend] Nexo Criminal Web
 
 on:
   push:
     branches: [ "main", "master", "develop" ]
     paths:
-      - './teams/amarrillo/frontend' # Ajustar al directorio frontend correspondiente del equipo
+      - 'teams/amarrillo/frontend/**'
       - '.github/workflows/Amarillo-frontend.yml'
   pull_request:
     branches: [ "main", "master", "develop" ]
 
 jobs:
-  build-frontend:
+  Build-Lint-Test:
     runs-on: ubuntu-latest
 
     defaults:
       run:
-        working-directory: ./teams/amarrillo/frontend/prison-web # Ajusta esta ruta según la ubicación exacta de tu package.json
+        working-directory: ./teams/amarrillo/frontend
 
     steps:
       - name: Checkout del código
@@ -26,13 +26,13 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: './teams/amarrillo/frontend/prison-web/package-lock.json'
+          cache-dependency-path: teams/amarrillo/frontend/package-lock.json
 
       - name: Instalar dependencias
         run: npm ci
 
-      - name: Ejecutar Linter / Verificaciones
+      - name: Lint / Verificaciones
         run: npm run lint --if-present
 
-      - name: Construir aplicación (Build)
+      - name: Build (construir)
         run: npm run build
