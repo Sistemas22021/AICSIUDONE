@@ -37,10 +37,10 @@ public class DeteccionModusOperandiServiceImpl implements DeteccionModusOperandi
     @Value("${zac.mo.umbral-similitud-candidato:70.0}")
     private double umbralSimilitudCandidato;
 
-    @Value("${spring.ai.ollama.embedding.options.model:nomic-embed-text}")
+    @Value("${spring.ai.google.genai.embedding.text.model:text-embedding-004}")
     private String nombreModeloEmbedding;
 
-    @Value("${spring.ai.ollama.chat.options.model:llama3.2}")
+    @Value("${spring.ai.google.genai.chat.options.model:gemini-2.5-flash}")
     private String nombreModeloChat;
 
     public DeteccionModusOperandiServiceImpl(ExpedienteRepository expedienteRepository,
@@ -201,7 +201,7 @@ public class DeteccionModusOperandiServiceImpl implements DeteccionModusOperandi
                     .call()
                     .entity(AnalisisMoIA.class);
         } catch (Exception e) {
-            log.error("[MO] Error al llamar a Ollama: {}", e.getMessage());
+            log.error("[MO] Error al llamar a Gemini: {}", e.getMessage());
             // Retornar un análisis por defecto
             return new AnalisisMoIA(
                     "No se pudo generar el análisis automáticamente",

@@ -22,6 +22,7 @@ import com.guardia.core.repository.UsuarioRepository;
 import com.guardia.core.repository.EscenaChecklistRepository;
 import com.guardia.core.service.EscenaService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.context.ApplicationEventPublisher;
@@ -34,6 +35,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 /**
  * Implementación de EscenaService: maneja la lógica de checklist, pasos y estados de escena.
  */
@@ -297,14 +299,19 @@ public class EscenaServiceImpl implements EscenaService {
                 .orElseThrow(() -> new ResourceNotFoundException("Escena", id));
     }
 
-    public EscenaResponse toResponse(Escena e) {
-        UsuarioResponse investigador = e.getLevantadaPor() == null ? null :
-                new UsuarioResponse( e.getLevantadaPor().getId(),
-                        e.getLevantadaPor().getUsername(),
-                        e.getLevantadaPor().getFullName(),
-                        e.getLevantadaPor().getProfilePhotoUrl(),
-                        e.getLevantadaPor().getRol());
+    private UsuarioResponse usuarioResponseSeguro(Usuario u) {
+        if (u == null) return null;
+        try {
+            return new UsuarioResponse(u.getId(), u.getUsername(), u.getFullName(), u.getProfilePhotoUrl(), u.getRol());
+        } catch (jakarta.persistence.EntityNotFoundException ex) {
+            log.warn("Referencia de usuario huérfana en escena: {}", ex.getMessage());
+            return null;
+        }
+    }
 
+    public EscenaResponse toResponse(Escena e) {
+        UsuarioResponse investigador = usuarioResponseSeguro(e.getLevantadaPor());
+        UsuarioResponse liberadaPor = usuarioResponseSeguro(e.getLiberadaPor());
         Long expedienteId = e.getExpediente() != null ? e.getExpediente().getId() : null;
 
         List<EvidenciaResponse> evidencias = e.getEvidencias() == null ? List.of() :
@@ -328,12 +335,6 @@ public class EscenaServiceImpl implements EscenaService {
                                 en.getAreaInspeccionada(), en.getResultado(), en.getObservacion(), e.getId(), en.getSinElementosNegativos()))
                         .toList();
 
-        UsuarioResponse liberadaPor = e.getLiberadaPor() == null ? null :
-                new UsuarioResponse( e.getLevantadaPor().getId(),
-                        e.getLevantadaPor().getUsername(),
-                        e.getLevantadaPor().getFullName(),
-                        e.getLevantadaPor().getProfilePhotoUrl(),
-                        e.getLevantadaPor().getRol());
 
         return new EscenaResponse(
                 e.getId(),

@@ -66,6 +66,11 @@ public class RoleValidationHandler implements HandlerInterceptor {
                 return true;
             }
 
+            // Puede registrar expediente vía el adaptador de incidentes (POST)
+            if (method.equals("POST") && uri.equals("/api/v1/incidentes")) {
+                return true;
+            }
+
             // Puede sellar expediente (PATCH)
             if (method.equals("PATCH") && uri.matches("^/api/v1/expedientes/\\d+/sellar$")) {
                 return true;
@@ -129,6 +134,11 @@ public class RoleValidationHandler implements HandlerInterceptor {
                 return true;
             }
 
+            // Puede forzar el reanálisis de Modus Operandi de un expediente (POST)
+            if (method.equals("POST") && uri.matches("^/api/v1/expedientes/\\d+/reanalizar-mo$")) {
+                return true;
+            }
+
             // Propuestas MO - CRUD completo
             if (uri.startsWith("/api/v1/propuestas-mo")) {
                 return true;
@@ -174,6 +184,11 @@ public class RoleValidationHandler implements HandlerInterceptor {
 
             // PROHIBIDO: Registrar expediente
             if (method.equals("POST") && uri.equals("/api/v1/expedientes")) {
+                return false;
+            }
+
+            // PROHIBIDO: Registrar expediente vía el adaptador de incidentes
+            if (method.equals("POST") && uri.equals("/api/v1/incidentes")) {
                 return false;
             }
 

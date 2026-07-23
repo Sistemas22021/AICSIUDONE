@@ -27,7 +27,7 @@ export const SellarExpedienteForm = ({ expediente, onSellado, onCancelar }: Sell
         }
         setError(null)
 
-        const resultado = await sellarExpediente(Number(expediente.id), Number(agenteSelladorId))
+        const resultado = await sellarExpediente(Number(expediente.id), agenteSelladorId)
         if (resultado.exito) {
             setExito(true)
         } else {
@@ -98,7 +98,7 @@ export const SellarExpedienteForm = ({ expediente, onSellado, onCancelar }: Sell
                 onChange={e => setAgenteSelladorId(e.target.value)}
                 options={[
                     { value: '', label: cargandoUsuarios ? 'Cargando usuarios…' : 'Selecciona un agente' },
-                    ...usuarios.map(u => ({ value: String(u.id), label: `${u.nombre} (${u.identificacion})` })),
+                    ...usuarios.map(u => ({ value: String(u.id), label: `${u.fullName} (${u.username})` })),
                 ]}
             />
 

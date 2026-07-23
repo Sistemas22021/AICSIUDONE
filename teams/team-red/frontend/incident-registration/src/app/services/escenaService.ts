@@ -4,6 +4,7 @@
  */
 
 import { apiClient } from './api'
+import type { Usuario } from '../types/api.types'
 
 // ─── Tipos espejo de los DTOs del backend ────────────────────────────────────
 
@@ -32,7 +33,7 @@ export interface EvidenciaRequestDTO {
     tipo: string
     descripcion: string
     escenaId: number
-    investigadorId?: number
+    investigadorId?: string
 }
 
 export interface EscenaNegativaResponseDTO {
@@ -56,11 +57,11 @@ export interface EscenaNegativaRequestDTO {
 
 export interface EscenaCrearRequestDTO {
     expedienteId: number
-    levantadaPorId: number
+    levantadaPorId: string
 }
 
 export interface LiberarEscenaRequestDTO {
-    investigadorResponsableId: number
+    investigadorResponsableId: string
     observaciones?: string
 }
 
@@ -72,7 +73,7 @@ export interface LiberarEscenaResponseDTO {
     inicioProceso: string
     cierreProceso: string
     expedienteId: number
-    liberadaPor: { id: number; nombre: string; identificacion: string; correo: string } | null
+    liberadaPor: { id: string; username: string; fullName: string; profilePhotoUrl: string | null; rol: string } | null
     horaLiberacion: string | null
     observacionesLiberacion: string | null
     hashLiberacion: string | null
@@ -151,14 +152,7 @@ export async function iniciarChecklistEscena(escenaId: number): Promise<EscenaRe
     return res.data
 }
 
-/** Busca un investigador por correo para verificar su existencia */
-export async function buscarInvestigadorPorCorreo(correo: string): Promise<UsuarioResponseDTO> {
-    const res = await apiClient.get<{ data: UsuarioResponseDTO }>(`/usuarios/correo/${encodeURIComponent(correo)}`)
-    return res.data
-}
-
-/** Busca un investigador por nombre (identificación) */
-export async function buscarInvestigadorPorNombre(identificacion: string): Promise<UsuarioResponseDTO> {
-    const res = await apiClient.get<{ data: UsuarioResponseDTO }>(`/usuarios/identificacion/${encodeURIComponent(identificacion)}`)
+export async function buscarInvestigadorPorNombre(username: string): Promise<Usuario> {
+    const res = await apiClient.get<{ data: Usuario }>(`/usuarios/username/${encodeURIComponent(username)}`)
     return res.data
 }

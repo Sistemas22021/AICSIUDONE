@@ -6,7 +6,8 @@ import com.guardia.core.exception.ApiResponse;
 import com.guardia.core.service.UsuarioService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+import jakarta.servlet.http.HttpServletRequest;
+import com.guardia.core.middleware.AuthenticationHandler;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,9 +36,13 @@ public class UsuarioController {
 
     @GetMapping("/username/{username}")
     public ResponseEntity<ApiResponse<UsuarioResponse>> obtenerPorUsername(
-            @PathVariable String username
+            @PathVariable String username,
+            HttpServletRequest request
     ) {
-        return ResponseEntity.ok(ApiResponse.ok(usuarioService.obtenerPorUsername(username)));
+        String resuelto = "me".equals(username)
+                ? (String) request.getAttribute(AuthenticationHandler.ATTR_AUTHENTICATED_USERNAME)
+                : username;
+        return ResponseEntity.ok(ApiResponse.ok(usuarioService.obtenerPorUsername(resuelto)));
     }
 
     @GetMapping

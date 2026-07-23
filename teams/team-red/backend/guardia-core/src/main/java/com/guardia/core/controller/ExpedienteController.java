@@ -5,6 +5,7 @@ import com.guardia.core.dto.response.ExpedienteResponse;
 import com.guardia.core.dto.response.ExpedienteActivoResponse;
 import com.guardia.core.exception.ApiResponse;
 import com.guardia.core.service.ExpedienteService;
+import com.guardia.core.service.DeteccionModusOperandiService;
 import com.guardia.core.dto.response.VerificacionHashResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 public class ExpedienteController {
 
     private final ExpedienteService expedienteService;
+    private final DeteccionModusOperandiService deteccionModusOperandiService;
 
     @PostMapping(value = "/registrar", consumes = APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse<ExpedienteResponse>> registrarExpediente(@Valid @RequestBody ExpedienteRequest request) {
@@ -56,5 +58,12 @@ public class ExpedienteController {
 
         List<ExpedienteActivoResponse> expedientes = expedienteService.obtenerParaPanel(estatus, sort);
         return ResponseEntity.ok(ApiResponse.ok("Expedientes obtenidos.", expedientes));
+    }
+
+    @PostMapping("/{id}/reanalizar-mo")
+    public ResponseEntity<ApiResponse<Void>> reanalizarModusOperandi(@PathVariable Long id) {
+        deteccionModusOperandiService.analizarPatrones(id);
+        return ResponseEntity.accepted()
+                .body(ApiResponse.ok("Reanálisis de Modus Operandi encolado.", null));
     }
 }

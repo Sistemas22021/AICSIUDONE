@@ -54,7 +54,8 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
     } = useEscenaCrimen()
 
     useEffect(() => {
-        if (expedienteIdInicial && folioInicial && !state.expedienteId) {
+        if (expedienteIdInicial && folioInicial && state.expedienteId !== expedienteIdInicial) {
+            resetEscena()
             vincularExpediente(expedienteIdInicial, folioInicial)
         }
     }, [expedienteIdInicial, folioInicial])
@@ -99,15 +100,12 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
         setBuscandoInvestigador(true)
         setErrorBusqueda(null)
         try {
-            const { buscarInvestigadorPorCorreo, buscarInvestigadorPorNombre } = await import('../../../services/escenaService')
-            const esCorreo = busquedaInvestigador.includes('@')
-            const usuario = esCorreo
-                ? await buscarInvestigadorPorCorreo(busquedaInvestigador.trim())
-                : await buscarInvestigadorPorNombre(busquedaInvestigador.trim())
-            setInvestigador(usuario.id, usuario.nombre)
+            const { buscarInvestigadorPorNombre } = await import('../../../services/escenaService')
+            const usuario = await buscarInvestigadorPorNombre(busquedaInvestigador.trim())
+            setInvestigador(usuario.id, usuario.fullName)
             setBusquedaInvestigador('')
         } catch {
-            setErrorBusqueda('No se encontró un investigador con ese correo o identificación.')
+            setErrorBusqueda('No se encontró un investigador con ese nombre de usuario.')
         } finally {
             setBuscandoInvestigador(false)
         }
@@ -118,18 +116,15 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
         setBuscandoInvestigador(true)
         setErrorBusqueda(null)
         try {
-            const { buscarInvestigadorPorCorreo, buscarInvestigadorPorNombre } = await import('../../../services/escenaService')
-            const esCorreo = busquedaInvestigador.includes('@')
-            const usuario = esCorreo
-                ? await buscarInvestigadorPorCorreo(busquedaInvestigador.trim())
-                : await buscarInvestigadorPorNombre(busquedaInvestigador.trim())
+            const {buscarInvestigadorPorNombre} = await import('../../../services/escenaService')
+            const usuario = await buscarInvestigadorPorNombre(busquedaInvestigador.trim())
             updateLiberacion({
                 investigadorResponsableId: usuario.id,
-                investigadorNombre: usuario.nombre,
+                investigadorNombre: usuario.fullName,
             })
             setBusquedaInvestigador('')
         } catch {
-            setErrorBusqueda('No se encontró un investigador con ese correo o identificación.')
+            setErrorBusqueda('No se encontró un investigador con ese nombre de usuario.')
         } finally {
             setBuscandoInvestigador(false)
         }
@@ -276,14 +271,14 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
                                     <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
                                         <div style={{ flex: 1 }}>
                                             <NeonInput
-                                                label="Investigador responsable (correo o identificación) *"
+                                                label="Investigador responsable (nombre de usuario)  *"
                                                 value={busquedaInvestigador}
                                                 onChange={(e: any) => {
                                                     setBusquedaInvestigador(e.target.value)
                                                     setErrorBusqueda(null)
                                                 }}
                                                 onKeyDown={(e: any) => e.key === 'Enter' && handleBuscarInvestigador()}
-                                                placeholder="correo@guardia.com  o  001-1234567-8"
+                                                placeholder="usuario.guardia"
                                                 disabled={isPaso1Completado || buscandoInvestigador}
                                                 error={!!errorBusqueda}
                                                 errorMessage={errorBusqueda ?? undefined}
@@ -649,7 +644,7 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
                                             <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
                                                 <div style={{ flex: 1 }}>
                                                     <NeonInput
-                                                        label="Investigador responsable de la liberación (correo o identificación) *"
+                                                        label="Investigador responsable de la liberación (nombre de usuario) *"
                                                         value={busquedaInvestigador}
                                                         onChange={(e: any) => {
                                                             setBusquedaInvestigador(e.target.value)
