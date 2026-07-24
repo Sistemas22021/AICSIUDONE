@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { fetchPropuestaVigente } from '../services/modusOperandiService'
+import { fetchPropuestaVigente, solicitarAnalisisMO   } from '../services/modusOperandiService'
 import type { PropuestaModusOperandi } from '../types/api.types'
 
-const POLL_INTERVAL_MS = 4000
-const POLL_TIMEOUT_MS = 60000 // deja de reintentar tras 1 minuto sin resultado
+const POLL_INTERVAL_MS = 2000
+const POLL_TIMEOUT_MS = 20000
 
 export type EstadoCargaMO = 'analizando' | 'listo' | 'sin_analisis' | 'error'
 
@@ -11,19 +11,9 @@ interface UsePropuestaModusOperandiResult {
     propuesta: PropuestaModusOperandi | null
     estadoCarga: EstadoCargaMO
     refetch: () => void
+    reanalizar: () => Promise<void>
 }
 
-/**
- * Consulta la propuesta de MO vigente de un expediente. Como HU2 la genera de
- * forma ASÍNCRONA (evento + @Async en el backend), el resultado puede no
- * existir todavía justo después de registrar el expediente: este hook hace
- * polling corto mientras el backend responde 404 ("aún no hay propuesta"),
- * y se detiene apenas la encuentra o al superar POLL_TIMEOUT_MS.
- *
- * Nota: fetchPropuestaVigente vive en modusOperandiService.ts, el mismo
- * archivo de servicio que usa HU3 para sus acciones — el backend expone la
- * lectura y la validación desde el mismo controlador.
- */
 export function usePropuestaModusOperandi(expedienteId: string | null): UsePropuestaModusOperandiResult {
     const [propuesta, setPropuesta] = useState<PropuestaModusOperandi | null>(null)
     const [estadoCarga, setEstadoCarga] = useState<EstadoCargaMO>('analizando')
@@ -56,11 +46,22 @@ export function usePropuestaModusOperandi(expedienteId: string | null): UsePropu
 
     useEffect(() => { cargar() }, [cargar])
 
+    const reanalizar = useCallback(async () => {
+        if (!expedienteId) return
+        try {
+            await solicitarAnalisisMO(expedienteId)
+        } finally {
+            startedAtRef.current = Date.now()   // reinicia la ventana de POLL_TIMEOUT_MS
+            setPropuesta(null)
+            setEstadoCarga('analizando')        // re-arma el useEffect de polling (líneas 59-63)
+        }
+    }, [expedienteId])
+
     useEffect(() => {
         if (estadoCarga !== 'analizando') return
         const interval = setInterval(cargar, POLL_INTERVAL_MS)
         return () => clearInterval(interval)
     }, [estadoCarga, cargar])
 
-    return { propuesta, estadoCarga, refetch: cargar }
+    return { propuesta, estadoCarga, refetch: cargar, reanalizar  }
 }

@@ -187,10 +187,10 @@ export function useEscenaCrimen() {
                     sincronizado: true,
                 }))
             }).catch(() => {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+                setState(prev => { localStorage.setItem(STORAGE_KEY, JSON.stringify(prev)); return prev })
             })
         })
-    }, [state])
+    }, [state.escenaId])
 
     const isPaso1Completado = state.paso1_completado
     const isPaso2Completado = state.paso2_completado
@@ -298,14 +298,20 @@ export function useEscenaCrimen() {
         if (!canCompletarPaso2) return
         if (isPaso2Completado) return
         if (state.escenaId) {
+            const evidenciasPendientes = state.evidencias.filter(ev => ev.id.includes('-'))
+            for (const ev of evidenciasPendientes) {
+                await guardarEvidenciaEnBackend(ev.id)
+            }
             if (state.noHayEscenaNegativa) {
-                await persistirNoHayEscenaNegativa()          // ← NUEVO
+                await persistirNoHayEscenaNegativa()
             } else {
                 const pendientes = state.escenaNegativa.filter(en => en.id.includes('-'))
                 for (const en of pendientes) {
                     await guardarEscenaNegativaEnBackend(en.id)
                 }
             }
+            const { avanzarPasoEscena } = await import('../services/escenaService')   // ← NUEVO
+            await avanzarPasoEscena(state.escenaId)                                    // ← NUEVO
         }
         setState((prev: EscenaCrimenState) => ({
             ...prev,
@@ -438,7 +444,7 @@ export function useEscenaCrimen() {
     }
 
     const updateEvidencia = (id: string, patch: Partial<Evidencia>) => {
-        if (isPaso2Completado) return
+        if (isPaso3Completado) return
         setState((prev: EscenaCrimenState) => ({
             ...prev,
             evidencias: prev.evidencias.map(e => e.id === id ? { ...e, ...patch, timestamp: new Date().toISOString() } : e),

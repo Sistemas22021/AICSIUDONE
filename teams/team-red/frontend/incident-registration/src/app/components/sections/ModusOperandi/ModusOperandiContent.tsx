@@ -26,7 +26,7 @@ interface ModusOperandiContentProps {
 }
 
 export const ModusOperandiContent = ({ expedienteId, folioExpediente, analistaId, soloLectura  }: ModusOperandiContentProps) => {
-    const { propuesta, estadoCarga, refetch } = usePropuestaModusOperandi(expedienteId)
+    const { propuesta, estadoCarga, refetch, reanalizar } = usePropuestaModusOperandi(expedienteId)
     const { showToast, ToastContainer } = useNeonToast()
 
     const [mostrarHistorial, setMostrarHistorial] = useState(false)
@@ -36,6 +36,7 @@ export const ModusOperandiContent = ({ expedienteId, folioExpediente, analistaId
     const [formularioActivo, setFormularioActivo] = useState<FormularioActivo>(null)
     const [confirmarAprobar, setConfirmarAprobar] = useState(false)
     const [enviando, setEnviando] = useState(false)
+    const [analizando, setAnalizando] = useState(false)
 
     const [caracteristicasComunes, setCaracteristicasComunes] = useState('')
     const [posibleFirma, setPosibleFirma] = useState('')
@@ -137,6 +138,19 @@ export const ModusOperandiContent = ({ expedienteId, folioExpediente, analistaId
         }
     }
 
+    const handleAnalizarAhora = async () => {
+        setAnalizando(true)
+        try {
+            await reanalizar()
+            showToast('Análisis de Modus Operandi solicitado. Puede tardar unos segundos.', 'success')
+        } catch (err) {
+            console.error('[ModusOperandiContent] Error solicitando análisis', err)
+            showToast('No se pudo solicitar el análisis.', 'error')
+        } finally {
+            setAnalizando(false)
+        }
+    }
+
     const puedeValidar = !soloLectura && !!propuesta && !propuesta.revisadoPorExperto && propuesta.estado !== 'SIN_COINCIDENCIAS'
     return (
         <div className="flex flex-col gap-5">
@@ -162,15 +176,25 @@ export const ModusOperandiContent = ({ expedienteId, folioExpediente, analistaId
             {estadoCarga === 'analizando' && (
                 <p className="text-sm text-cyan-500/80">
                     El sistema está generando el análisis de Modus Operandi para este expediente. Esto puede tardar
-                    unos segundos (HU2 corre de forma asíncrona en el servidor)…
+                    unos segundos…
                 </p>
             )}
 
             {estadoCarga === 'sin_analisis' && (
-                <p className="text-sm text-cyan-500/80">
-                    No se generó ninguna propuesta de MO para este expediente todavía. Verifica que el expediente
-                    tenga descripción del hecho, o intenta actualizar.
-                </p>
+                <div className="flex flex-col gap-3">
+                    <p className="text-sm text-cyan-500/80">
+                        No se generó ninguna propuesta de MO para este expediente todavía. Verifica que el expediente
+                        tenga descripción del hecho, o solicita un nuevo análisis.
+                    </p>
+                    <NeonButton
+                        variant="outline"
+                        icon={<RefreshCw size={13} />}
+                        onClick={handleAnalizarAhora}
+                        disabled={analizando}
+                    >
+                        {analizando ? 'Solicitando análisis…' : 'Analizar ahora'}
+                    </NeonButton>
+                </div>
             )}
 
             {estadoCarga === 'error' && (

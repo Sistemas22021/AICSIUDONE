@@ -6,6 +6,7 @@ import com.guardia.core.dto.request.RechazarPropuestaMoRequest;
 import com.guardia.core.dto.response.PropuestaModusOperandiResponse;
 import com.guardia.core.exception.ApiResponse;
 import com.guardia.core.service.PropuestaModusOperandiService;
+import com.guardia.core.service.DeteccionModusOperandiService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +24,7 @@ import java.util.List;
 public class PropuestaModusOperandiController {
 
     private final PropuestaModusOperandiService propuestaModusOperandiService;
+    private final DeteccionModusOperandiService deteccionModusOperandiService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<PropuestaModusOperandiResponse>> obtenerVigente(
@@ -63,5 +65,11 @@ public class PropuestaModusOperandiController {
             @Valid @RequestBody RechazarPropuestaMoRequest request) {
         return ResponseEntity.ok(ApiResponse.ok("Propuesta de MO rechazada.",
                 propuestaModusOperandiService.rechazar(propuestaId, request)));
+    }
+    @PostMapping("/analizar")
+    public ResponseEntity<ApiResponse<Void>> analizarAhora(@PathVariable Long expedienteId) {
+        deteccionModusOperandiService.analizarPatrones(expedienteId);
+        return ResponseEntity.accepted().body(
+                ApiResponse.ok("Análisis de Modus Operandi solicitado.", null));
     }
 }
