@@ -18,6 +18,8 @@ import ModalConfirmar from '../components/ModalConfirmar';
 import Modal from '../components/Modal';
 import { exportarCSV } from '../services/exportar';
 import FormVehiculo from '../components/FormVehiculo';
+import { useAuth } from '../services/AuthContext';
+import { puedeEditar, puedeEliminar } from '../services/permisos';
 
 const ESTADOS: EstadoVehiculo[] = [
   'NORMAL', 'ROBADO', 'RECUPERADO', 'DESAPARECIDO', 'BAJO_OBSERVACION', 'VEHICULO_APOYO',
@@ -50,6 +52,8 @@ interface Avistamiento {
 }
 
 export default function Vehiculos() {
+  const { user } = useAuth();
+
   const [lista, setLista] = useState<Vehiculo[]>([]);
   const [ubicaciones, setUbicaciones] = useState<Ubicacion[]>([]);
   const [sucesos, setSucesos] = useState<Suceso[]>([]);
@@ -58,6 +62,7 @@ export default function Vehiculos() {
   const [filtroEstado, setFiltroEstado] = useState<string>('');
   const [err, setErr] = useState('');
   const [ok, setOk] = useState('');
+
   const [detalle, setDetalle] = useState<Vehiculo | null>(null);
   const [aEliminar, setAEliminar] = useState<Vehiculo | null>(null);
   const [editando, setEditando] = useState<Vehiculo | null>(null);
@@ -300,6 +305,7 @@ export default function Vehiculos() {
             </div>
           </div>
         </div>
+
         <div className="table-scroll">
           <table>
             <thead>
@@ -376,38 +382,44 @@ export default function Vehiculos() {
                           visibility
                         </span>
                       </button>
-                      <button
-                        className="btn-icon"
-                        onClick={() => setEditando(v)}
-                        title="Editar"
-                      >
-                        <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-                          edit
-                        </span>
-                      </button>
-                      <select
-                        value={v.estado}
-                        onChange={(e) => cambiarEstado(v.id!, e.target.value as EstadoVehiculo)}
-                        style={{ width: 140, fontSize: 11, padding: '6px 24px 6px 10px' }}
-                      >
-                        {Array.from(new Set([
-                          ...(v.estado ? [v.estado] : []),
-                          ...ESTADOS_SELECCIONABLES,
-                        ])).map((e) => (
-                          <option key={e} value={e}>
-                            {estadoLabel(e as EstadoVehiculo)}
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        className="btn-icon danger"
-                        onClick={() => setAEliminar(v)}
-                        title="Eliminar"
-                      >
-                        <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-                          delete
-                        </span>
-                      </button>
+                      {puedeEditar(user?.rol) && (
+                        <button
+                          className="btn-icon"
+                          onClick={() => setEditando(v)}
+                          title="Editar"
+                        >
+                          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                            edit
+                          </span>
+                        </button>
+                      )}
+                      {puedeEditar(user?.rol) ? (
+                        <select
+                          value={v.estado}
+                          onChange={(e) => cambiarEstado(v.id!, e.target.value as EstadoVehiculo)}
+                          style={{ width: 140, fontSize: 11, padding: '6px 24px 6px 10px' }}
+                        >
+                          {Array.from(new Set([
+                            ...(v.estado ? [v.estado] : []),
+                            ...ESTADOS_SELECCIONABLES,
+                          ])).map((e) => (
+                            <option key={e} value={e}>
+                              {estadoLabel(e as EstadoVehiculo)}
+                            </option>
+                          ))}
+                        </select>
+                      ) : null}
+                      {puedeEliminar(user?.rol) && (
+                        <button
+                          className="btn-icon danger"
+                          onClick={() => setAEliminar(v)}
+                          title="Eliminar"
+                        >
+                          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                            delete
+                          </span>
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -422,6 +434,7 @@ export default function Vehiculos() {
             </tbody>
           </table>
         </div>
+
         <Paginacion
           total={total}
           pagina={pagina}
@@ -514,6 +527,7 @@ export default function Vehiculos() {
                   </div>
                 </div>
               )}
+
               <h4
                 style={{
                   fontSize: 11,
@@ -527,16 +541,18 @@ export default function Vehiculos() {
                 }}
               >
                 <span>Historial de avistamientos</span>
-                <button
-                  className="btn-ghost"
-                  style={{ fontSize: 10, padding: '4px 10px' }}
-                  onClick={() => setAvAbierto(true)}
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: 12 }}>
-                    add
-                  </span>
-                  Registrar avistamiento
-                </button>
+                {puedeEditar(user?.rol) && (
+                  <button
+                    className="btn-ghost"
+                    style={{ fontSize: 10, padding: '4px 10px' }}
+                    onClick={() => setAvAbierto(true)}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: 12 }}>
+                      add
+                    </span>
+                    Registrar avistamiento
+                  </button>
+                )}
               </h4>
               {avistamientosVehiculo.length === 0 ? (
                 <div
@@ -622,6 +638,7 @@ export default function Vehiculos() {
                 {detalle.marca} {detalle.modelo}
               </div>
             </div>
+
             <div className="form-group" style={{ marginBottom: 14 }}>
               <label className="form-label">Ubicación del avistamiento</label>
               <select
@@ -636,6 +653,7 @@ export default function Vehiculos() {
                 ))}
               </select>
             </div>
+
             <div className="form-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
               <div className="form-group">
                 <label className="form-label">Fecha y hora</label>
@@ -659,6 +677,7 @@ export default function Vehiculos() {
                 </select>
               </div>
             </div>
+
             <div
               style={{
                 display: 'flex',
