@@ -17,19 +17,25 @@ import FormSucesoPorTipo from '../components/FormSucesoPorTipo';
 import GaleriaFotos from '../components/GaleriaFotos';
 import Modal from '../components/Modal';
 import FormularioDesaparecida from '../components/FormularioDesaparecida';
+import { useAuth } from '../services/AuthContext';
+import { puedeEditar, puedeEliminar } from '../services/permisos';
+
 const TIPOS: TipoSuceso[] = ['ROBO_VEHICULO', 'DESAPARICION', 'AVISTAMIENTO', 'TRANSACCION'];
+
 const tipoLabel: Record<string, string> = {
   ROBO_VEHICULO: 'Robo de vehículo',
   DESAPARICION: 'Desaparición',
   AVISTAMIENTO: 'Avistamiento',
   TRANSACCION: 'Transacción',
 };
+
 const estadoDesapLabel: Record<string, string> = {
   BUSCADA: 'Buscada',
   ENCONTRADA_VIVA: 'Encontrada viva',
   ENCONTRADA_FALLECIDA: 'Encontrada fallecida',
   ARCHIVADA: 'Archivada',
 };
+
 /**
  * Fila unificada de la tabla: puede ser un suceso o una desaparicion.
  * Se marca con _origen para ramificar las acciones (ver/eliminar).
@@ -47,7 +53,11 @@ interface FilaUnificada {
   suceso?: Suceso;
   desaparecida?: PersonaDesaparecida;
 }
+
 export default function Sucesos() {
+  const { user } = useAuth();
+  const puedeCrear = puedeEditar(user?.rol);
+
   const [searchParams] = useSearchParams();
   const [sucesos, setSucesos] = useState<Suceso[]>([]);
   const [desaparecidas, setDesaparecidas] = useState<PersonaDesaparecida[]>([]);
@@ -67,6 +77,7 @@ export default function Sucesos() {
   const [editandoSuceso, setEditandoSuceso] = useState<Suceso | null>(null);
   const [formSuceso, setFormSuceso] = useState({ fechaHora: '', modusOperandi: '', descripcion: '' });
   const [enviandoCian, setEnviandoCian] = useState<number | null>(null);
+
   const cargar = async () => {
     try { setSucesos(await sucesoService.listar()); } catch (e) { console.error('Sucesos:', e); }
     try { setDesaparecidas(await desaparecidaService.listar()); } catch (e) { console.error('Desaparecidas:', e); }
@@ -74,6 +85,7 @@ export default function Sucesos() {
     try { setUbicaciones(await ubicacionService.listar()); } catch (e) { console.error('Ubicaciones:', e); }
     try { setPersonas(await personaService.listar()); } catch (e) { console.error('Personas:', e); }
   };
+
   useEffect(() => {
     cargar();
     if (searchParams.get('nueva') === '1') {
@@ -82,6 +94,7 @@ export default function Sucesos() {
       }, 300);
     }
   }, []);
+
   const filasSuceso: FilaUnificada[] = sucesos.map(s => ({
     _origen: 'suceso',
     id: s.id!,
@@ -94,6 +107,7 @@ export default function Sucesos() {
     modus: s.modusOperandi || '',
     suceso: s,
   }));
+
   const filasDesap: FilaUnificada[] = desaparecidas.map(d => ({
     _origen: 'desaparicion',
     id: d.id!,
@@ -106,9 +120,11 @@ export default function Sucesos() {
     modus: '',
     desaparecida: d,
   }));
+
   const todas = [...filasSuceso, ...filasDesap].sort(
     (a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
   );
+
   const filtrados = todas.filter(f => {
     if (filtroTipo && f.tipo !== filtroTipo) return false;
     if (filtroVehiculo && String(f.suceso?.vehiculo?.id) !== filtroVehiculo) return false;
@@ -122,7 +138,9 @@ export default function Sucesos() {
       f.personaTexto.toLowerCase().includes(q) ||
       (f.suceso?.descripcion?.toLowerCase().includes(q) ?? false);
   });
+
   const { visibles, pagina, setPagina, total, porPagina } = usePaginacion(filtrados, 10);
+
   const confirmarEliminar = async () => {
     if (!aEliminar) return;
     try {
@@ -140,6 +158,7 @@ export default function Sucesos() {
       setAEliminar(null);
     }
   };
+
   const exportar = () => {
     exportarCSV(
       filtrados.map(f => ({
@@ -153,6 +172,7 @@ export default function Sucesos() {
       'sucesos'
     );
   };
+
   const puntos: PuntoMapa[] = useMemo(() => {
     const deSucesos: PuntoMapa[] = sucesos
       .filter(s => s.ubicacion?.latitud && s.ubicacion?.longitud)
@@ -169,6 +189,7 @@ export default function Sucesos() {
           { etiqueta: 'Modus', valor: s.modusOperandi || '—' },
         ],
       }));
+
     const deDesap: PuntoMapa[] = desaparecidas
       .filter(d => d.ultimaUbicacion?.latitud && d.ultimaUbicacion?.longitud)
       .map(d => ({
@@ -183,8 +204,10 @@ export default function Sucesos() {
           { etiqueta: 'Fecha', valor: new Date(d.fechaDesaparicion).toLocaleString('es-ES') },
         ],
       }));
+
     return [...deSucesos, ...deDesap];
   }, [sucesos, desaparecidas]);
+
   const totalRegistros = sucesos.length + desaparecidas.length;
   const ultimaSemana = todas.filter(f => {
     const d = new Date(f.fecha);
@@ -192,6 +215,7 @@ export default function Sucesos() {
   }).length;
   const robos = sucesos.filter(s => s.tipo === 'ROBO_VEHICULO').length;
   const desapCount = desaparecidas.length;
+
   const abrirEditarSuceso = (s: Suceso) => {
     setEditandoSuceso(s);
     setFormSuceso({
@@ -200,6 +224,7 @@ export default function Sucesos() {
       descripcion: s.descripcion || '',
     });
   };
+
   const guardarEdicionSuceso = async () => {
     if (!editandoSuceso) return;
     try {
@@ -217,6 +242,7 @@ export default function Sucesos() {
       setErr(e?.response?.data?.error || 'No se pudo actualizar el suceso');
     }
   };
+
   const enviarACian = async (origen: 'suceso' | 'desaparicion', id: number) => {
     setEnviandoCian(id);
     setErr(''); setOk('');
@@ -232,13 +258,17 @@ export default function Sucesos() {
       setEnviandoCian(null);
     }
   };
+
   const limpiarFiltros = () => {
     setFiltro(''); setFiltroTipo(''); setFiltroVehiculo('');
     setFiltroPersona(''); setFiltroUbicacion('');
   };
+
   const filtrosActivos = filtro || filtroTipo || filtroVehiculo || filtroPersona || filtroUbicacion;
+
   const idEtiqueta = (f: FilaUnificada) =>
     f._origen === 'suceso' ? `EV-${String(f.id).padStart(4, '0')}` : `DS-${String(f.id).padStart(4, '0')}`;
+
   return (
     <>
       <div className="page-header">
@@ -251,31 +281,43 @@ export default function Sucesos() {
           <span className="badge-pill alerta">ÚLTIMA SEMANA: {ultimaSemana}</span>
         </div>
       </div>
+
       <div className="toolbar">
         <button className="btn-ghost" onClick={exportar}>
           <span className="material-symbols-outlined" style={{ fontSize: 16 }}>download</span>
           Exportar CSV
         </button>
       </div>
+
+      {/* Mensajes cuando el formulario esta oculto (roles de solo consulta) */}
+      {!puedeCrear && ok && <div className="success" style={{ marginBottom: 16 }}>{ok}</div>}
+      {!puedeCrear && err && <div className="error" style={{ marginBottom: 16 }}>{err}</div>}
+
       <div className="bento-grid" id="form-suceso">
-        <div className="bento-col-5">
-          <div className="form-card" style={{ height: '100%' }}>
-            <div className="card-header" style={{ borderBottom: 'none', paddingBottom: 0, marginBottom: 20 }}>
-              <span className="material-symbols-outlined">app_registration</span>
-              <h3 className="card-title">Registrar suceso</h3>
+        {puedeCrear && (
+          <div className="bento-col-5">
+            <div className="form-card" style={{ height: '100%' }}>
+              <div className="card-header" style={{ borderBottom: 'none', paddingBottom: 0, marginBottom: 20 }}>
+                <span className="material-symbols-outlined">app_registration</span>
+                <h3 className="card-title">Registrar suceso</h3>
+              </div>
+              <FormSucesoPorTipo
+                onGuardado={() => {
+                  setOk('Suceso registrado correctamente');
+                  setTimeout(() => setOk(''), 3000);
+                  cargar();
+                }}
+              />
+              {ok && <div className="success" style={{ marginTop: 12 }}>{ok}</div>}
+              {err && <div className="error" style={{ marginTop: 12 }}>{err}</div>}
             </div>
-            <FormSucesoPorTipo
-              onGuardado={() => {
-                setOk('Suceso registrado correctamente');
-                setTimeout(() => setOk(''), 3000);
-                cargar();
-              }}
-            />
-            {ok && <div className="success" style={{ marginTop: 12 }}>{ok}</div>}
-            {err && <div className="error" style={{ marginTop: 12 }}>{err}</div>}
           </div>
-        </div>
-        <div className="bento-col-7">
+        )}
+
+        <div
+          className={puedeCrear ? 'bento-col-7' : 'bento-col-12'}
+          style={puedeCrear ? undefined : { gridColumn: '1 / -1' }}
+        >
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20, height: '100%' }}>
             <MapaTactical puntos={puntos} altura={300}
               hudLabel="Mapa de sucesos"
@@ -301,6 +343,7 @@ export default function Sucesos() {
           </div>
         </div>
       </div>
+
       <div className="form-card" style={{ marginBottom: 20, padding: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
           <span className="material-symbols-outlined" style={{ color: 'var(--red-500)', fontSize: 18 }}>filter_alt</span>
@@ -341,6 +384,7 @@ export default function Sucesos() {
           </select>
         </div>
       </div>
+
       <div className="table-wrap">
         <div className="table-header">
           <div className="table-header-title">
@@ -355,6 +399,7 @@ export default function Sucesos() {
             </div>
           </div>
         </div>
+
         <div className="table-scroll">
           <table>
             <thead>
@@ -398,17 +443,17 @@ export default function Sucesos() {
                       <button className="btn-icon" onClick={() => setDetalle(f)} title="Ver detalle">
                         <span className="material-symbols-outlined" style={{ fontSize: 18 }}>visibility</span>
                       </button>
-                      {f._origen === 'desaparicion' && f.desaparecida && (
+                      {puedeCrear && f._origen === 'desaparicion' && f.desaparecida && (
                         <button className="btn-icon" onClick={() => setEditandoDesap(f.desaparecida!)} title="Editar">
                           <span className="material-symbols-outlined" style={{ fontSize: 18 }}>edit</span>
                         </button>
                       )}
-                      {f._origen === 'suceso' && f.suceso && (
+                      {puedeCrear && f._origen === 'suceso' && f.suceso && (
                         <button className="btn-icon" onClick={() => abrirEditarSuceso(f.suceso!)} title="Editar">
                           <span className="material-symbols-outlined" style={{ fontSize: 18 }}>edit</span>
                         </button>
                       )}
-                      {f._origen === 'suceso' && f.suceso && (
+                      {puedeCrear && f._origen === 'suceso' && f.suceso && (
                         <button className="btn-icon" title="Enviar a patrullas (Cian)"
                           disabled={enviandoCian === f.id}
                           onClick={() => enviarACian('suceso', f.suceso!.id!)}>
@@ -417,7 +462,7 @@ export default function Sucesos() {
                           </span>
                         </button>
                       )}
-                      {f._origen === 'desaparicion' && f.desaparecida && (
+                      {puedeCrear && f._origen === 'desaparicion' && f.desaparecida && (
                         <button className="btn-icon" title="Enviar a patrullas (Cian)"
                           disabled={enviandoCian === f.id}
                           onClick={() => enviarACian('desaparicion', f.desaparecida!.id!)}>
@@ -426,9 +471,11 @@ export default function Sucesos() {
                           </span>
                         </button>
                       )}
-                      <button className="btn-icon danger" onClick={() => setAEliminar(f)} title="Eliminar">
-                        <span className="material-symbols-outlined" style={{ fontSize: 18 }}>delete</span>
-                      </button>
+                      {puedeEliminar(user?.rol) && (
+                        <button className="btn-icon danger" onClick={() => setAEliminar(f)} title="Eliminar">
+                          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>delete</span>
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -441,9 +488,11 @@ export default function Sucesos() {
             </tbody>
           </table>
         </div>
+
         <Paginacion total={total} pagina={pagina} porPagina={porPagina}
           onCambiar={setPagina} label="registros" />
       </div>
+
       {detalle && detalle._origen === 'suceso' && detalle.suceso && (
         <ModalDetalle abierto={true} onClose={() => setDetalle(null)}
           titulo={tipoLabel[detalle.suceso.tipo]}
@@ -480,6 +529,7 @@ export default function Sucesos() {
           }
         />
       )}
+
       {detalle && detalle._origen === 'desaparicion' && detalle.desaparecida && (
         <ModalDetalle abierto={true} onClose={() => setDetalle(null)}
           titulo={`${detalle.desaparecida.nombre} ${detalle.desaparecida.apellido}`}
@@ -536,6 +586,7 @@ export default function Sucesos() {
           }
         />
       )}
+
       <Modal
         abierto={!!editandoDesap}
         onClose={() => setEditandoDesap(null)}
@@ -557,6 +608,7 @@ export default function Sucesos() {
           />
         )}
       </Modal>
+
       <Modal
         abierto={!!editandoSuceso}
         onClose={() => setEditandoSuceso(null)}
@@ -598,6 +650,7 @@ export default function Sucesos() {
           </div>
         )}
       </Modal>
+
       <ModalConfirmar abierto={!!aEliminar} titulo="¿Eliminar registro?"
         mensaje={aEliminar
           ? `Vas a eliminar ${idEtiqueta(aEliminar)}${aEliminar._origen === 'desaparicion' ? ` (${aEliminar.personaTexto})` : ''}.`
