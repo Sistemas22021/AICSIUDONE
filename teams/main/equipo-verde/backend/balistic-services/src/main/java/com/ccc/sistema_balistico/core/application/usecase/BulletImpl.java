@@ -1,6 +1,7 @@
 package com.ccc.sistema_balistico.core.application.usecase;
 
 import com.ccc.sistema_balistico.core.application.dto.BulletDTO;
+import com.ccc.sistema_balistico.core.application.services.FileStorageService;
 import com.ccc.sistema_balistico.core.infrastructure.in.rest.mapper.BulletMapper;
 import com.ccc.sistema_balistico.core.application.services.BulletService;
 import com.ccc.sistema_balistico.core.infrastructure.out.persistence.entity.BulletEntity;
@@ -9,6 +10,7 @@ import com.ccc.sistema_balistico.core.domain.exceptions.custom.BulletIsDeleted;
 import com.ccc.sistema_balistico.core.domain.exceptions.custom.BulletNotFound;
 import com.ccc.sistema_balistico.core.domain.exceptions.custom.caliber.CaliberIsDeleted;
 import com.ccc.sistema_balistico.core.domain.exceptions.custom.caliber.CaliberNotFound;
+import com.ccc.sistema_balistico.core.domain.enums.BulletStatus;
 import com.ccc.sistema_balistico.core.infrastructure.out.persistence.jpa.BulletRepository;
 import com.ccc.sistema_balistico.core.infrastructure.out.persistence.jpa.CaliberRepository;
 import com.ccc.sistema_balistico.core.application.services.BulletImagesService;
@@ -32,7 +34,7 @@ public class BulletImpl implements BulletService {
     @Autowired
     BulletImagesService bulletImagesService;
     @Autowired
-    com.ccc.sistema_balistico.core.application.services.FileStorageService fileStorageService;
+    FileStorageService fileStorageService;
 
 
     @Autowired
@@ -60,10 +62,17 @@ public class BulletImpl implements BulletService {
         if (caliber.getIsDelete()) throw new CaliberIsDeleted();
         bulletDTO.setIdBullet(null);
         bulletDTO.setCreatedAt(LocalDateTime.now());
+        bulletDTO.setStatus(BulletStatus.EN_INVESTIGACION);
         BulletEntity bulletEntity = BulletMapper.toEntity(bulletDTO,caliber);
         bulletEntity = bulletRepository.save(bulletEntity);
 
-        return bulletImagesService.saveImageList(files,bulletEntity);
+        BulletDTO result = bulletImagesService.saveImageList(files,bulletEntity);
+        
+        bulletEntity.setStatus(BulletStatus.EN_BOVEDA);
+        bulletRepository.save(bulletEntity);
+        
+        result.setStatus(BulletStatus.EN_BOVEDA);
+        return result;
     }
 
     @Transactional
@@ -74,6 +83,9 @@ public class BulletImpl implements BulletService {
         bulletEntity.setLandsAndGrooves(bulletDTO.getLandsAndGrooves());
         bulletEntity.setPercussionType(bulletDTO.getPercussionType());
         bulletEntity.setTwistDirection(bulletDTO.getTwistDirection());
+        if (bulletDTO.getStatus() != null) {
+            bulletEntity.setStatus(bulletDTO.getStatus());
+        }
 
         return BulletMapper.toDTO(bulletRepository.save(bulletEntity));
     }
@@ -94,6 +106,7 @@ public class BulletImpl implements BulletService {
         }
         
         bulletEntity.setIsDelete(true);
+        bulletEntity.setStatus(BulletStatus.ARCHIVADO);
         bulletRepository.save(bulletEntity);
     }
 
