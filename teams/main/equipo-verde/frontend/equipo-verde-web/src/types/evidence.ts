@@ -25,6 +25,7 @@ export interface EvidenceFormState {
   twist: TwistDirection | '';
   percussion: PercussionType | '';
   marca: string;
+  status?: string;
 }
 
 export interface EvidenceFormErrors {
@@ -41,4 +42,7 @@ export interface EvidenceRecord extends EvidenceFormState {
   id: string;
   createdAt: string;
   previewUrl: string | null;
+  caliberId?: string;
+  caliberName?: string;
+  status?: 'EN_INVESTIGACION' | 'EN_BOVEDA' | 'EN_TRIBUNAL' | 'ARCHIVADO';
 }
