@@ -164,13 +164,23 @@ export const ModusOperandiContent = ({ expedienteId, folioExpediente, analistaId
                     </div>
                     <EstadoAnalisisMO estadoCarga={estadoCarga} estado={propuesta?.estado} />
                 </div>
-                <button
-                    onClick={refetch}
-                    className="p-2 border border-cyan-400/40 rounded text-cyan-400 hover:bg-cyan-400/10 transition-all flex-shrink-0"
-                    title="Actualizar"
-                >
-                    <RefreshCw size={14} />
-                </button>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                    <button
+                        onClick={refetch}
+                        className="p-2 border border-cyan-400/40 rounded text-cyan-400 hover:bg-cyan-400/10 transition-all"
+                        title="Actualizar"
+                    >
+                        <RefreshCw size={14} />
+                    </button>
+                    <NeonButton
+                        variant="outline"
+                        icon={<RefreshCw size={13} />}
+                        onClick={handleAnalizarAhora}
+                        disabled={analizando}
+                    >
+                        {analizando ? 'Solicitando análisis…' : 'Cargar nuevamente'}
+                    </NeonButton>
+                </div>
             </div>
 
             {estadoCarga === 'analizando' && (
@@ -181,20 +191,10 @@ export const ModusOperandiContent = ({ expedienteId, folioExpediente, analistaId
             )}
 
             {estadoCarga === 'sin_analisis' && (
-                <div className="flex flex-col gap-3">
-                    <p className="text-sm text-cyan-500/80">
-                        No se generó ninguna propuesta de MO para este expediente todavía. Verifica que el expediente
-                        tenga descripción del hecho, o solicita un nuevo análisis.
-                    </p>
-                    <NeonButton
-                        variant="outline"
-                        icon={<RefreshCw size={13} />}
-                        onClick={handleAnalizarAhora}
-                        disabled={analizando}
-                    >
-                        {analizando ? 'Solicitando análisis…' : 'Analizar ahora'}
-                    </NeonButton>
-                </div>
+                <p className="text-sm text-cyan-500/80">
+                    No se generó ninguna propuesta de MO para este expediente todavía. Verifica que el expediente
+                    tenga descripción del hecho, o usá "Cargar nuevamente" arriba.
+                </p>
             )}
 
             {estadoCarga === 'error' && (
