@@ -1,6 +1,7 @@
 package com.ccc.sistema_balistico.core.infrastructure.out.persistence.entity;
 
 
+import com.ccc.sistema_balistico.core.domain.enums.BulletStatus;
 import com.ccc.sistema_balistico.core.domain.enums.PercussionType;
 import com.ccc.sistema_balistico.core.domain.enums.TwistDirection;
 import jakarta.persistence.*;
@@ -34,6 +35,9 @@ public class BulletEntity {
 
     @Enumerated(EnumType.STRING)
     private TwistDirection twistDirection;
+
+    @Enumerated(EnumType.STRING)
+    private BulletStatus status;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)

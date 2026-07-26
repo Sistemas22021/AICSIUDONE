@@ -65,7 +65,7 @@ export const AuditoriaPage = () => {
   }, []);
 
   const getActionLabel = (revType: number, entityType: string) => {
-    const entity = entityType === 'BULLET' ? 'PROYECTIL' : (entityType === 'IMAGES' ? 'IMAGEN' : entityType);
+    const entity = entityType === 'BULLET' ? 'PROYECTIL' : (entityType === 'IMAGES' ? 'IMAGEN' : (entityType === 'EXPEDIENT' ? 'EXPEDIENTE' : entityType));
     if (revType === 0) return `CREACIÓN DE ${entity}`;
     if (revType === 1) return `MODIFICACIÓN DE ${entity}`;
     if (revType === 2) return `ELIMINACIÓN DE ${entity}`;
@@ -283,7 +283,7 @@ export const AuditoriaPage = () => {
                       />
                     </TableCell>
                     <TableCell className="text-slate-600 text-xs py-3">
-                      | Entidad: {log.entityType} #{log.entityId}
+                      | Entidad: {log.entityType === 'BULLET' ? 'PROYECTIL' : (log.entityType === 'IMAGES' ? 'IMAGEN' : (log.entityType === 'EXPEDIENT' ? 'EXPEDIENTE' : log.entityType))} #{log.entityId}
                     </TableCell>
                     <TableCell align="right" className="text-slate-400 text-xs py-3">
                       <Box className="flex items-center justify-end gap-1">

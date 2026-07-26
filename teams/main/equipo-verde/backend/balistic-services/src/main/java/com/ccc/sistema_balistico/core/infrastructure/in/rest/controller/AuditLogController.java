@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,7 +30,9 @@ public class AuditLogController {
     )
     @GetMapping
     public ResponseEntity<Page<AuditLogViewEntity>> getAuditLogs(
-            @PageableDefault() Pageable pageable) {
+            @PageableDefault(
+                    sort = "revTimestamp",
+                    direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(auditLogService.getAuditLogs(pageable));
     }
 }

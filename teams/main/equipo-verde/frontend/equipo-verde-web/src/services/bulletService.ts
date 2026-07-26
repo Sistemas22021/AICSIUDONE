@@ -17,6 +17,8 @@ export interface BulletDTO {
   percussionType: string;  // CENTRAL | ANULAR | ELECTRICA | LATERAL
   twistDirection: string;  // DEXTRORSUM | SINISTRORSUM | NONE
   caliber: number;         // ID del calibre
+  caliberName?: string;    // Nombre del calibre
+  status?: 'EN_INVESTIGACION' | 'EN_BOVEDA' | 'EN_TRIBUNAL' | 'ARCHIVADO'; // Estado
   manufacturer: string;    // Marca del fabricante
   createdAt?: string;
   isDelete?: boolean;

@@ -35,7 +35,8 @@ const INITIAL_FORM_STATE: EvidenceFormState = {
   estrias: '',
   twist: '',
   percussion: '',
-  marca: ''
+  marca: '',
+  status: ''
 };
 
 const premiumInputStyles = {
@@ -142,6 +143,41 @@ export const RegistroPage = () => {
     fetchExpedientes(expedienteInputValue);
   }, [expedienteInputValue, fetchExpedientes]);
 
+  const renderStatusBadge = (status?: string) => {
+    switch (status) {
+      case 'EN_INVESTIGACION':
+        return (
+          <span className="inline-flex items-center text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full">
+            En Investigación
+          </span>
+        );
+      case 'EN_BOVEDA':
+        return (
+          <span className="inline-flex items-center text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">
+            En Bóveda
+          </span>
+        );
+      case 'EN_TRIBUNAL':
+        return (
+          <span className="inline-flex items-center text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-full">
+            En Tribunal
+          </span>
+        );
+      case 'ARCHIVADO':
+        return (
+          <span className="inline-flex items-center text-xs font-bold text-slate-600 bg-slate-100 border border-slate-300 px-2.5 py-1 rounded-full">
+            Archivado
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center text-xs font-bold text-slate-400 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-full">
+            Desconocido
+          </span>
+        );
+    }
+  };
+
   const loadBullets = async () => {
     try {
       const data = await getBullets(0, 50);
@@ -150,6 +186,9 @@ export const RegistroPage = () => {
         createdAt: b.createdAt || '',
         expediente: b.caseFile,
         calibre: String(b.caliber),
+        caliberId: String(b.caliber),
+        caliberName: b.caliberName,
+        status: b.status,
         estrias: String(b.landsAndGrooves),
         twist: b.twistDirection as TwistDirection,
         percussion: b.percussionType as PercussionType,
@@ -176,7 +215,8 @@ export const RegistroPage = () => {
       estrias: record.estrias,
       twist: record.twist,
       percussion: record.percussion,
-      marca: record.marca
+      marca: record.marca,
+      status: record.status || ''
     });
     setEditingId(record.id);
     setExpedienteSelected(record.expediente ? { caseNumber: record.expediente } as ExpedienteDTO : null);
@@ -365,7 +405,8 @@ export const RegistroPage = () => {
         percussionType: formData.percussion,
         twistDirection: formData.twist,
         caliber: Number(formData.calibre),
-        manufacturer: formData.marca
+        manufacturer: formData.marca,
+        status: formData.status as any
       };
 
       if (editingId) {
@@ -460,6 +501,7 @@ export const RegistroPage = () => {
                     <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Calibre</th>
                     <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Estrías/Giro</th>
                     <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Marca</th>
+                    <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Estado</th>
                     <th className="p-4 pr-8 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Acción</th>
                   </tr>
                 </thead>
@@ -469,11 +511,14 @@ export const RegistroPage = () => {
                       <td className="p-4 pl-8 font-bold text-slate-800">{record.expediente}</td>
                       <td className="p-4">
                         <span className="inline-flex items-center text-xs font-extrabold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-md">
-                          {record.calibre}
+                          {record.caliberName || record.calibre}
                         </span>
                       </td>
                       <td className="p-4 text-slate-600 font-medium">{record.estrias} / {record.twist.split(' ')[0]}</td>
                       <td className="p-4 text-slate-600 font-medium">{record.marca}</td>
+                      <td className="p-4">
+                        {renderStatusBadge(record.status)}
+                      </td>
                       <td className="p-4 pr-8 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <IconButton
@@ -657,6 +702,32 @@ export const RegistroPage = () => {
                 size="medium"
                 sx={premiumInputStyles}
               />
+
+              {/* Estado (solo cuando se está editando) */}
+              {editingId && (
+                <TextField
+                  fullWidth
+                  select
+                  label="Estado"
+                  value={formData.status || ''}
+                  onChange={(e) => handleInputChange('status', e.target.value)}
+                  disabled={formData.status !== 'EN_BOVEDA' && formData.status !== 'EN_TRIBUNAL'}
+                  variant="outlined"
+                  size="medium"
+                  sx={premiumInputStyles}
+                >
+                  {formData.status === 'EN_INVESTIGACION' && (
+                    <MenuItem value="EN_INVESTIGACION">En Investigación</MenuItem>
+                  )}
+                  {formData.status === 'ARCHIVADO' && (
+                    <MenuItem value="ARCHIVADO">Archivado</MenuItem>
+                  )}
+                  {(formData.status === 'EN_BOVEDA' || formData.status === 'EN_TRIBUNAL') && [
+                    <MenuItem key="EN_BOVEDA" value="EN_BOVEDA">En Bóveda</MenuItem>,
+                    <MenuItem key="EN_TRIBUNAL" value="EN_TRIBUNAL">En Tribunal</MenuItem>
+                  ]}
+                </TextField>
+              )}
             </Box>
 
             <Box className="mt-10 pt-8 border-t border-slate-100 flex flex-col sm:flex-row justify-end items-center gap-4">

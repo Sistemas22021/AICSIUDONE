@@ -1,4 +1,4 @@
-package com.ccc.sistema_balistico.core.infrastructure.in.rest.controllers;
+package com.ccc.sistema_balistico.core.infrastructure.in.rest.controller;
 
 import com.ccc.sistema_balistico.core.application.dto.ExpedientDTO;
 import com.ccc.sistema_balistico.core.application.services.ExpedientService;

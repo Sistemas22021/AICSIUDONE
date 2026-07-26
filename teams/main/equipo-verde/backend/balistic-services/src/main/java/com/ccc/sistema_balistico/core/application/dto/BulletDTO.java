@@ -1,5 +1,6 @@
 package com.ccc.sistema_balistico.core.application.dto;
 
+import com.ccc.sistema_balistico.core.domain.enums.BulletStatus;
 import com.ccc.sistema_balistico.core.domain.enums.PercussionType;
 import com.ccc.sistema_balistico.core.domain.enums.TwistDirection;
 import jakarta.validation.constraints.NotNull;
@@ -31,6 +32,10 @@ public class BulletDTO {
 
     @NotNull(message = "Caliber Required")
     private Long caliber;
+
+    private String caliberName;
+
+    private BulletStatus status;
 
     private List<String> images;
 
