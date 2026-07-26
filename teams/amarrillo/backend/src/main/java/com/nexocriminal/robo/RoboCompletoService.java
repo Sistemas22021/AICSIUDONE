@@ -36,78 +36,73 @@ public class RoboCompletoService {
     private final SucesoTestigoRepository testigoRepository;
 
     public Suceso registrar(RoboCompletoRequest req) {
-        Persona victima = resolverOVictima(req);
-        Vehiculo vehiculoCreado = crearVehiculoRobado(req, victima);
-        Suceso sucesoCreado = crearSucesoRobo(req, vehiculoCreado, victima);
-        vincularTestigos(req, sucesoCreado);
-        return sucesoCreado;
-    }
 
-    private Persona resolverOVictima(RoboCompletoRequest req) {
+        // 1. Resolver victima/propietario: usar existente o crear nueva
+        Persona victima;
         if (req.victimaId != null) {
-            return personaService.obtener(req.victimaId);
+            victima = personaService.obtener(req.victimaId);
+        } else {
+            Persona nueva = new Persona();
+            nueva.setDocumento(req.victimaDocumento);
+            nueva.setNombre(req.victimaNombre);
+            nueva.setApellido(req.victimaApellido);
+            nueva.setTelefono(req.victimaTelefono);
+            nueva.setAlias(req.victimaAlias);
+            nueva.setRol(RolPersona.VICTIMA);
+            victima = personaService.crear(nueva);
         }
-        Persona nueva = new Persona();
-        nueva.setDocumento(req.victimaDocumento);
-        nueva.setNombre(req.victimaNombre);
-        nueva.setApellido(req.victimaApellido);
-        nueva.setTelefono(req.victimaTelefono);
-        nueva.setAlias(req.victimaAlias);
-        nueva.setRol(RolPersona.VICTIMA);
-        return personaService.crear(nueva);
-    }
 
-    private Vehiculo crearVehiculoRobado(RoboCompletoRequest req, Persona propietario) {
-        Vehiculo v = new Vehiculo();
-        v.setPlaca(req.placa);
-        v.setMarca(req.marca);
-        v.setModelo(req.modelo);
-        v.setAnio(req.anio);
-        v.setColor(req.color);
-        v.setChasis(req.chasis);
-        v.setDeclaracion(req.declaracion);
-        v.setEstado(EstadoVehiculo.ROBADO);
-        v.setPropietario(propietario);
-        return vehiculoService.crear(v);
-    }
+        // 2. Crear el vehiculo, con la victima como propietario, estado ROBADO
+        Vehiculo vehiculo = new Vehiculo();
+        vehiculo.setPlaca(req.placa);
+        vehiculo.setMarca(req.marca);
+        vehiculo.setModelo(req.modelo);
+        vehiculo.setAnio(req.anio);
+        vehiculo.setColor(req.color);
+        vehiculo.setChasis(req.chasis);
+        vehiculo.setDeclaracion(req.declaracion);
+        vehiculo.setEstado(EstadoVehiculo.ROBADO);
+        vehiculo.setPropietario(victima);
+        Vehiculo vehiculoCreado = vehiculoService.crear(vehiculo);
 
-    private Suceso crearSucesoRobo(RoboCompletoRequest req, Vehiculo vehiculo, Persona victima) {
-        Suceso s = Suceso.builder()
+        // 3. Crear el suceso de tipo ROBO_VEHICULO
+        Suceso suceso = Suceso.builder()
                 .tipo(TipoSuceso.ROBO_VEHICULO)
                 .fechaHora(req.fechaHora != null ? req.fechaHora : LocalDateTime.now())
                 .modusOperandi(req.modusOperandi)
                 .descripcion(req.descripcion)
-                .vehiculo(vehiculo)
+                .vehiculo(vehiculoCreado)
                 .victima(victima)
                 .build();
         if (req.ubicacionId != null) {
             Ubicacion u = new Ubicacion();
             u.setId(req.ubicacionId);
-            s.setUbicacion(u);
+            suceso.setUbicacion(u);
         }
-        return sucesoService.crear(s);
-    }
+        Suceso sucesoCreado = sucesoService.crear(suceso);
 
-    private void vincularTestigos(RoboCompletoRequest req, Suceso suceso) {
-        if (req.testigos == null) return;
-        for (RoboCompletoRequest.TestigoData t : req.testigos) {
-            Persona testigo = t.id != null
-                    ? personaService.obtener(t.id)
-                    : crearPersonaTestigo(t);
-            testigoRepository.save(SucesoTestigo.builder()
-                    .sucesoId(suceso.getId())
-                    .personaId(testigo.getId())
-                    .build());
+        // 4. Vincular testigos: crear los nuevos, y registrar la relacion
+        if (req.testigos != null) {
+            for (RoboCompletoRequest.TestigoData t : req.testigos) {
+                Persona testigo;
+                if (t.id != null) {
+                    testigo = personaService.obtener(t.id);
+                } else {
+                    Persona nuevoTestigo = new Persona();
+                    nuevoTestigo.setDocumento(t.documento);
+                    nuevoTestigo.setNombre(t.nombre);
+                    nuevoTestigo.setApellido(t.apellido);
+                    nuevoTestigo.setTelefono(t.telefono);
+                    nuevoTestigo.setRol(RolPersona.TESTIGO);
+                    testigo = personaService.crear(nuevoTestigo);
+                }
+                testigoRepository.save(SucesoTestigo.builder()
+                        .sucesoId(sucesoCreado.getId())
+                        .personaId(testigo.getId())
+                        .build());
+            }
         }
-    }
 
-    private Persona crearPersonaTestigo(RoboCompletoRequest.TestigoData t) {
-        Persona p = new Persona();
-        p.setDocumento(t.documento);
-        p.setNombre(t.nombre);
-        p.setApellido(t.apellido);
-        p.setTelefono(t.telefono);
-        p.setRol(RolPersona.TESTIGO);
-        return personaService.crear(p);
+        return sucesoCreado;
     }
 }
