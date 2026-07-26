@@ -5,6 +5,7 @@ import { CustodiaSidebar } from '@/components/custodia-sidebar'
 import { CustodiaHeader } from '@/components/custodia-header'
 import { TranscriptionPanel } from '@/components/transcription-panel'
 import { TestimoniesPanel } from '@/components/testimonies-panel'
+import { DataExtractionPanel } from '@/components/data-extraction-panel'
 
 export default function Home() {
   const [activeView, setActiveView] = useState('interrogation')
@@ -27,6 +28,15 @@ export default function Home() {
             </div>
           </div>
         )
+      case 'data-extraction':
+        return (
+          <div className="flex items-center justify-center h-full p-6">
+            <div className="w-full max-w-4xl h-full overflow-hidden">
+              <DataExtractionPanel />
+            </div>
+          </div>
+        )
+      
       default:
         return null
     }

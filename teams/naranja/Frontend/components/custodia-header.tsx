@@ -14,6 +14,7 @@ const viewTitles: Record<string, { title: string; role: string }> = {
   'testimonies-list': { title: 'Consulta de Testimonios', role: 'Investigador' },
   'audit': { title: 'Auditoría de Cadena de Custodia', role: 'Auditor' },
   'settings': { title: 'Configuración del Sistema', role: 'Administrador' },
+  'data-extraction': { title: 'Procesamiento de Datos', role: 'Auditor'}
 }
 
 export function CustodiaHeader({ currentView, currentStep }: CustodiaHeaderProps) {
