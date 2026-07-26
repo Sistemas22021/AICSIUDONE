@@ -144,10 +144,10 @@ export interface ExpedienteResumenDTO {
 }
 
 export interface CasoRequestDTO {
-  creadoPorIdentificacion: number
+  creadoPorUsername: string
   expedienteIds: number[]
   motivo: string
-  alertaOrigenId?: number | null
+  alertaOrigenId?: string | null
 }
 
 export interface CasoResponseDTO {
@@ -198,11 +198,11 @@ export interface PropuestaModusOperandi {
 }
 
 export interface AprobarPropuestaMoPayload {
-  analistaId: number
+  analistaId: string
 }
 
 export interface CorregirPropuestaMoPayload {
-  analistaId: number
+  analistaId: string
   caracteristicasComunes?: string
   posibleFirma?: string
   consistenciaHorarioZona?: string
@@ -210,7 +210,7 @@ export interface CorregirPropuestaMoPayload {
 }
 
 export interface RechazarPropuestaMoPayload {
-  analistaId: number
+  analistaId: string
   clasificacionManual: string
   justificacion: string
 }

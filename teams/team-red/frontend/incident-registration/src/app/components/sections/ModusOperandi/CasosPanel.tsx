@@ -1,17 +1,17 @@
 import { useState } from 'react'
 import { NeonPanel } from '../../ui/NeonPanel'
 import { NeonButton } from '../../ui/NeonButton'
-import { NeonInput } from '../../ui/NeonInput'
 import { NeonTextarea } from '../../ui/NeonTextarea'
 import { NeonCheckbox } from '../../ui/NeonCheckbox'
 import { useCasos } from '../../../hooks/useCasos'
 import { useExpedientesActivos } from '../../../hooks/useExpedientesActivos'
+import { useAuth } from '../../../context/AuthContext'
 import { crearCaso } from '../../../services/casoService'
 
 export const CasosPanel = () => {
+    const { username } = useAuth()
     const { casos, loading: cargandoCasos, refetch } = useCasos()
     const { expedientes, loading: cargandoExpedientes } = useExpedientesActivos()
-    const [creadoPorId, setCreadoPorId] = useState('')
     const [motivo, setMotivo] = useState('')
     const [seleccionados, setSeleccionados] = useState<string[]>([])
     const [enviando, setEnviando] = useState(false)
@@ -20,7 +20,7 @@ export const CasosPanel = () => {
     const toggleSeleccion = (id: string) =>
         setSeleccionados(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
 
-    const puedeEnviar = creadoPorId.trim() !== '' && motivo.trim() !== '' && seleccionados.length >= 2
+    const puedeEnviar = motivo.trim() !== '' && seleccionados.length >= 2
 
     const handleCrear = async () => {
         if (!puedeEnviar) return
@@ -28,7 +28,7 @@ export const CasosPanel = () => {
         setMensaje(null)
         try {
             await crearCaso({
-                creadoPorIdentificacion: Number(creadoPorId),
+                creadoPorUsername: username,
                 expedienteIds: seleccionados.map(Number),
                 motivo,
             })
@@ -48,13 +48,12 @@ export const CasosPanel = () => {
         <div className="space-y-6">
             <NeonPanel title="Nuevo caso" subtitle="Agrupa dos o más expedientes relacionados">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <NeonInput
-                        label="Identificación  del usuario que agrupa"
-                        required
-                        type="text"
-                        value={creadoPorId}
-                        onChange={(e) => setCreadoPorId(e.target.value)}
-                    />
+                    <div>
+                        <label className="text-[11px] uppercase tracking-[0.1em] text-cyan-400 font-medium mb-2 block">
+                            Usuario que agrupa
+                        </label>
+                        <p className="text-sm text-cyan-200">{username}</p>
+                    </div>
                 </div>
 
                 <NeonTextarea

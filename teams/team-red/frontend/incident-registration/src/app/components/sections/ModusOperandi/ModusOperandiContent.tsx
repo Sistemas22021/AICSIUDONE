@@ -21,7 +21,7 @@ type FormularioActivo = null | 'corregir' | 'rechazar'
 interface ModusOperandiContentProps {
     expedienteId: string
     folioExpediente: string
-    analistaId: number
+    analistaId: string
     soloLectura?: boolean
 }
 
