@@ -3,9 +3,9 @@ spring:
     import: "optional:configserver:http://localhost:8888"
   
   datasource:
-    url: jdbc:postgresql://ep-gentle-shape-anxltemn-pooler.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
-    username: neondb_owner
-    password: npg_H3Eiz8CeBXnF
+    url: ${DATASOURCE_URL}
+    username: ${DATASOURCE_USERNAME}
+    password: ${DATASOURCE_PASSWORD:}
 
   jpa:
     hibernate:
