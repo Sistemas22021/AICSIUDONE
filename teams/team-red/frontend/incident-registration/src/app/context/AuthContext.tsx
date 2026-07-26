@@ -13,6 +13,7 @@ type AuthState = 'verificando' | 'autenticado' | 'no-autenticado'
 
 interface AuthContextType {
     username: string
+    userId: string | null
     rol: 'OFICIAL' | 'ANALISTA' | null
     isAuthenticated: boolean
     isOficial: boolean
@@ -25,6 +26,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [authState, setAuthState] = useState<AuthState>('verificando')
     const [username, setUsername] = useState<string>('')
+    const [userId, setUserId] = useState<string | null>(null)
     const [rol, setRol] = useState<'OFICIAL' | 'ANALISTA' | null>(null)
 
     useEffect(() => {
@@ -44,12 +46,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     // Intentar obtener el usuario actual
                     const response = await apiClient.get<{ data: Usuario }>('/usuarios/username/me')
                     if (response.data) {
+                        setUserId(response.data.id)
                         setRol(response.data.rol)
                         setUserRole(response.data.rol)
                     }
                 } catch (error) {
                     console.error('Error obteniendo rol:', error)
-                    // Fallback: intentar obtener de la lista de usuarios
                     try {
                         const { apiClient } = await import('../services/api')
                         const usernameFromToken = getUsername()
@@ -57,6 +59,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                             const response = await apiClient.get<{ data: Usuario[] }>('/usuarios')
                             const user = response.data.find(u => u.username === usernameFromToken)
                             if (user) {
+                                setUserId(user.id)
                                 setRol(user.rol)
                                 setUserRole(user.rol)
                             }
@@ -113,6 +116,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         <AuthContext.Provider
             value={{
                 username,
+                userId,
                 rol,
                 isAuthenticated: true,
                 isOficial,

@@ -59,3 +59,12 @@ jobs:
           name: dist-preview
           path: ${{ env.FRONTEND_DIR }}/dist/
           retention-days: 7
+
+
+      - name: Deploy a Vercel (Preview)
+        run: |
+          npm install -g vercel
+          vercel --token=${{ secrets.ROJO_VERCEL_TOKEN }} --yes
+        env:
+          VERCEL_ORG_ID: ${{ secrets.ROJO_VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.ROJO_VERCEL_PROJECT_ID }}

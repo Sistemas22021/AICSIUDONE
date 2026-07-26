@@ -2,11 +2,12 @@ import { useMemo, useState } from 'react'
 import { Search, FileSearch } from 'lucide-react'
 import { NeonInput } from '../../ui/NeonInput'
 import { useExpedientesActivos } from '../../../hooks/useExpedientesActivos'
+import { useAuth } from '../../../context/AuthContext'
 import { ModusOperandiContent } from './ModusOperandiContent'
 import type { ExpedienteActivo } from '../../../types/api.types'
 
-const ANALISTA_ID_ACTUAL = 1
 export const AnalisisMOTab = () => {
+    const { userId } = useAuth()
     const { expedientes, loading } = useExpedientesActivos()
     const [filtro, setFiltro] = useState('')
     const [seleccionado, setSeleccionado] = useState<ExpedienteActivo | null>(null)
@@ -29,7 +30,7 @@ export const AnalisisMOTab = () => {
                 <ModusOperandiContent
                     expedienteId={seleccionado.id}
                     folioExpediente={seleccionado.folioCOPP}
-                    analistaId={ANALISTA_ID_ACTUAL}
+                    analistaId={userId ?? ''}
                     soloLectura
                 />
             </div>
