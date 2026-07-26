@@ -58,7 +58,7 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
             resetEscena()
             vincularExpediente(expedienteIdInicial, folioInicial)
         }
-    }, [expedienteIdInicial, folioInicial])
+    }, [expedienteIdInicial, folioInicial, state.expedienteId, resetEscena, vincularExpediente])
 
     const { showToast, ToastContainer } = useNeonToast()
     const [mostrarConfirmLiberacion, setMostrarConfirmLiberacion] = useState(false)
@@ -89,7 +89,7 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
 
     const handleVerificarIntegridad = () => {
         if (state.folioExpediente) {
-            verificarIntegridad(state.folioExpediente)
+            verificarIntegridad()
         } else {
             alert('Primero vincula este formulario a un expediente usando el campo "Folio del Expediente"')
         }
@@ -259,7 +259,7 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
                                     {!isPaso1Completado && (
                                         <NeonButton
                                             variant="ghost"
-                                            onClick={() => setInvestigador(0, '')}
+                                            onClick={() => setInvestigador('', '')}
                                             style={{ fontSize: '11px', padding: '2px 8px' }}
                                         >
                                             Cambiar
