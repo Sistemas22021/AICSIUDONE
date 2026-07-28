@@ -8,15 +8,16 @@
 storage.location=${STORAGE_LOCATION_BALISTIC:uploads}
 storage.type=${STORAGE_TYPE:s3}
 
-# --- Base de Datos PostgreSQL ---
-spring.datasource.url=${DB_URL_BALISTIC}
-spring.datasource.username=${DB_USER_BALISTIC}
-spring.datasource.password=${DB_PASSWORD_BALISTIC}
-spring.jpa.hibernate.ddl-auto=${JPA_DDL_AUTO:update}
+# --- Base de Datos local (H2 por defecto para desarrollo) ---
+spring.datasource.url=${DB_URL_BALISTIC:jdbc:h2:mem:balisticdb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL}
+spring.datasource.username=${DB_USER_BALISTIC:sa}
+spring.datasource.password=${DB_PASSWORD_BALISTIC:}
+spring.jpa.hibernate.ddl-auto=${JPA_DDL_AUTO:create-drop}
 spring.sql.init.mode=${SQL_INIT_MODE:never}
 spring.jpa.defer-datasource-initialization=true
 spring.jpa.show-sql=${JPA_SHOW_SQL:false}
 spring.jpa.properties.hibernate.format_sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect
 
 # AWS S3 / LocalStack Configuration
 aws.s3.endpoint=${AWS_S3_ENDPOINT:http://127.0.0.1:4566}

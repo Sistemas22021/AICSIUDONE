@@ -9,11 +9,12 @@ export default defineConfig({
   ],
   server: {
     port: 3002,
+    host: '0.0.0.0',
     proxy: {
       '/api': {
-        // En local apuntamos directo al balistic-services (sin API Gateway)
-        target: 'http://localhost:8080',
+        target: 'http://127.0.0.1:8081',
         changeOrigin: true,
+        secure: false,
       },
     },
   },

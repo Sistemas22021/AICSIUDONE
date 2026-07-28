@@ -27,7 +27,7 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("api/v1/bullet")
+@RequestMapping("/api/v1/bullet")
 @Tag(name = "Registro Balístico", description = "Endpoints para la gestión, seguimiento y análisis de evidencias balísticas")
 @Validated
 public class BulletController {
@@ -44,6 +44,15 @@ public class BulletController {
     @GetMapping
     public ResponseEntity<Page<BulletDTO>> getAll(Pageable pageable) {
         return ResponseEntity.ok(bulletService.getAll(pageable));
+    }
+
+    @Operation(
+            summary = "Obtener evidencias archivadas (borrado lógico)",
+            description = "Retorna una página de evidencias balísticas que han sido archivadas/eliminadas lógicamente."
+    )
+    @GetMapping("/archived")
+    public ResponseEntity<Page<BulletDTO>> getArchivedBullets(Pageable pageable) {
+        return ResponseEntity.ok(bulletService.getArchivedBullets(pageable));
     }
 
     @Operation(
@@ -99,6 +108,16 @@ public class BulletController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteBullet(@PathVariable Long id) {
         bulletService.deleteBullet(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(
+            summary = "Desarchivar evidencia",
+            description = "Restaura una evidencia archivada, cambiando su estado a EN_INVESTIGACION y marcando is_delete = false."
+    )
+    @PatchMapping("/{id}/unarchive")
+    public ResponseEntity<Void> unarchiveBullet(@PathVariable Long id) {
+        bulletService.unarchiveBullet(id);
         return ResponseEntity.noContent().build();
     }
 

@@ -49,6 +49,13 @@ public class BulletImpl implements BulletService {
 
     @Transactional(readOnly = true)
     @Override
+    public Page<BulletDTO> getArchivedBullets(Pageable pageable) {
+        Page<BulletEntity> bulletEntityList = bulletRepository.findByIsDeleteTrue(pageable);
+        return bulletEntityList.map(BulletMapper::toDTO);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
     public BulletDTO getBullet(Long idBullet) {
         BulletEntity bulletEntity = bulletRepository.findById(idBullet).orElseThrow(()-> new BulletNotFound("Bullet Not Found"));
         if (bulletEntity.getIsDelete()) throw new BulletIsDeleted();
@@ -97,16 +104,20 @@ public class BulletImpl implements BulletService {
             return new BulletNotFound("Bullet Not Found");
         });
         
-        if (bulletEntity.getImagePaths() != null) {
-            for (com.ccc.sistema_balistico.core.infrastructure.out.persistence.entity.BulletImagesEntity img : bulletEntity.getImagePaths()) {
-                fileStorageService.deleteImage(img.getPathImage());
-            }
-            bulletImageRepository.deleteAll(bulletEntity.getImagePaths());
-            bulletEntity.getImagePaths().clear();
-        }
-        
         bulletEntity.setIsDelete(true);
         bulletEntity.setStatus(BulletStatus.ARCHIVADO);
+        bulletRepository.save(bulletEntity);
+    }
+
+    @Transactional
+    @Override
+    public void unarchiveBullet(Long idBullet) {
+        BulletEntity bulletEntity = bulletRepository.findById(idBullet).orElseThrow(() -> {
+            return new BulletNotFound("Bullet Not Found");
+        });
+
+        bulletEntity.setIsDelete(false);
+        bulletEntity.setStatus(BulletStatus.EN_INVESTIGACION);
         bulletRepository.save(bulletEntity);
     }
 

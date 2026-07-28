@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("api/v1/audit-log")
+@RequestMapping("/api/v1/audit-log")
 @Tag(name = "Logs de Auditoría", description = "Endpoints para la consulta paginada de auditoría con Envers")
 public class AuditLogController {
 

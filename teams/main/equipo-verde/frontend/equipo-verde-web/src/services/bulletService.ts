@@ -79,6 +79,15 @@ export async function getBullets(page = 0, size = 20): Promise<PageResponse<Bull
 }
 
 /**
+ * Obtener evidencias archivadas (borrado lógico) (paginado)
+ */
+export async function getArchivedBullets(page = 0, size = 20): Promise<PageResponse<BulletDTO>> {
+  const res = await fetch(`${BASE_URL}/archived?page=${page}&size=${size}`);
+  if (!res.ok) await throwBackendError(res);
+  return res.json();
+}
+
+/**
  * Obtener una evidencia por ID
  */
 export async function getBulletById(id: number): Promise<BulletDTO> {
@@ -150,6 +159,14 @@ export async function updateBullet(id: number, bulletData: BulletDTO): Promise<B
  */
 export async function deleteBullet(id: number): Promise<void> {
   const res = await fetch(`${BASE_URL}/${id}`, { method: 'DELETE' });
+  if (!res.ok) await throwBackendError(res);
+}
+
+/**
+ * Desarchivar una evidencia (restaurar de borrado lógico)
+ */
+export async function unarchiveBullet(id: number): Promise<void> {
+  const res = await fetch(`${BASE_URL}/${id}/unarchive`, { method: 'PATCH' });
   if (!res.ok) await throwBackendError(res);
 }
 

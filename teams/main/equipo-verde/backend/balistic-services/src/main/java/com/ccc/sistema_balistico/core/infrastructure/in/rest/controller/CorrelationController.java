@@ -14,7 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("api/v1/correlate")
+@RequestMapping("/api/v1/correlate")
 @Tag(name = "Correlación Balística", description = "Endpoints para el análisis comparativo de proyectiles y generación de ranking de coincidencia")
 public class CorrelationController {
 

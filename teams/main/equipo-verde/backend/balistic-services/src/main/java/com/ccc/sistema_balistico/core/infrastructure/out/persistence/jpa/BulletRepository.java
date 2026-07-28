@@ -13,7 +13,11 @@ import java.util.Optional;
 
 public interface BulletRepository extends JpaRepository<BulletEntity, Long> {
 
+    @Query("SELECT b FROM BulletEntity b WHERE b.isDelete = false OR b.isDelete IS NULL")
     Page<BulletEntity> findByIsDeleteFalse(Pageable pageable);
+
+    @Query("SELECT b FROM BulletEntity b WHERE b.isDelete = true")
+    Page<BulletEntity> findByIsDeleteTrue(Pageable pageable);
 
     @EntityGraph(attributePaths = {"imagePaths"})
     Optional<BulletEntity> findWithImagesByIdBulletAndIsDeleteFalse(Long id);
