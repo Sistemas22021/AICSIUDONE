@@ -81,4 +81,14 @@ public class Evidencia {
     public void vincularEscena(Escena escena) {
         this.escena = escena;
     }
+
+    /**
+     * Registra la firma de conformidad del investigador sobre el levantamiento
+     * de esta evidencia. Punto de extensión para auditoría — de momento no
+     * persiste un campo dedicado (ej. firmadoPor/fechaFirma); solo valida que
+     * el flujo de firma pueda ejecutarse sin romper el contrato del service.
+     */
+    public void firmarLevantamiento(Usuario investigador) {
+        // TODO: registrar auditoría de firma cuando se defina el campo de persistencia
+    }
 }
