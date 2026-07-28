@@ -72,6 +72,10 @@ public class Evidencia {
         this.numeroItem = numero;
     }
 
+    public void firmarLevantamiento(Usuario investigador) {
+        // Lógica de firma/auditoría a implementar (ej: guardar en log de auditoría)
+    }
+
     public boolean validarIntegridad() {
         return this.numeroItem != null && !this.numeroItem.isBlank()
                 && this.tipo != null && !this.tipo.isBlank()
@@ -88,7 +92,4 @@ public class Evidencia {
      * persiste un campo dedicado (ej. firmadoPor/fechaFirma); solo valida que
      * el flujo de firma pueda ejecutarse sin romper el contrato del service.
      */
-    public void firmarLevantamiento(Usuario investigador) {
-        // TODO: registrar auditoría de firma cuando se defina el campo de persistencia
-    }
 }

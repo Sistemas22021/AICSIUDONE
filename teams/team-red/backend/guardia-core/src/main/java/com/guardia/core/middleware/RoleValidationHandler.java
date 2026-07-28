@@ -131,6 +131,11 @@ public class RoleValidationHandler implements HandlerInterceptor {
                 return true;
             }
 
+            // Firma conductual - CRUD completo
+            if (uri.contains("/firma-conductual") || uri.startsWith("/api/v1/firmas-conductuales")) {
+                return true;
+            }
+
             // Puede forzar el reanálisis de Modus Operandi de un expediente (POST)
             if (method.equals("POST") && uri.matches("^/api/v1/expedientes/\\d+/reanalizar-mo$")) {
                 return true;

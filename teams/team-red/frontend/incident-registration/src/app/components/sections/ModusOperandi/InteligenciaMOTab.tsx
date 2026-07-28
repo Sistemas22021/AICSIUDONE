@@ -4,8 +4,9 @@ import { InteligenciaSubTabs } from './InteligenciaSubTabs'
 import { AnalisisMOTab } from './AnalisisMOTab'
 import { ValidarMOTab } from './ValidarMOTab'
 import { CasosPanel } from './CasosPanel'
+import { FirmaConductualTab } from '../FirmaConductual/FirmaConductualTab'
 
-type SubTab = 'analisis' | 'validar' | 'buscar' | 'casos'
+type SubTab = 'analisis' | 'validar' | 'buscar' | 'firma' | 'casos'
 
 export const InteligenciaMOTab = () => {
     const [subTab, setSubTab] = useState<SubTab>('analisis')
@@ -15,6 +16,7 @@ export const InteligenciaMOTab = () => {
             <InteligenciaSubTabs activo={subTab} onChange={setSubTab} />
             {subTab === 'analisis' && <AnalisisMOTab />}
             {subTab === 'validar' && <ValidarMOTab />}
+            {subTab === 'firma' && <FirmaConductualTab />}
             {subTab === 'casos' && <CasosPanel />}
         </NeonPanel>
     )

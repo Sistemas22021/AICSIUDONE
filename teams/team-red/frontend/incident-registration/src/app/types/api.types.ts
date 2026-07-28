@@ -225,3 +225,30 @@ export interface RechazarPropuestaMoPayload {
   clasificacionManual: string
   justificacion: string
 }
+
+// ─── Firma conductual ─────────────────────────────────────────────────────────
+
+export interface FirmaConductual {
+  id: number
+  expedienteId: number
+  folioExpediente: string
+  version: number
+  vigente: boolean
+  comportamientoPreDelictivo: string | null
+  metodoAproximacion: string | null
+  metodoAtaque: string | null
+  comportamientoPostDelictivo: string | null
+  elementosDistintivos: string | null
+  analistaId: string
+  analistaNombre: string
+  fechaRegistro: string
+}
+
+export interface FirmaConductualPayload {
+  analistaId: string
+  comportamientoPreDelictivo?: string
+  metodoAproximacion?: string
+  metodoAtaque?: string
+  comportamientoPostDelictivo?: string
+  elementosDistintivos?: string
+}
