@@ -6,7 +6,10 @@ import lombok.*;
 
 import java.util.List;
 
+import org.hibernate.envers.Audited;
+
 @Entity
+@Audited
 @Getter
 @Setter
 @NoArgsConstructor
