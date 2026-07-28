@@ -3,10 +3,10 @@ package com.guardia.core.service;
 
 import com.guardia.core.dto.request.UsuarioRequest;
 import com.guardia.core.dto.response.UsuarioResponse;
-import com.guardia.core.exception.BusinessException;
 import com.guardia.core.exception.ResourceNotFoundException;
 import com.guardia.core.model.Usuario;
 import com.guardia.core.repository.UsuarioRepository;
+import com.guardia.core.security.PasswordHasher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -16,18 +16,24 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 /**
  * Pruebas unitarias para {@link UsuarioServiceImpl}.
- * Aísla la capa de servicio mockeando {@link UsuarioRepository}, sin levantar contexto de Spring.
+ *
+ * <p>La entidad {@code Usuario} refleja la tabla compartida {@code users} del
+ * servicio de SSO: id UUID (no autoincremental) y campos username/password/
+ * fullName/profilePhotoUrl/rol. Este servicio ya no crea, autentica ni busca
+ * usuarios por identificación/correo (eso lo gestiona el auth-service); solo
+ * consulta, actualiza datos de perfil y elimina.</p>
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("UsuarioServiceImpl - Pruebas Unitarias")
@@ -36,83 +42,28 @@ class UsuarioServiceImplTest {
     @Mock
     private UsuarioRepository usuarioRepository;
 
+    @Mock
+    private PasswordHasher passwordHasher;
+
     @InjectMocks
     private UsuarioServiceImpl usuarioService;
 
+    private UUID usuarioId;
     private Usuario usuarioEjemplo;
-    private UsuarioRequest requestEjemplo;
 
     @BeforeEach
     void setUp() {
         // Arrange (fixture común): usuario persistido de referencia
+        usuarioId = UUID.randomUUID();
         usuarioEjemplo = Usuario.builder()
-                .id(1L)
-                .nombre("Juan Perez")
-                .identificacion("V-12345678")
-                .credenciales("clave-secreta")
-                .correo("juan.perez@guardia.com")
+                .id(usuarioId)
+                .username("jperez")
+                .password("hash-bcrypt")
+                .fullName("Juan Perez")
+                .profilePhotoUrl("https://cdn.example.com/jperez.png")
+                .createdAt(OffsetDateTime.now())
+                .rol("OFICIAL")
                 .build();
-
-        requestEjemplo = new UsuarioRequest(
-                "Juan Perez",
-                "V-12345678",
-                "clave-secreta",
-                "juan.perez@guardia.com"
-        );
-    }
-
-    @Nested
-    @DisplayName("crear()")
-    class Crear {
-
-        @Test
-        @DisplayName("Debe crear un usuario exitosamente cuando identificación y correo son únicos")
-        void debeCrearUsuarioExitosamente() {
-            // Arrange
-            when(usuarioRepository.existsByIdentificacion(requestEjemplo.identificacion())).thenReturn(false);
-            when(usuarioRepository.existsByCorreo(requestEjemplo.correo())).thenReturn(false);
-            when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuarioEjemplo);
-
-            // Act
-            UsuarioResponse resultado = usuarioService.crear(requestEjemplo);
-
-            // Assert
-            assertThat(resultado).isNotNull();
-            assertThat(resultado.id()).isEqualTo(1L);
-            assertThat(resultado.nombre()).isEqualTo("Juan Perez");
-            assertThat(resultado.identificacion()).isEqualTo("V-12345678");
-            assertThat(resultado.correo()).isEqualTo("juan.perez@guardia.com");
-            verify(usuarioRepository, times(1)).save(any(Usuario.class));
-        }
-
-        @Test
-        @DisplayName("Debe lanzar BusinessException cuando la identificación ya existe")
-        void debeLanzarExcepcionCuandoIdentificacionYaExiste() {
-            // Arrange
-            when(usuarioRepository.existsByIdentificacion(requestEjemplo.identificacion())).thenReturn(true);
-
-            // Act & Assert
-            assertThatThrownBy(() -> usuarioService.crear(requestEjemplo))
-                    .isInstanceOf(BusinessException.class)
-                    .hasMessage("Ya existe un usuario con esa identificación.");
-
-            verify(usuarioRepository, never()).save(any(Usuario.class));
-        }
-
-        @Test
-        @DisplayName("Debe lanzar BusinessException cuando el correo ya existe")
-        void debeLanzarExcepcionCuandoCorreoYaExiste() {
-            // Arrange
-            when(usuarioRepository.existsByIdentificacion(requestEjemplo.identificacion())).thenReturn(false);
-            when(usuarioRepository.existsByCorreo(requestEjemplo.correo())).thenReturn(true);
-
-            // Act & Assert
-            assertThatThrownBy(() -> usuarioService.crear(requestEjemplo))
-                    .isInstanceOf(BusinessException.class)
-                    .hasMessage("Ya existe un usuario con ese correo.");
-
-            verify(usuarioRepository, never()).save(any(Usuario.class));
-        }
     }
 
     @Nested
@@ -123,56 +74,59 @@ class UsuarioServiceImplTest {
         @DisplayName("Debe retornar el usuario cuando el id existe")
         void debeRetornarUsuarioCuandoExiste() {
             // Arrange
-            when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuarioEjemplo));
+            when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuarioEjemplo));
 
             // Act
-            UsuarioResponse resultado = usuarioService.obtenerPorId(1L);
+            UsuarioResponse resultado = usuarioService.obtenerPorId(usuarioId);
 
             // Assert
-            assertThat(resultado.id()).isEqualTo(1L);
-            assertThat(resultado.nombre()).isEqualTo("Juan Perez");
+            assertThat(resultado.id()).isEqualTo(usuarioId);
+            assertThat(resultado.username()).isEqualTo("jperez");
+            assertThat(resultado.fullName()).isEqualTo("Juan Perez");
+            assertThat(resultado.rol()).isEqualTo("OFICIAL");
         }
 
         @Test
         @DisplayName("Debe lanzar ResourceNotFoundException cuando el id no existe")
         void debeLanzarExcepcionCuandoIdNoExiste() {
             // Arrange
-            when(usuarioRepository.findById(99L)).thenReturn(Optional.empty());
+            UUID inexistente = UUID.randomUUID();
+            when(usuarioRepository.findById(inexistente)).thenReturn(Optional.empty());
 
             // Act & Assert
-            assertThatThrownBy(() -> usuarioService.obtenerPorId(99L))
+            assertThatThrownBy(() -> usuarioService.obtenerPorId(inexistente))
                     .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessage("Usuario con id 99 no encontrado.");
+                    .hasMessage("Usuario con id " + inexistente + " no encontrado.");
         }
     }
 
     @Nested
-    @DisplayName("obtenerPorIdentificacion()")
-    class ObtenerPorIdentificacion {
+    @DisplayName("obtenerPorUsername()")
+    class ObtenerPorUsername {
 
         @Test
-        @DisplayName("Debe retornar el usuario cuando la identificación existe")
-        void debeRetornarUsuarioCuandoIdentificacionExiste() {
+        @DisplayName("Debe retornar el usuario cuando el username existe")
+        void debeRetornarUsuarioCuandoUsernameExiste() {
             // Arrange
-            when(usuarioRepository.findByIdentificacion("V-12345678")).thenReturn(Optional.of(usuarioEjemplo));
+            when(usuarioRepository.findByUsername("jperez")).thenReturn(Optional.of(usuarioEjemplo));
 
             // Act
-            UsuarioResponse resultado = usuarioService.obtenerPorIdentificacion("V-12345678");
+            UsuarioResponse resultado = usuarioService.obtenerPorUsername("jperez");
 
             // Assert
-            assertThat(resultado.identificacion()).isEqualTo("V-12345678");
+            assertThat(resultado.username()).isEqualTo("jperez");
         }
 
         @Test
         @DisplayName("Debe lanzar ResourceNotFoundException con mensaje específico cuando no existe")
-        void debeLanzarExcepcionCuandoIdentificacionNoExiste() {
+        void debeLanzarExcepcionCuandoUsernameNoExiste() {
             // Arrange
-            when(usuarioRepository.findByIdentificacion("X-000")).thenReturn(Optional.empty());
+            when(usuarioRepository.findByUsername("fantasma")).thenReturn(Optional.empty());
 
             // Act & Assert
-            assertThatThrownBy(() -> usuarioService.obtenerPorIdentificacion("X-000"))
+            assertThatThrownBy(() -> usuarioService.obtenerPorUsername("fantasma"))
                     .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessage("Usuario con identificación X-000 no encontrado.");
+                    .hasMessage("Usuario con username 'fantasma' no encontrado.");
         }
     }
 
@@ -180,8 +134,8 @@ class UsuarioServiceImplTest {
     @DisplayName("obtenerTodos() debe retornar la lista completa mapeada a UsuarioResponse")
     void debeRetornarTodosLosUsuarios() {
         // Arrange
-        Usuario usuario2 = Usuario.builder().id(2L).nombre("Ana Diaz")
-                .identificacion("V-8888").credenciales("clave2").correo("ana@guardia.com").build();
+        Usuario usuario2 = Usuario.builder().id(UUID.randomUUID()).username("adiaz")
+                .password("hash2").fullName("Ana Diaz").rol("ANALISTA").build();
         when(usuarioRepository.findAll()).thenReturn(List.of(usuarioEjemplo, usuario2));
 
         // Act
@@ -189,7 +143,7 @@ class UsuarioServiceImplTest {
 
         // Assert
         assertThat(resultado).hasSize(2);
-        assertThat(resultado).extracting(UsuarioResponse::nombre)
+        assertThat(resultado).extracting(UsuarioResponse::fullName)
                 .containsExactly("Juan Perez", "Ana Diaz");
     }
 
@@ -198,31 +152,48 @@ class UsuarioServiceImplTest {
     class Actualizar {
 
         @Test
-        @DisplayName("Debe actualizar los datos del usuario existente")
+        @DisplayName("Debe actualizar el nombre completo y la foto de perfil cuando ambos vienen informados")
         void debeActualizarUsuarioExistente() {
             // Arrange
             UsuarioRequest requestActualizado = new UsuarioRequest(
-                    "Juan Perez Actualizado", "V-12345678", "nueva-clave", "nuevo@guardia.com");
-            when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuarioEjemplo));
+                    "jperez", "clave-no-usada", "Juan Perez Actualizado", "https://cdn.example.com/nueva.png");
+            when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuarioEjemplo));
             when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
 
             // Act
-            UsuarioResponse resultado = usuarioService.actualizar(1L, requestActualizado);
+            UsuarioResponse resultado = usuarioService.actualizar(usuarioId, requestActualizado);
 
             // Assert
-            assertThat(resultado.nombre()).isEqualTo("Juan Perez Actualizado");
-            assertThat(resultado.correo()).isEqualTo("nuevo@guardia.com");
+            assertThat(resultado.fullName()).isEqualTo("Juan Perez Actualizado");
+            assertThat(resultado.profilePhotoUrl()).isEqualTo("https://cdn.example.com/nueva.png");
             verify(usuarioRepository).save(usuarioEjemplo);
+        }
+
+        @Test
+        @DisplayName("Debe conservar el nombre completo actual cuando el nuevo viene en blanco")
+        void debeConservarNombreCuandoVieneEnBlanco() {
+            // Arrange
+            UsuarioRequest requestActualizado = new UsuarioRequest("jperez", "clave-no-usada", "   ", null);
+            when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuarioEjemplo));
+            when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            // Act
+            UsuarioResponse resultado = usuarioService.actualizar(usuarioId, requestActualizado);
+
+            // Assert: al ser blank, no se sobreescribe el fullName original
+            assertThat(resultado.fullName()).isEqualTo("Juan Perez");
         }
 
         @Test
         @DisplayName("Debe lanzar ResourceNotFoundException al actualizar un usuario inexistente")
         void debeLanzarExcepcionAlActualizarUsuarioInexistente() {
             // Arrange
-            when(usuarioRepository.findById(99L)).thenReturn(Optional.empty());
+            UUID inexistente = UUID.randomUUID();
+            UsuarioRequest request = new UsuarioRequest("x", "clavesegura", "Nombre", null);
+            when(usuarioRepository.findById(inexistente)).thenReturn(Optional.empty());
 
             // Act & Assert
-            assertThatThrownBy(() -> usuarioService.actualizar(99L, requestEjemplo))
+            assertThatThrownBy(() -> usuarioService.actualizar(inexistente, request))
                     .isInstanceOf(ResourceNotFoundException.class);
             verify(usuarioRepository, never()).save(any());
         }
@@ -236,86 +207,26 @@ class UsuarioServiceImplTest {
         @DisplayName("Debe eliminar el usuario cuando existe")
         void debeEliminarUsuarioExistente() {
             // Arrange
-            when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuarioEjemplo));
+            when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuarioEjemplo));
 
             // Act
-            usuarioService.eliminar(1L);
+            usuarioService.eliminar(usuarioId);
 
             // Assert
-            verify(usuarioRepository, times(1)).deleteById(1L);
+            verify(usuarioRepository, times(1)).deleteById(usuarioId);
         }
 
         @Test
         @DisplayName("Debe lanzar ResourceNotFoundException y no eliminar cuando no existe")
         void debeLanzarExcepcionAlEliminarUsuarioInexistente() {
             // Arrange
-            when(usuarioRepository.findById(99L)).thenReturn(Optional.empty());
+            UUID inexistente = UUID.randomUUID();
+            when(usuarioRepository.findById(inexistente)).thenReturn(Optional.empty());
 
             // Act & Assert
-            assertThatThrownBy(() -> usuarioService.eliminar(99L))
+            assertThatThrownBy(() -> usuarioService.eliminar(inexistente))
                     .isInstanceOf(ResourceNotFoundException.class);
-            verify(usuarioRepository, never()).deleteById(anyLong());
-        }
-    }
-
-    @Nested
-    @DisplayName("autenticar()")
-    class Autenticar {
-
-        @Test
-        @DisplayName("Debe retornar true cuando las credenciales coinciden")
-        void debeRetornarTrueCuandoCredencialesCoinciden() {
-            // Arrange
-            when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuarioEjemplo));
-
-            // Act
-            boolean resultado = usuarioService.autenticar(1L, "clave-secreta");
-
-            // Assert
-            assertThat(resultado).isTrue();
-        }
-
-        @Test
-        @DisplayName("Debe retornar false cuando las credenciales no coinciden")
-        void debeRetornarFalseCuandoCredencialesNoCoinciden() {
-            // Arrange
-            when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuarioEjemplo));
-
-            // Act
-            boolean resultado = usuarioService.autenticar(1L, "clave-incorrecta");
-
-            // Assert
-            assertThat(resultado).isFalse();
-        }
-    }
-
-    @Nested
-    @DisplayName("obtenerPorCorreo()")
-    class ObtenerPorCorreo {
-
-        @Test
-        @DisplayName("Debe retornar el usuario cuando el correo existe")
-        void debeRetornarUsuarioCuandoCorreoExiste() {
-            // Arrange
-            when(usuarioRepository.findByCorreo("juan.perez@guardia.com")).thenReturn(Optional.of(usuarioEjemplo));
-
-            // Act
-            UsuarioResponse resultado = usuarioService.obtenerPorCorreo("juan.perez@guardia.com");
-
-            // Assert
-            assertThat(resultado.correo()).isEqualTo("juan.perez@guardia.com");
-        }
-
-        @Test
-        @DisplayName("Debe lanzar ResourceNotFoundException cuando el correo no existe")
-        void debeLanzarExcepcionCuandoCorreoNoExiste() {
-            // Arrange
-            when(usuarioRepository.findByCorreo("noexiste@guardia.com")).thenReturn(Optional.empty());
-
-            // Act & Assert
-            assertThatThrownBy(() -> usuarioService.obtenerPorCorreo("noexiste@guardia.com"))
-                    .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessage("Usuario con correo noexiste@guardia.com no encontrado.");
+            verify(usuarioRepository, never()).deleteById(any());
         }
     }
 }

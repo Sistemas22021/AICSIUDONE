@@ -22,9 +22,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -32,8 +32,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 /**
- * Pruebas unitarias para {@link PropuestaModusOperandiServiceImpl} (HU3 -
- * "Validación experta del MO propuesto").
+ * Pruebas unitarias para {@link PropuestaModusOperandiServiceImpl} (HU3 - validación experta del MO).
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("PropuestaModusOperandiServiceImpl - Pruebas Unitarias")
@@ -45,24 +44,21 @@ class PropuestaModusOperandiServiceImplTest {
     @InjectMocks
     private PropuestaModusOperandiServiceImpl propuestaService;
 
-    private Expediente expedienteEjemplo;
+    private UUID analistaId;
     private Usuario analistaEjemplo;
+    private Expediente expedienteEjemplo;
     private PropuestaModusOperandi propuestaEjemplo;
 
     @BeforeEach
     void setUp() {
-        // Arrange (fixture común)
+        analistaId = UUID.randomUUID();
+        analistaEjemplo = Usuario.builder()
+                .id(analistaId).username("aruiz").password("hash").fullName("Analista Ruiz").rol("ANALISTA").build();
         expedienteEjemplo = Expediente.builder().id(1L).folio("EXP-2026-AAAA1111").build();
-        analistaEjemplo = Usuario.builder().id(1L).nombre("Analista Ruiz").identificacion("V-1").correo("r@x.com").build();
         propuestaEjemplo = PropuestaModusOperandi.builder()
-                .id(1L)
-                .expediente(expedienteEjemplo)
-                .version(1)
-                .vigente(true)
-                .estado(EstadoPropuestaMO.PENDIENTE)
-                .caracteristicasComunes("Ingreso por ventana trasera")
-                .expedientesSimilares(new ArrayList<>())
-                .revisadoPorExperto(false)
+                .id(50L).expediente(expedienteEjemplo).version(1).vigente(true)
+                .estado(EstadoPropuestaMO.PENDIENTE).revisadoPorExperto(false)
+                .expedientesSimilares(List.of())
                 .build();
     }
 
@@ -73,40 +69,50 @@ class PropuestaModusOperandiServiceImplTest {
         @Test
         @DisplayName("Debe retornar la propuesta vigente cuando existe")
         void debeRetornarPropuestaVigente() {
-            // Arrange
             when(propuestaRepository.findByExpedienteIdAndVigenteTrue(1L)).thenReturn(Optional.of(propuestaEjemplo));
 
-            // Act
             PropuestaModusOperandiResponse resultado = propuestaService.obtenerVigentePorExpediente(1L);
 
-            // Assert
-            assertThat(resultado.vigente()).isTrue();
+            assertThat(resultado.id()).isEqualTo(50L);
             assertThat(resultado.folioExpediente()).isEqualTo("EXP-2026-AAAA1111");
+            assertThat(resultado.estado()).isEqualTo(EstadoPropuestaMO.PENDIENTE);
         }
 
         @Test
         @DisplayName("Debe lanzar ResourceNotFoundException cuando no hay propuesta vigente")
         void debeLanzarExcepcionCuandoNoHayVigente() {
-            // Arrange
             when(propuestaRepository.findByExpedienteIdAndVigenteTrue(99L)).thenReturn(Optional.empty());
 
-            // Act & Assert
             assertThatThrownBy(() -> propuestaService.obtenerVigentePorExpediente(99L))
-                    .isInstanceOf(ResourceNotFoundException.class);
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("99");
+        }
+
+        @Test
+        @DisplayName("Debe lanzar BusinessException cuando la propuesta no tiene expediente asociado")
+        void debeLanzarExcepcionCuandoSinExpediente() {
+            PropuestaModusOperandi huerfana = PropuestaModusOperandi.builder()
+                    .id(60L).expediente(null).version(1).estado(EstadoPropuestaMO.PENDIENTE).build();
+            when(propuestaRepository.findByExpedienteIdAndVigenteTrue(1L)).thenReturn(Optional.of(huerfana));
+
+            assertThatThrownBy(() -> propuestaService.obtenerVigentePorExpediente(1L))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining("no tiene expediente asociado");
         }
     }
 
     @Test
-    @DisplayName("historialPorExpediente() debe retornar todas las versiones ordenadas descendentemente")
-    void debeRetornarHistorialDeVersiones() {
-        // Arrange
-        when(propuestaRepository.findByExpedienteIdOrderByVersionDesc(1L)).thenReturn(List.of(propuestaEjemplo));
+    @DisplayName("historialPorExpediente() debe retornar el historial ordenado por versión descendente")
+    void debeRetornarHistorial() {
+        PropuestaModusOperandi v2 = PropuestaModusOperandi.builder()
+                .id(51L).expediente(expedienteEjemplo).version(2).estado(EstadoPropuestaMO.PENDIENTE)
+                .expedientesSimilares(List.of()).build();
+        when(propuestaRepository.findByExpedienteIdOrderByVersionDesc(1L)).thenReturn(List.of(v2, propuestaEjemplo));
 
-        // Act
         List<PropuestaModusOperandiResponse> resultado = propuestaService.historialPorExpediente(1L);
 
-        // Assert
-        assertThat(resultado).hasSize(1);
+        assertThat(resultado).hasSize(2);
+        assertThat(resultado.get(0).version()).isEqualTo(2);
     }
 
     @Nested
@@ -114,46 +120,40 @@ class PropuestaModusOperandiServiceImplTest {
     class Aprobar {
 
         @Test
-        @DisplayName("Debe aprobar la propuesta y marcarla como revisada por el analista")
-        void debeAprobarPropuestaExitosamente() {
-            // Arrange
-            AprobarPropuestaMoRequest request = new AprobarPropuestaMoRequest(1L);
-            when(propuestaRepository.findById(1L)).thenReturn(Optional.of(propuestaEjemplo));
-            when(usuarioRepository.findById(1L)).thenReturn(Optional.of(analistaEjemplo));
+        @DisplayName("Debe aprobar la propuesta y marcarla como revisada por experto")
+        void debeAprobarExitosamente() {
+            AprobarPropuestaMoRequest request = new AprobarPropuestaMoRequest(analistaId);
+            when(propuestaRepository.findById(50L)).thenReturn(Optional.of(propuestaEjemplo));
+            when(usuarioRepository.findById(analistaId)).thenReturn(Optional.of(analistaEjemplo));
             when(propuestaRepository.save(any(PropuestaModusOperandi.class))).thenAnswer(inv -> inv.getArgument(0));
 
-            // Act
-            PropuestaModusOperandiResponse resultado = propuestaService.aprobar(1L, request);
+            PropuestaModusOperandiResponse resultado = propuestaService.aprobar(50L, request);
 
-            // Assert
             assertThat(resultado.estado()).isEqualTo(EstadoPropuestaMO.APROBADA);
             assertThat(resultado.revisadoPorExperto()).isTrue();
-            assertThat(resultado.analistaRevisorId()).isEqualTo(1L);
+            assertThat(resultado.analistaRevisorNombre()).isEqualTo("Analista Ruiz");
         }
 
         @Test
         @DisplayName("Debe lanzar ResourceNotFoundException cuando la propuesta no existe")
         void debeLanzarExcepcionCuandoPropuestaNoExiste() {
-            // Arrange
-            AprobarPropuestaMoRequest request = new AprobarPropuestaMoRequest(1L);
-            when(propuestaRepository.findById(99L)).thenReturn(Optional.empty());
+            AprobarPropuestaMoRequest request = new AprobarPropuestaMoRequest(analistaId);
+            when(propuestaRepository.findById(999L)).thenReturn(Optional.empty());
 
-            // Act & Assert
-            assertThatThrownBy(() -> propuestaService.aprobar(99L, request))
+            assertThatThrownBy(() -> propuestaService.aprobar(999L, request))
                     .isInstanceOf(ResourceNotFoundException.class);
-            verify(usuarioRepository, never()).findById(any());
+            verifyNoInteractions(usuarioRepository);
         }
 
         @Test
         @DisplayName("Debe lanzar ResourceNotFoundException cuando el analista no existe")
         void debeLanzarExcepcionCuandoAnalistaNoExiste() {
-            // Arrange
-            AprobarPropuestaMoRequest request = new AprobarPropuestaMoRequest(77L);
-            when(propuestaRepository.findById(1L)).thenReturn(Optional.of(propuestaEjemplo));
-            when(usuarioRepository.findById(77L)).thenReturn(Optional.empty());
+            UUID inexistente = UUID.randomUUID();
+            AprobarPropuestaMoRequest request = new AprobarPropuestaMoRequest(inexistente);
+            when(propuestaRepository.findById(50L)).thenReturn(Optional.of(propuestaEjemplo));
+            when(usuarioRepository.findById(inexistente)).thenReturn(Optional.empty());
 
-            // Act & Assert
-            assertThatThrownBy(() -> propuestaService.aprobar(1L, request))
+            assertThatThrownBy(() -> propuestaService.aprobar(50L, request))
                     .isInstanceOf(ResourceNotFoundException.class);
             verify(propuestaRepository, never()).save(any());
         }
@@ -164,35 +164,34 @@ class PropuestaModusOperandiServiceImplTest {
     class Corregir {
 
         @Test
-        @DisplayName("Debe sobreescribir únicamente los campos de clasificación enviados")
-        void debeCorregirSoloLosCamposEnviados() {
-            // Arrange: solo se envía posibleFirma; caracteristicasComunes y consistenciaHorarioZona quedan null
+        @DisplayName("Debe sobreescribir solo los campos de clasificación enviados distintos de null")
+        void debeCorregirCamposEnviados() {
+            propuestaEjemplo.setCaracteristicasComunes("original");
+            propuestaEjemplo.setPosibleFirma("firma original");
             CorregirPropuestaMoRequest request = new CorregirPropuestaMoRequest(
-                    1L, null, "Firma distintiva: forzado de cerraduras", null, "Corrección tras revisión de campo");
-            when(propuestaRepository.findById(1L)).thenReturn(Optional.of(propuestaEjemplo));
-            when(usuarioRepository.findById(1L)).thenReturn(Optional.of(analistaEjemplo));
+                    analistaId, "nuevas características", null, "zona consistente", "Justificación obligatoria");
+            when(propuestaRepository.findById(50L)).thenReturn(Optional.of(propuestaEjemplo));
+            when(usuarioRepository.findById(analistaId)).thenReturn(Optional.of(analistaEjemplo));
             when(propuestaRepository.save(any(PropuestaModusOperandi.class))).thenAnswer(inv -> inv.getArgument(0));
 
-            // Act
-            PropuestaModusOperandiResponse resultado = propuestaService.corregir(1L, request);
+            PropuestaModusOperandiResponse resultado = propuestaService.corregir(50L, request);
 
-            // Assert
             assertThat(resultado.estado()).isEqualTo(EstadoPropuestaMO.CORREGIDA);
-            assertThat(resultado.posibleFirma()).isEqualTo("Firma distintiva: forzado de cerraduras");
-            // El valor original se conserva porque el campo no vino informado en la solicitud
-            assertThat(resultado.caracteristicasComunes()).isEqualTo("Ingreso por ventana trasera");
-            assertThat(resultado.justificacionRevision()).isEqualTo("Corrección tras revisión de campo");
+            assertThat(resultado.caracteristicasComunes()).isEqualTo("nuevas características");
+            assertThat(resultado.posibleFirma()).isEqualTo("firma original"); // no enviado -> se conserva
+            assertThat(resultado.consistenciaHorarioZona()).isEqualTo("zona consistente");
+            assertThat(resultado.justificacionRevision()).isEqualTo("Justificación obligatoria");
+            assertThat(resultado.revisadoPorExperto()).isTrue();
         }
 
         @Test
         @DisplayName("Debe lanzar ResourceNotFoundException cuando la propuesta no existe")
         void debeLanzarExcepcionCuandoPropuestaNoExiste() {
-            // Arrange
-            CorregirPropuestaMoRequest request = new CorregirPropuestaMoRequest(1L, "a", "b", "c", "justificación");
-            when(propuestaRepository.findById(99L)).thenReturn(Optional.empty());
+            CorregirPropuestaMoRequest request = new CorregirPropuestaMoRequest(
+                    analistaId, "x", null, null, "Justificación");
+            when(propuestaRepository.findById(999L)).thenReturn(Optional.empty());
 
-            // Act & Assert
-            assertThatThrownBy(() -> propuestaService.corregir(99L, request))
+            assertThatThrownBy(() -> propuestaService.corregir(999L, request))
                     .isInstanceOf(ResourceNotFoundException.class);
         }
     }
@@ -203,48 +202,32 @@ class PropuestaModusOperandiServiceImplTest {
 
         @Test
         @DisplayName("Debe rechazar la propuesta y registrar la clasificación manual")
-        void debeRechazarPropuestaExitosamente() {
-            // Arrange
+        void debeRechazarExitosamente() {
             RechazarPropuestaMoRequest request = new RechazarPropuestaMoRequest(
-                    1L, "Hurto simple sin patrón asociado", "La IA sobreestimó la similitud");
-            when(propuestaRepository.findById(1L)).thenReturn(Optional.of(propuestaEjemplo));
-            when(usuarioRepository.findById(1L)).thenReturn(Optional.of(analistaEjemplo));
+                    analistaId, "ROBO_SIMPLE", "El patrón no coincide con los casos previos");
+            when(propuestaRepository.findById(50L)).thenReturn(Optional.of(propuestaEjemplo));
+            when(usuarioRepository.findById(analistaId)).thenReturn(Optional.of(analistaEjemplo));
             when(propuestaRepository.save(any(PropuestaModusOperandi.class))).thenAnswer(inv -> inv.getArgument(0));
 
-            // Act
-            PropuestaModusOperandiResponse resultado = propuestaService.rechazar(1L, request);
+            PropuestaModusOperandiResponse resultado = propuestaService.rechazar(50L, request);
 
-            // Assert
             assertThat(resultado.estado()).isEqualTo(EstadoPropuestaMO.RECHAZADA);
-            assertThat(resultado.clasificacionManual()).isEqualTo("Hurto simple sin patrón asociado");
-            assertThat(resultado.justificacionRevision()).isEqualTo("La IA sobreestimó la similitud");
+            assertThat(resultado.clasificacionManual()).isEqualTo("ROBO_SIMPLE");
+            assertThat(resultado.justificacionRevision()).isEqualTo("El patrón no coincide con los casos previos");
+            assertThat(resultado.revisadoPorExperto()).isTrue();
         }
 
         @Test
         @DisplayName("Debe lanzar ResourceNotFoundException cuando el analista no existe")
         void debeLanzarExcepcionCuandoAnalistaNoExiste() {
-            // Arrange
-            RechazarPropuestaMoRequest request = new RechazarPropuestaMoRequest(77L, "manual", "justificación");
-            when(propuestaRepository.findById(1L)).thenReturn(Optional.of(propuestaEjemplo));
-            when(usuarioRepository.findById(77L)).thenReturn(Optional.empty());
+            UUID inexistente = UUID.randomUUID();
+            RechazarPropuestaMoRequest request = new RechazarPropuestaMoRequest(inexistente, "X", "Justificación");
+            when(propuestaRepository.findById(50L)).thenReturn(Optional.of(propuestaEjemplo));
+            when(usuarioRepository.findById(inexistente)).thenReturn(Optional.empty());
 
-            // Act & Assert
-            assertThatThrownBy(() -> propuestaService.rechazar(1L, request))
+            assertThatThrownBy(() -> propuestaService.rechazar(50L, request))
                     .isInstanceOf(ResourceNotFoundException.class);
+            verify(propuestaRepository, never()).save(any());
         }
-    }
-
-    @Test
-    @DisplayName("toResponse() debe lanzar BusinessException cuando la propuesta no tiene expediente asociado")
-    void debeLanzarExcepcionCuandoPropuestaSinExpediente() {
-        // Arrange: propuesta huérfana, sin expediente (caso de datos corruptos/edge case)
-        PropuestaModusOperandi huerfana = PropuestaModusOperandi.builder()
-                .id(2L).expediente(null).expedientesSimilares(new ArrayList<>()).build();
-        when(propuestaRepository.findByExpedienteIdAndVigenteTrue(1L)).thenReturn(Optional.of(huerfana));
-
-        // Act & Assert
-        assertThatThrownBy(() -> propuestaService.obtenerVigentePorExpediente(1L))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("no tiene expediente asociado");
     }
 }
