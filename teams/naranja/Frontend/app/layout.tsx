@@ -1,3 +1,4 @@
+import AuthGuard from '@/components/AuthGuard';
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
@@ -38,7 +39,9 @@ export default function RootLayout({
   return (
     <html lang="es" className="dark bg-background" suppressHydrationWarning>
       <body className="font-sans antialiased bg-background text-foreground">
-        {children}
+        <AuthGuard>
+          {children}
+        </AuthGuard>
         <Toaster />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
