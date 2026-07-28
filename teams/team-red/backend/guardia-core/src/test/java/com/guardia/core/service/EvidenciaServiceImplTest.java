@@ -22,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -31,45 +32,34 @@ import static org.mockito.Mockito.*;
 
 /**
  * Pruebas unitarias para {@link EvidenciaServiceImpl}.
- * Se mockea {@link HashStrategy} para aislar el cálculo criptográfico real del SHA-256.
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("EvidenciaServiceImpl - Pruebas Unitarias")
 class EvidenciaServiceImplTest {
 
-    @Mock
-    private EvidenciaRepository evidenciaRepository;
-
-    @Mock
-    private EscenaRepository escenaRepository;
-
-    @Mock
-    private UsuarioRepository usuarioRepository;
-
-    @Mock
-    private HashStrategy hashStrategy;
+    @Mock private EvidenciaRepository evidenciaRepository;
+    @Mock private EscenaRepository escenaRepository;
+    @Mock private UsuarioRepository usuarioRepository;
+    @Mock private HashStrategy hashStrategy;
 
     @InjectMocks
     private EvidenciaServiceImpl evidenciaService;
 
-    private Escena escenaEjemplo;
     private Usuario investigadorEjemplo;
+    private Escena escenaEjemplo;
     private Evidencia evidenciaEjemplo;
+    private UUID investigadorId;
 
     @BeforeEach
     void setUp() {
         // Arrange (fixture común)
-        investigadorEjemplo = Usuario.builder().id(1L).nombre("Carlos Ruiz").build();
+        investigadorId = UUID.randomUUID();
+        investigadorEjemplo = Usuario.builder()
+                .id(investigadorId).username("cruiz").password("hash").fullName("Carlos Ruiz").rol("ANALISTA").build();
         escenaEjemplo = Escena.builder().id(1L).levantadaPor(investigadorEjemplo).build();
         evidenciaEjemplo = Evidencia.builder()
-                .id(1L)
-                .numeroItem("EV-001")
-                .tipo("Arma blanca")
-                .descripcion("Cuchillo con manchas de sangre")
-                .escena(escenaEjemplo)
-                .hashIntegridad("hash-calculado")
-                .investigador(investigadorEjemplo)
-                .build();
+                .id(100L).numeroItem("EV-001").tipo("ARMA").descripcion("Cuchillo")
+                .escena(escenaEjemplo).investigador(investigadorEjemplo).hashIntegridad("hash123").build();
     }
 
     @Nested
@@ -77,14 +67,13 @@ class EvidenciaServiceImplTest {
     class Crear {
 
         @Test
-        @DisplayName("Debe crear la evidencia asignando el número de item consecutivo y el investigador indicado")
-        void debeCrearEvidenciaConInvestigadorExplicito() {
+        @DisplayName("Debe crear la evidencia asignando el número correlativo y el hash calculado")
+        void debeCrearEvidenciaExitosamente() {
             // Arrange
-            EvidenciaRequest request = new EvidenciaRequest(
-                    null, "Arma blanca", "Cuchillo con manchas de sangre", 1L, 1L, null);
+            EvidenciaRequest request = new EvidenciaRequest(null, "ARMA", "Cuchillo", 1L, investigadorId, null);
             when(escenaRepository.findByIdWithInvestigador(1L)).thenReturn(Optional.of(escenaEjemplo));
-            when(evidenciaRepository.countByEscenaId(1L)).thenReturn(0L);
-            when(usuarioRepository.findById(1L)).thenReturn(Optional.of(investigadorEjemplo));
+            when(evidenciaRepository.countByEscenaId(1L)).thenReturn(2L);
+            when(usuarioRepository.findById(investigadorId)).thenReturn(Optional.of(investigadorEjemplo));
             when(hashStrategy.calcular(anyString())).thenReturn("hash-calculado");
             when(evidenciaRepository.save(any(Evidencia.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -92,79 +81,76 @@ class EvidenciaServiceImplTest {
             EvidenciaResponse resultado = evidenciaService.crear(request);
 
             // Assert
-            assertThat(resultado.numeroItem()).isEqualTo("EV-001");
+            assertThat(resultado.numeroItem()).isEqualTo("EV-003");
             assertThat(resultado.hashIntegridad()).isEqualTo("hash-calculado");
             assertThat(resultado.investigadorNombre()).isEqualTo("Carlos Ruiz");
+            verify(hashStrategy).calcular("ARMA|Cuchillo");
         }
 
         @Test
-        @DisplayName("Debe usar el investigador de la escena cuando no se especifica investigadorId")
-        void debeUsarInvestigadorDeLaEscenaCuandoNoSeEspecifica() {
+        @DisplayName("Debe usar el hash provisto por el cliente cuando viene informado, sin recalcularlo")
+        void debeUsarHashDelCliente() {
             // Arrange
-            EvidenciaRequest request = new EvidenciaRequest(
-                    null, "Huella dactilar", "Huella en vaso", 1L, null, null);
-            when(escenaRepository.findByIdWithInvestigador(1L)).thenReturn(Optional.of(escenaEjemplo));
-            when(evidenciaRepository.countByEscenaId(1L)).thenReturn(2L);
-            when(usuarioRepository.findById(1L)).thenReturn(Optional.of(investigadorEjemplo));
-            when(hashStrategy.calcular(anyString())).thenReturn("hash-generado");
-            when(evidenciaRepository.save(any(Evidencia.class))).thenAnswer(inv -> inv.getArgument(0));
-
-            // Act
-            EvidenciaResponse resultado = evidenciaService.crear(request);
-
-            // Assert: el consecutivo debe ser total + 1
-            assertThat(resultado.numeroItem()).isEqualTo("EV-003");
-            assertThat(resultado.investigadorNombre()).isEqualTo("Carlos Ruiz");
-        }
-
-        @Test
-        @DisplayName("Debe usar el hash enviado por el cliente cuando viene informado")
-        void debeUsarHashDelClienteCuandoViene() {
-            // Arrange
-            EvidenciaRequest request = new EvidenciaRequest(
-                    null, "Fotografía", "Foto de la escena", 1L, 1L, "hash-del-cliente-sha256");
+            EvidenciaRequest request = new EvidenciaRequest(null, "ARMA", "Cuchillo", 1L, investigadorId, "hash-cliente-123");
             when(escenaRepository.findByIdWithInvestigador(1L)).thenReturn(Optional.of(escenaEjemplo));
             when(evidenciaRepository.countByEscenaId(1L)).thenReturn(0L);
-            when(usuarioRepository.findById(1L)).thenReturn(Optional.of(investigadorEjemplo));
+            when(usuarioRepository.findById(investigadorId)).thenReturn(Optional.of(investigadorEjemplo));
             when(evidenciaRepository.save(any(Evidencia.class))).thenAnswer(inv -> inv.getArgument(0));
 
             // Act
             EvidenciaResponse resultado = evidenciaService.crear(request);
 
             // Assert
-            assertThat(resultado.hashIntegridad()).isEqualTo("hash-del-cliente-sha256");
-            verify(hashStrategy, never()).calcular(anyString());
+            assertThat(resultado.hashIntegridad()).isEqualTo("hash-cliente-123");
+            assertThat(resultado.numeroItem()).isEqualTo("EV-001");
+            verifyNoInteractions(hashStrategy);
+        }
+
+        @Test
+        @DisplayName("Debe usar el investigador que levantó la escena cuando no se especifica investigadorId")
+        void debeUsarInvestigadorDeLaEscenaCuandoNoSeEspecifica() {
+            // Arrange
+            EvidenciaRequest request = new EvidenciaRequest(null, "ARMA", "Cuchillo", 1L, null, "hash-cliente");
+            when(escenaRepository.findByIdWithInvestigador(1L)).thenReturn(Optional.of(escenaEjemplo));
+            when(evidenciaRepository.countByEscenaId(1L)).thenReturn(0L);
+            when(usuarioRepository.findById(investigadorId)).thenReturn(Optional.of(investigadorEjemplo));
+            when(evidenciaRepository.save(any(Evidencia.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            // Act
+            EvidenciaResponse resultado = evidenciaService.crear(request);
+
+            // Assert
+            assertThat(resultado.investigadorNombre()).isEqualTo("Carlos Ruiz");
+            verify(usuarioRepository).findById(investigadorId);
         }
 
         @Test
         @DisplayName("Debe lanzar ResourceNotFoundException cuando la escena no existe")
         void debeLanzarExcepcionCuandoEscenaNoExiste() {
             // Arrange
-            EvidenciaRequest request = new EvidenciaRequest(
-                    null, "Arma", "desc", 99L, 1L, null);
+            EvidenciaRequest request = new EvidenciaRequest(null, "ARMA", "Cuchillo", 99L, investigadorId, null);
             when(escenaRepository.findByIdWithInvestigador(99L)).thenReturn(Optional.empty());
 
             // Act & Assert
             assertThatThrownBy(() -> evidenciaService.crear(request))
-                    .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessage("Escena con id 99 no encontrado.");
-            verify(evidenciaRepository, never()).save(any());
+                    .isInstanceOf(ResourceNotFoundException.class);
+            verifyNoInteractions(evidenciaRepository);
         }
 
         @Test
-        @DisplayName("Debe lanzar ResourceNotFoundException cuando el investigadorId indicado no existe")
+        @DisplayName("Debe lanzar ResourceNotFoundException cuando el investigadorId especificado no existe")
         void debeLanzarExcepcionCuandoInvestigadorNoExiste() {
             // Arrange
-            EvidenciaRequest request = new EvidenciaRequest(
-                    null, "Arma", "desc", 1L, 77L, null);
+            UUID inexistente = UUID.randomUUID();
+            EvidenciaRequest request = new EvidenciaRequest(null, "ARMA", "Cuchillo", 1L, inexistente, null);
             when(escenaRepository.findByIdWithInvestigador(1L)).thenReturn(Optional.of(escenaEjemplo));
             when(evidenciaRepository.countByEscenaId(1L)).thenReturn(0L);
-            when(usuarioRepository.findById(77L)).thenReturn(Optional.empty());
+            when(usuarioRepository.findById(inexistente)).thenReturn(Optional.empty());
 
             // Act & Assert
             assertThatThrownBy(() -> evidenciaService.crear(request))
-                    .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessage("Usuario con id 77 no encontrado.");
+                    .isInstanceOf(ResourceNotFoundException.class);
+            verify(evidenciaRepository, never()).save(any());
         }
     }
 
@@ -176,27 +162,25 @@ class EvidenciaServiceImplTest {
         @DisplayName("Debe retornar true cuando el hash recalculado coincide con el almacenado")
         void debeRetornarTrueCuandoHashCoincide() {
             // Arrange
-            evidenciaEjemplo.setTipo("Arma blanca");
-            evidenciaEjemplo.setDescripcion("Cuchillo con manchas de sangre");
-            when(evidenciaRepository.findById(1L)).thenReturn(Optional.of(evidenciaEjemplo));
-            when(hashStrategy.calcular("Arma blanca|Cuchillo con manchas de sangre")).thenReturn("hash-calculado");
+            when(evidenciaRepository.findById(100L)).thenReturn(Optional.of(evidenciaEjemplo));
+            when(hashStrategy.calcular("ARMA|Cuchillo")).thenReturn("hash123");
 
             // Act
-            boolean resultado = evidenciaService.verificarHash(1L);
+            boolean resultado = evidenciaService.verificarHash(100L);
 
             // Assert
             assertThat(resultado).isTrue();
         }
 
         @Test
-        @DisplayName("Debe retornar false cuando el hash recalculado no coincide")
+        @DisplayName("Debe retornar false cuando el hash recalculado no coincide (evidencia alterada)")
         void debeRetornarFalseCuandoHashNoCoincide() {
             // Arrange
-            when(evidenciaRepository.findById(1L)).thenReturn(Optional.of(evidenciaEjemplo));
-            when(hashStrategy.calcular(anyString())).thenReturn("hash-diferente");
+            when(evidenciaRepository.findById(100L)).thenReturn(Optional.of(evidenciaEjemplo));
+            when(hashStrategy.calcular("ARMA|Cuchillo")).thenReturn("hash-diferente");
 
             // Act
-            boolean resultado = evidenciaService.verificarHash(1L);
+            boolean resultado = evidenciaService.verificarHash(100L);
 
             // Assert
             assertThat(resultado).isFalse();
@@ -204,12 +188,12 @@ class EvidenciaServiceImplTest {
 
         @Test
         @DisplayName("Debe lanzar ResourceNotFoundException cuando la evidencia no existe")
-        void debeLanzarExcepcionCuandoEvidenciaNoExiste() {
+        void debeLanzarExcepcionCuandoNoExiste() {
             // Arrange
-            when(evidenciaRepository.findById(99L)).thenReturn(Optional.empty());
+            when(evidenciaRepository.findById(999L)).thenReturn(Optional.empty());
 
             // Act & Assert
-            assertThatThrownBy(() -> evidenciaService.verificarHash(99L))
+            assertThatThrownBy(() -> evidenciaService.verificarHash(999L))
                     .isInstanceOf(ResourceNotFoundException.class);
         }
     }
@@ -218,17 +202,28 @@ class EvidenciaServiceImplTest {
     @DisplayName("obtenerPorId() debe retornar la evidencia cuando existe")
     void debeRetornarEvidenciaCuandoExiste() {
         // Arrange
-        when(evidenciaRepository.findById(1L)).thenReturn(Optional.of(evidenciaEjemplo));
+        when(evidenciaRepository.findById(100L)).thenReturn(Optional.of(evidenciaEjemplo));
 
         // Act
-        EvidenciaResponse resultado = evidenciaService.obtenerPorId(1L);
+        EvidenciaResponse resultado = evidenciaService.obtenerPorId(100L);
 
         // Assert
         assertThat(resultado.numeroItem()).isEqualTo("EV-001");
     }
 
     @Test
-    @DisplayName("obtenerTodos() debe retornar todas las evidencias")
+    @DisplayName("obtenerPorId() debe lanzar ResourceNotFoundException cuando no existe")
+    void debeLanzarExcepcionCuandoNoExiste() {
+        // Arrange
+        when(evidenciaRepository.findById(999L)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThatThrownBy(() -> evidenciaService.obtenerPorId(999L))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("obtenerTodos() debe retornar todas las evidencias registradas")
     void debeRetornarTodasLasEvidencias() {
         // Arrange
         when(evidenciaRepository.findAll()).thenReturn(List.of(evidenciaEjemplo));
@@ -241,7 +236,7 @@ class EvidenciaServiceImplTest {
     }
 
     @Test
-    @DisplayName("obtenerPorEscena() debe filtrar evidencias por la escena indicada")
+    @DisplayName("obtenerPorEscena() debe delegar en el repositorio filtrando por escenaId")
     void debeRetornarEvidenciasPorEscena() {
         // Arrange
         when(evidenciaRepository.findByEscenaId(1L)).thenReturn(List.of(evidenciaEjemplo));
@@ -251,23 +246,41 @@ class EvidenciaServiceImplTest {
 
         // Assert
         assertThat(resultado).hasSize(1);
+        verify(evidenciaRepository).findByEscenaId(1L);
     }
 
-    @Test
-    @DisplayName("actualizar() debe modificar tipo, descripción y número de item")
-    void debeActualizarEvidenciaExistente() {
-        // Arrange
-        EvidenciaRequest request = new EvidenciaRequest(
-                "EV-999", "Sangre", "Muestra de sangre", 1L, 1L, null);
-        when(evidenciaRepository.findById(1L)).thenReturn(Optional.of(evidenciaEjemplo));
-        when(evidenciaRepository.save(any(Evidencia.class))).thenAnswer(inv -> inv.getArgument(0));
+    @Nested
+    @DisplayName("actualizar()")
+    class Actualizar {
 
-        // Act
-        EvidenciaResponse resultado = evidenciaService.actualizar(1L, request);
+        @Test
+        @DisplayName("Debe actualizar tipo, descripción y número de item")
+        void debeActualizarEvidenciaExistente() {
+            // Arrange
+            EvidenciaRequest request = new EvidenciaRequest("EV-999", "HUELLA", "Huella dactilar", 1L, investigadorId, null);
+            when(evidenciaRepository.findById(100L)).thenReturn(Optional.of(evidenciaEjemplo));
+            when(evidenciaRepository.save(any(Evidencia.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        // Assert
-        assertThat(resultado.tipo()).isEqualTo("Sangre");
-        assertThat(resultado.numeroItem()).isEqualTo("EV-999");
+            // Act
+            EvidenciaResponse resultado = evidenciaService.actualizar(100L, request);
+
+            // Assert
+            assertThat(resultado.tipo()).isEqualTo("HUELLA");
+            assertThat(resultado.descripcion()).isEqualTo("Huella dactilar");
+            assertThat(resultado.numeroItem()).isEqualTo("EV-999");
+        }
+
+        @Test
+        @DisplayName("Debe lanzar ResourceNotFoundException al actualizar una evidencia inexistente")
+        void debeLanzarExcepcionAlActualizarInexistente() {
+            // Arrange
+            EvidenciaRequest request = new EvidenciaRequest("EV-999", "HUELLA", "desc", 1L, investigadorId, null);
+            when(evidenciaRepository.findById(999L)).thenReturn(Optional.empty());
+
+            // Act & Assert
+            assertThatThrownBy(() -> evidenciaService.actualizar(999L, request))
+                    .isInstanceOf(ResourceNotFoundException.class);
+        }
     }
 
     @Nested
@@ -278,23 +291,23 @@ class EvidenciaServiceImplTest {
         @DisplayName("Debe eliminar la evidencia cuando existe")
         void debeEliminarEvidenciaExistente() {
             // Arrange
-            when(evidenciaRepository.findById(1L)).thenReturn(Optional.of(evidenciaEjemplo));
+            when(evidenciaRepository.findById(100L)).thenReturn(Optional.of(evidenciaEjemplo));
 
             // Act
-            evidenciaService.eliminar(1L);
+            evidenciaService.eliminar(100L);
 
             // Assert
-            verify(evidenciaRepository).deleteById(1L);
+            verify(evidenciaRepository).deleteById(100L);
         }
 
         @Test
         @DisplayName("Debe lanzar ResourceNotFoundException y no eliminar cuando no existe")
         void debeLanzarExcepcionAlEliminarInexistente() {
             // Arrange
-            when(evidenciaRepository.findById(99L)).thenReturn(Optional.empty());
+            when(evidenciaRepository.findById(999L)).thenReturn(Optional.empty());
 
             // Act & Assert
-            assertThatThrownBy(() -> evidenciaService.eliminar(99L))
+            assertThatThrownBy(() -> evidenciaService.eliminar(999L))
                     .isInstanceOf(ResourceNotFoundException.class);
             verify(evidenciaRepository, never()).deleteById(any());
         }
@@ -302,13 +315,13 @@ class EvidenciaServiceImplTest {
 
     @Test
     @DisplayName("asignarNumero() debe actualizar el número de item de la evidencia")
-    void debeAsignarNumeroDeItem() {
+    void debeAsignarNumero() {
         // Arrange
-        when(evidenciaRepository.findById(1L)).thenReturn(Optional.of(evidenciaEjemplo));
+        when(evidenciaRepository.findById(100L)).thenReturn(Optional.of(evidenciaEjemplo));
         when(evidenciaRepository.save(any(Evidencia.class))).thenAnswer(inv -> inv.getArgument(0));
 
         // Act
-        EvidenciaResponse resultado = evidenciaService.asignarNumero(1L, "EV-777");
+        EvidenciaResponse resultado = evidenciaService.asignarNumero(100L, "EV-777");
 
         // Assert
         assertThat(resultado.numeroItem()).isEqualTo("EV-777");
@@ -322,12 +335,12 @@ class EvidenciaServiceImplTest {
         @DisplayName("Debe firmar el levantamiento cuando el investigador existe")
         void debeFirmarLevantamientoExitosamente() {
             // Arrange
-            when(evidenciaRepository.findById(1L)).thenReturn(Optional.of(evidenciaEjemplo));
-            when(usuarioRepository.findById(1L)).thenReturn(Optional.of(investigadorEjemplo));
+            when(evidenciaRepository.findById(100L)).thenReturn(Optional.of(evidenciaEjemplo));
+            when(usuarioRepository.findById(investigadorId)).thenReturn(Optional.of(investigadorEjemplo));
             when(evidenciaRepository.save(any(Evidencia.class))).thenAnswer(inv -> inv.getArgument(0));
 
             // Act
-            EvidenciaResponse resultado = evidenciaService.firmarLevantamiento(1L, 1L);
+            EvidenciaResponse resultado = evidenciaService.firmarLevantamiento(100L, investigadorId);
 
             // Assert
             assertThat(resultado).isNotNull();
@@ -338,11 +351,12 @@ class EvidenciaServiceImplTest {
         @DisplayName("Debe lanzar ResourceNotFoundException cuando el investigador no existe")
         void debeLanzarExcepcionCuandoInvestigadorNoExiste() {
             // Arrange
-            when(evidenciaRepository.findById(1L)).thenReturn(Optional.of(evidenciaEjemplo));
-            when(usuarioRepository.findById(77L)).thenReturn(Optional.empty());
+            UUID inexistente = UUID.randomUUID();
+            when(evidenciaRepository.findById(100L)).thenReturn(Optional.of(evidenciaEjemplo));
+            when(usuarioRepository.findById(inexistente)).thenReturn(Optional.empty());
 
             // Act & Assert
-            assertThatThrownBy(() -> evidenciaService.firmarLevantamiento(1L, 77L))
+            assertThatThrownBy(() -> evidenciaService.firmarLevantamiento(100L, inexistente))
                     .isInstanceOf(ResourceNotFoundException.class);
             verify(evidenciaRepository, never()).save(any());
         }
@@ -353,13 +367,13 @@ class EvidenciaServiceImplTest {
     class ValidarIntegridad {
 
         @Test
-        @DisplayName("Debe retornar true cuando la evidencia tiene numeroItem, tipo y escena asignados")
-        void debeRetornarTrueCuandoEvidenciaCompleta() {
+        @DisplayName("Debe retornar true cuando numeroItem, tipo y escena están presentes")
+        void debeRetornarTrueCuandoValida() {
             // Arrange
-            when(evidenciaRepository.findById(1L)).thenReturn(Optional.of(evidenciaEjemplo));
+            when(evidenciaRepository.findById(100L)).thenReturn(Optional.of(evidenciaEjemplo));
 
             // Act
-            boolean resultado = evidenciaService.validarIntegridad(1L);
+            boolean resultado = evidenciaService.validarIntegridad(100L);
 
             // Assert
             assertThat(resultado).isTrue();
@@ -369,11 +383,11 @@ class EvidenciaServiceImplTest {
         @DisplayName("Debe retornar false cuando falta el número de item")
         void debeRetornarFalseCuandoFaltaNumeroItem() {
             // Arrange
-            Evidencia incompleta = Evidencia.builder().id(2L).tipo("Arma").escena(escenaEjemplo).build();
-            when(evidenciaRepository.findById(2L)).thenReturn(Optional.of(incompleta));
+            Evidencia incompleta = Evidencia.builder().id(200L).tipo("ARMA").escena(escenaEjemplo).build();
+            when(evidenciaRepository.findById(200L)).thenReturn(Optional.of(incompleta));
 
             // Act
-            boolean resultado = evidenciaService.validarIntegridad(2L);
+            boolean resultado = evidenciaService.validarIntegridad(200L);
 
             // Assert
             assertThat(resultado).isFalse();

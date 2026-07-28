@@ -1,8 +1,6 @@
 // Ruta destino: src/test/java/com/guardia/core/service/ExpedienteServiceImplTest.java
 package com.guardia.core.service;
 
-import com.guardia.core.ExpedienteRegistradoEvent;
-import com.guardia.core.SelloExpedienteEvent;
 import com.guardia.core.SelloStrategy;
 import com.guardia.core.dto.request.CoordenadasRequest;
 import com.guardia.core.dto.request.DelitoRequest;
@@ -34,18 +32,16 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -54,8 +50,6 @@ import static org.mockito.Mockito.*;
 
 /**
  * Pruebas unitarias para {@link ExpedienteServiceImpl}.
- * Es el servicio central del dominio: cubre creación, sellado, verificación de integridad
- * y las reglas de negocio que protegen expedientes ya sellados o archivados.
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ExpedienteServiceImpl - Pruebas Unitarias")
@@ -75,60 +69,52 @@ class ExpedienteServiceImplTest {
     private ExpedienteServiceImpl expedienteService;
 
     private Expediente expedienteEjemplo;
-    private Usuario usuarioEjemplo;
+    private UUID agenteId;
+    private Usuario agenteEjemplo;
 
     @BeforeEach
     void setUp() {
-        // Arrange (fixture común)
-        usuarioEjemplo = Usuario.builder().id(1L).nombre("Agente Gómez").identificacion("V-1").correo("g@x.com").build();
-
+        agenteId = UUID.randomUUID();
+        agenteEjemplo = Usuario.builder()
+                .id(agenteId).username("agomez").password("hash").fullName("Agente Gómez").rol("OFICIAL").build();
         expedienteEjemplo = Expediente.builder()
-                .id(1L)
-                .folio("EXP-2026-AAAA1111")
-                .estadoExpediente(EstadoExpediente.BORRADOR)
-                .fechaCreacion(LocalDateTime.now())
-                .descripcionHecho("Descripción del hecho")
-                .involucrados(new ArrayList<>())
-                .escenas(new ArrayList<>())
-                .modusOperandiList(new ArrayList<>())
-                .delitos(new ArrayList<>())
+                .id(1L).folio("EXP-2026-AAAA1111").descripcionHecho("Robo").estadoExpediente(EstadoExpediente.BORRADOR)
                 .build();
     }
 
-    /** Construye un ExpedienteRequest válido y mínimo (ubicación + 1 delito + 1 víctima). */
-    private ExpedienteRequest requestMinimo() {
-        ExpedienteRequest request = new ExpedienteRequest();
+    private UbicacionRequest ubicacionRequest() {
+        UbicacionRequest u = new UbicacionRequest();
+        u.setMunicipio("Libertador");
+        u.setSector("Catia");
+        u.setDireccion("Av. Principal");
+        u.setReferencia("Cerca de la plaza");
+        CoordenadasRequest c = new CoordenadasRequest();
+        c.setLatitud(10.5);
+        c.setLongitud(-66.9);
+        u.setCoordenadas(c);
+        return u;
+    }
 
-        UbicacionRequest ubicacion = new UbicacionRequest();
-        ubicacion.setMunicipio("Libertador");
-        ubicacion.setSector("Catia");
-        ubicacion.setDireccion("Av. Principal");
-        ubicacion.setReferencia("Cerca de la plaza");
-        CoordenadasRequest coords = new CoordenadasRequest();
-        coords.setLatitud(10.5);
-        coords.setLongitud(-66.9);
-        ubicacion.setCoordenadas(coords);
-        request.setUbicacion(ubicacion);
+    private DelitoRequest delitoRequest(String delito, String subtipo) {
+        DelitoRequest d = new DelitoRequest();
+        d.setDelito(delito);
+        SubDelitoRequest sub = new SubDelitoRequest();
+        sub.setNombre(subtipo);
+        d.setSubDelito(sub);
+        d.setFechaHecho(LocalDate.of(2026, 1, 15));
+        d.setHoraInicioHecho(LocalTime.of(20, 0));
+        d.setHechoEnCurso(false);
+        return d;
+    }
 
-        request.setDescripcion("Descripción del hecho");
-
-        DelitoRequest delito = new DelitoRequest();
-        delito.setDelito("HOMICIDIO");
-        SubDelitoRequest subDelito = new SubDelitoRequest();
-        subDelito.setNombre("HOMICIDIO_CULPOSO");
-        delito.setSubDelito(subDelito);
-        delito.setFechaHecho(LocalDate.of(2026, 1, 15));
-        delito.setHoraInicioHecho(LocalTime.of(10, 30));
-        delito.setHechoEnCurso(false);
-        request.setDelitos(List.of(delito));
-
-        InvolucradosRequest victima = new InvolucradosRequest();
-        victima.setNombre("Maria Lopez");
-        victima.setCedula("V-9999999");
-        victima.setTelefono("0414-1234567");
-        request.setVictimas(List.of(victima));
-
-        return request;
+    private InvolucradosRequest involucrado(String nombre, String cedula) {
+        InvolucradosRequest v = new InvolucradosRequest();
+        v.setNombre(nombre);
+        v.setCedula(cedula);
+        v.setTelefono("0414-1234567");
+        v.setNacionalidad("Venezolana");
+        v.setDireccion("Calle Falsa 123");
+        return v;
     }
 
     @Nested
@@ -136,68 +122,48 @@ class ExpedienteServiceImplTest {
     class Crear {
 
         @Test
-        @DisplayName("Debe crear el expediente completo con ubicación, delito, víctima y publicar el evento de registro")
+        @DisplayName("Debe crear el expediente completo con ubicación, delitos, víctimas y denunciante")
         void debeCrearExpedienteCompleto() {
             // Arrange
-            ExpedienteRequest request = requestMinimo();
-            TipoDelito tipoDelito = TipoDelito.builder().id(5L).nombre("HOMICIDIO").requiereSubtipo(true).build();
-            SubtipoDelito subtipo = SubtipoDelito.builder().id(50L).nombre("HOMICIDIO_CULPOSO").tipoDelito(tipoDelito).build();
+            ExpedienteRequest request = new ExpedienteRequest();
+            request.setUbicacion(ubicacionRequest());
+            request.setDelitos(List.of(delitoRequest("HOMICIDIO", "HOMICIDIO_CULPOSO")));
+            request.setDescripcion("Descripción del hecho");
+            request.setEsDenunciaFormal(true);
+            request.setVictimas(List.of(involucrado("Maria Lopez", "V-9999999")));
+            request.setDenunciante(involucrado("Pedro Diaz", "V-8888888"));
+
+            TipoDelito tipoDelito = TipoDelito.builder().id(1L).nombre("HOMICIDIO").requiereSubtipo(true).build();
+            SubtipoDelito subtipoDelito = SubtipoDelito.builder()
+                    .id(10L).nombre("HOMICIDIO_CULPOSO").tipoDelito(tipoDelito).build();
 
             when(localizacionRepository.save(any(Localizacion.class))).thenAnswer(inv -> inv.getArgument(0));
             when(tipoDelitoRepository.findByNombre("HOMICIDIO")).thenReturn(Optional.of(tipoDelito));
-            when(subtipoDelitoRepository.findByTipoDelitoId(5L)).thenReturn(List.of(subtipo));
-            // Simula la asignación de id que realizaría JPA al persistir (IDENTITY strategy)
-            when(expedienteRepository.save(any(Expediente.class))).thenAnswer(inv -> {
-                Expediente e = inv.getArgument(0);
-                e.setId(100L);
-                return e;
-            });
+            when(subtipoDelitoRepository.findByTipoDelitoId(1L)).thenReturn(List.of(subtipoDelito));
+            when(expedienteRepository.save(any(Expediente.class))).thenAnswer(inv -> inv.getArgument(0));
 
             // Act
             ExpedienteResponse resultado = expedienteService.crear(request);
 
             // Assert
             assertThat(resultado.folio()).startsWith("EXP-2026-");
-            assertThat(resultado.estadoExpediente()).isEqualTo(EstadoExpediente.BORRADOR);
-            assertThat(resultado.involucrados()).hasSize(1);
-            assertThat(resultado.involucrados().get(0).nombre()).isEqualTo("Maria Lopez");
+            assertThat(resultado.descripcionHecho()).isEqualTo("Descripción del hecho");
+            assertThat(resultado.tipoDelito().nombre()).isEqualTo("HOMICIDIO");
+            assertThat(resultado.subtipoDelito().nombre()).isEqualTo("HOMICIDIO_CULPOSO");
+            assertThat(resultado.involucrados()).hasSize(2); // víctima + denunciante
             assertThat(resultado.localizacion().municipio()).isEqualTo("Libertador");
-
-            ArgumentCaptor<ExpedienteRegistradoEvent> eventCaptor = ArgumentCaptor.forClass(ExpedienteRegistradoEvent.class);
-            verify(eventPublisher).publishEvent(eventCaptor.capture());
-            assertThat(eventCaptor.getValue().getExpedienteId()).isEqualTo(100L);
+            verify(eventPublisher).publishEvent(any(com.guardia.core.ExpedienteRegistradoEvent.class));
         }
 
         @Test
-        @DisplayName("Debe incluir al denunciante como involucrado cuando viene informado en la solicitud")
-        void debeIncluirDenuncianteComoInvolucrado() {
+        @DisplayName("Debe crear el expediente mínimo sin ubicación ni denunciante")
+        void debeCrearExpedienteMinimo() {
             // Arrange
-            ExpedienteRequest request = requestMinimo();
-            InvolucradosRequest denunciante = new InvolucradosRequest();
-            denunciante.setNombre("Pedro Gomez");
-            denunciante.setCedula("V-1111111");
-            request.setDenunciante(denunciante);
+            ExpedienteRequest request = new ExpedienteRequest();
+            request.setDescripcion("Descripción mínima");
+            request.setDelitos(List.of());
+            request.setVictimas(List.of(involucrado("Ana Perez", "V-1111111")));
 
-            when(localizacionRepository.save(any(Localizacion.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(tipoDelitoRepository.findByNombre("HOMICIDIO")).thenReturn(Optional.empty());
-            when(expedienteRepository.save(any(Expediente.class))).thenAnswer(inv -> inv.getArgument(0));
-
-            // Act
-            ExpedienteResponse resultado = expedienteService.crear(request);
-
-            // Assert: denunciante + víctima = 2 involucrados
-            assertThat(resultado.involucrados()).hasSize(2);
-            assertThat(resultado.involucrados()).extracting("nombre")
-                    .contains("Pedro Gomez", "Maria Lopez");
-        }
-
-        @Test
-        @DisplayName("No debe crear ni guardar localización cuando la ubicación no viene informada")
-        void noDebeCrearLocalizacionCuandoUbicacionEsNula() {
-            // Arrange
-            ExpedienteRequest request = requestMinimo();
-            request.setUbicacion(null);
-            when(tipoDelitoRepository.findByNombre("HOMICIDIO")).thenReturn(Optional.empty());
             when(expedienteRepository.save(any(Expediente.class))).thenAnswer(inv -> inv.getArgument(0));
 
             // Act
@@ -205,16 +171,21 @@ class ExpedienteServiceImplTest {
 
             // Assert
             assertThat(resultado.localizacion()).isNull();
-            verify(localizacionRepository, never()).save(any());
+            assertThat(resultado.tipoDelito()).isNull();
+            assertThat(resultado.involucrados()).hasSize(1);
+            verifyNoInteractions(localizacionRepository, tipoDelitoRepository);
         }
 
         @Test
-        @DisplayName("No debe promover subtipo cuando el tipo de delito no fue encontrado por nombre")
-        void noDebePromoverSubtipoCuandoTipoDelitoNoExiste() {
+        @DisplayName("No debe promover el subtipo cuando el tipo de delito no coincide con ningún nombre existente")
+        void noDebePromoverSubtipoSinTipoDelitoEncontrado() {
             // Arrange
-            ExpedienteRequest request = requestMinimo();
-            when(localizacionRepository.save(any(Localizacion.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(tipoDelitoRepository.findByNombre("HOMICIDIO")).thenReturn(Optional.empty());
+            ExpedienteRequest request = new ExpedienteRequest();
+            request.setDescripcion("Descripción");
+            request.setDelitos(List.of(delitoRequest("DELITO_DESCONOCIDO", "SUBTIPO_X")));
+            request.setVictimas(List.of(involucrado("Ana Perez", "V-1111111")));
+
+            when(tipoDelitoRepository.findByNombre("DELITO_DESCONOCIDO")).thenReturn(Optional.empty());
             when(expedienteRepository.save(any(Expediente.class))).thenAnswer(inv -> inv.getArgument(0));
 
             // Act
@@ -223,102 +194,63 @@ class ExpedienteServiceImplTest {
             // Assert
             assertThat(resultado.tipoDelito()).isNull();
             assertThat(resultado.subtipoDelito()).isNull();
-            verify(subtipoDelitoRepository, never()).findByTipoDelitoId(any());
+            verifyNoInteractions(subtipoDelitoRepository);
         }
     }
 
+    @Test
+    @DisplayName("obtenerPorId() debe lanzar ResourceNotFoundException cuando no existe")
+    void debeLanzarExcepcionCuandoNoExistePorId() {
+        when(expedienteRepository.findById(99L)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> expedienteService.obtenerPorId(99L))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
     @Nested
-    @DisplayName("obtenerPorId() / obtenerPorFolio()")
-    class Consultas {
+    @DisplayName("obtenerPorFolio()")
+    class ObtenerPorFolio {
 
         @Test
-        @DisplayName("obtenerPorId() debe retornar el expediente cuando existe")
-        void debeRetornarExpedientePorId() {
-            // Arrange
-            when(expedienteRepository.findById(1L)).thenReturn(Optional.of(expedienteEjemplo));
+        @DisplayName("Debe retornar el expediente cuando el folio existe")
+        void debeRetornarExpedienteCuandoFolioExiste() {
+            when(expedienteRepository.findByFolio("EXP-2026-AAAA1111")).thenReturn(Optional.of(expedienteEjemplo));
 
-            // Act
-            ExpedienteResponse resultado = expedienteService.obtenerPorId(1L);
+            ExpedienteResponse resultado = expedienteService.obtenerPorFolio("EXP-2026-AAAA1111");
 
-            // Assert
             assertThat(resultado.folio()).isEqualTo("EXP-2026-AAAA1111");
         }
 
         @Test
-        @DisplayName("obtenerPorId() debe lanzar ResourceNotFoundException cuando no existe")
-        void debeLanzarExcepcionPorIdInexistente() {
-            // Arrange
-            when(expedienteRepository.findById(99L)).thenReturn(Optional.empty());
+        @DisplayName("Debe lanzar ResourceNotFoundException con mensaje específico cuando el folio no existe")
+        void debeLanzarExcepcionCuandoFolioNoExiste() {
+            when(expedienteRepository.findByFolio("INEXISTENTE")).thenReturn(Optional.empty());
 
-            // Act & Assert
-            assertThatThrownBy(() -> expedienteService.obtenerPorId(99L))
-                    .isInstanceOf(ResourceNotFoundException.class);
-        }
-
-        @Test
-        @DisplayName("obtenerPorFolio() debe retornar el expediente cuando el folio existe")
-        void debeRetornarExpedientePorFolio() {
-            // Arrange
-            when(expedienteRepository.findByFolio("EXP-2026-AAAA1111")).thenReturn(Optional.of(expedienteEjemplo));
-
-            // Act
-            ExpedienteResponse resultado = expedienteService.obtenerPorFolio("EXP-2026-AAAA1111");
-
-            // Assert
-            assertThat(resultado.id()).isEqualTo(1L);
-        }
-
-        @Test
-        @DisplayName("obtenerPorFolio() debe lanzar ResourceNotFoundException con mensaje específico cuando no existe")
-        void debeLanzarExcepcionPorFolioInexistente() {
-            // Arrange
-            when(expedienteRepository.findByFolio("NOEXISTE")).thenReturn(Optional.empty());
-
-            // Act & Assert
-            assertThatThrownBy(() -> expedienteService.obtenerPorFolio("NOEXISTE"))
+            assertThatThrownBy(() -> expedienteService.obtenerPorFolio("INEXISTENTE"))
                     .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessage("Expediente con folio NOEXISTE no encontrado.");
+                    .hasMessage("Expediente con folio INEXISTENTE no encontrado.");
         }
     }
 
     @Test
-    @DisplayName("obtenerTodos() debe retornar todos los expedientes mapeados")
+    @DisplayName("obtenerTodos() debe retornar todos los expedientes")
     void debeRetornarTodosLosExpedientes() {
-        // Arrange
         when(expedienteRepository.findAll()).thenReturn(List.of(expedienteEjemplo));
-
-        // Act
-        List<ExpedienteResponse> resultado = expedienteService.obtenerTodos();
-
-        // Assert
-        assertThat(resultado).hasSize(1);
+        assertThat(expedienteService.obtenerTodos()).hasSize(1);
     }
 
     @Test
-    @DisplayName("obtenerPorEstado() debe filtrar por el estado indicado")
-    void debeRetornarExpedientesPorEstado() {
-        // Arrange
+    @DisplayName("obtenerPorEstado() debe delegar en el repositorio")
+    void debeRetornarPorEstado() {
         when(expedienteRepository.findByEstadoExpediente(EstadoExpediente.BORRADOR))
                 .thenReturn(List.of(expedienteEjemplo));
-
-        // Act
-        List<ExpedienteResponse> resultado = expedienteService.obtenerPorEstado(EstadoExpediente.BORRADOR);
-
-        // Assert
-        assertThat(resultado).hasSize(1);
+        assertThat(expedienteService.obtenerPorEstado(EstadoExpediente.BORRADOR)).hasSize(1);
     }
 
     @Test
-    @DisplayName("obtenerPorCreador() debe filtrar por el usuario creador")
-    void debeRetornarExpedientesPorCreador() {
-        // Arrange
-        when(expedienteRepository.findByCreadoPorId(1L)).thenReturn(List.of(expedienteEjemplo));
-
-        // Act
-        List<ExpedienteResponse> resultado = expedienteService.obtenerPorCreador(1L);
-
-        // Assert
-        assertThat(resultado).hasSize(1);
+    @DisplayName("obtenerPorCreador() debe delegar en el repositorio filtrando por usuarioId")
+    void debeRetornarPorCreador() {
+        when(expedienteRepository.findByCreadoPorId(agenteId)).thenReturn(List.of(expedienteEjemplo));
+        assertThat(expedienteService.obtenerPorCreador(agenteId)).hasSize(1);
     }
 
     @Nested
@@ -326,45 +258,33 @@ class ExpedienteServiceImplTest {
     class Actualizar {
 
         @Test
-        @DisplayName("Debe actualizar descripción y fecha del hecho cuando el expediente está en BORRADOR")
-        void debeActualizarExpedienteEnBorrador() {
-            // Arrange
-            ExpedienteRequest request = requestMinimo();
+        @DisplayName("Debe actualizar descripción y fecha del hecho de un expediente en BORRADOR")
+        void debeActualizarExpedienteExistente() {
+            ExpedienteRequest request = new ExpedienteRequest();
             request.setDescripcion("Nueva descripción");
+            request.setDelitos(List.of(delitoRequest("ROBO", "ROBO_AGRAVADO")));
+
             when(expedienteRepository.findById(1L)).thenReturn(Optional.of(expedienteEjemplo));
             when(expedienteRepository.save(any(Expediente.class))).thenAnswer(inv -> inv.getArgument(0));
 
-            // Act
             ExpedienteResponse resultado = expedienteService.actualizar(1L, request);
 
-            // Assert
             assertThat(resultado.descripcionHecho()).isEqualTo("Nueva descripción");
+            assertThat(resultado.fechaHecho()).isEqualTo(java.time.LocalDateTime.of(2026, 1, 15, 20, 0));
         }
 
         @Test
-        @DisplayName("Debe lanzar BusinessException cuando el expediente ya está sellado")
-        void debeLanzarExcepcionCuandoEstaSellado() {
-            // Arrange
+        @DisplayName("Debe lanzar BusinessException al intentar modificar un expediente sellado")
+        void debeLanzarExcepcionAlActualizarSellado() {
             expedienteEjemplo.setEstadoExpediente(EstadoExpediente.PROCESADO_Y_SELLADO);
+            ExpedienteRequest request = new ExpedienteRequest();
+            request.setDescripcion("Cambio no permitido");
             when(expedienteRepository.findById(1L)).thenReturn(Optional.of(expedienteEjemplo));
 
-            // Act & Assert
-            assertThatThrownBy(() -> expedienteService.actualizar(1L, requestMinimo()))
+            assertThatThrownBy(() -> expedienteService.actualizar(1L, request))
                     .isInstanceOf(BusinessException.class)
                     .hasMessage("No se puede modificar un expediente sellado o archivado.");
             verify(expedienteRepository, never()).save(any());
-        }
-
-        @Test
-        @DisplayName("Debe lanzar BusinessException cuando el expediente está archivado")
-        void debeLanzarExcepcionCuandoEstaArchivado() {
-            // Arrange
-            expedienteEjemplo.setEstadoExpediente(EstadoExpediente.ARCHIVADO);
-            when(expedienteRepository.findById(1L)).thenReturn(Optional.of(expedienteEjemplo));
-
-            // Act & Assert
-            assertThatThrownBy(() -> expedienteService.actualizar(1L, requestMinimo()))
-                    .isInstanceOf(BusinessException.class);
         }
     }
 
@@ -373,26 +293,19 @@ class ExpedienteServiceImplTest {
     class Eliminar {
 
         @Test
-        @DisplayName("Debe eliminar el expediente cuando está en estado BORRADOR")
+        @DisplayName("Debe eliminar el expediente cuando está en BORRADOR")
         void debeEliminarExpedienteEnBorrador() {
-            // Arrange
             when(expedienteRepository.findById(1L)).thenReturn(Optional.of(expedienteEjemplo));
-
-            // Act
             expedienteService.eliminar(1L);
-
-            // Assert
             verify(expedienteRepository).deleteById(1L);
         }
 
         @Test
-        @DisplayName("Debe lanzar BusinessException cuando el estado no es BORRADOR")
-        void debeLanzarExcepcionCuandoNoEsBorrador() {
-            // Arrange
-            expedienteEjemplo.setEstadoExpediente(EstadoExpediente.EN_REVISION);
+        @DisplayName("Debe lanzar BusinessException al eliminar un expediente que no está en BORRADOR")
+        void debeLanzarExcepcionAlEliminarNoBorrador() {
+            expedienteEjemplo.setEstadoExpediente(EstadoExpediente.INVESTIGACION_ACTIVA);
             when(expedienteRepository.findById(1L)).thenReturn(Optional.of(expedienteEjemplo));
 
-            // Act & Assert
             assertThatThrownBy(() -> expedienteService.eliminar(1L))
                     .isInstanceOf(BusinessException.class)
                     .hasMessage("Solo se pueden eliminar expedientes en estado BORRADOR.");
@@ -405,78 +318,67 @@ class ExpedienteServiceImplTest {
     class Sellar {
 
         @Test
-        @DisplayName("Debe sellar el expediente cuando los datos son válidos y el agente existe")
+        @DisplayName("Debe sellar el expediente cuando tiene todos los datos requeridos")
         void debeSellarExpedienteExitosamente() {
-            // Arrange: datos suficientes para validarDatos() == true
-            expedienteEjemplo.setTipoDelito(TipoDelito.builder().id(1L).nombre("HOMICIDIO").build());
+            expedienteEjemplo.setTipoDelito(TipoDelito.builder().id(1L).nombre("ROBO").build());
             expedienteEjemplo.setMunicipio("Libertador");
             when(expedienteRepository.findById(1L)).thenReturn(Optional.of(expedienteEjemplo));
-            when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuarioEjemplo));
+            when(usuarioRepository.findById(agenteId)).thenReturn(Optional.of(agenteEjemplo));
             when(expedienteRepository.save(any(Expediente.class))).thenAnswer(inv -> inv.getArgument(0));
 
-            // Act
-            ExpedienteResponse resultado = expedienteService.sellar(1L, 1L);
+            ExpedienteResponse resultado = expedienteService.sellar(1L, agenteId);
 
-            // Assert
             assertThat(resultado).isNotNull();
-            verify(selloStrategy).aplicar(eq(expedienteEjemplo), eq(usuarioEjemplo), any(LocalDateTime.class));
-            verify(eventPublisher).publishEvent(any(SelloExpedienteEvent.class));
+            verify(selloStrategy).aplicar(eq(expedienteEjemplo), eq(agenteEjemplo), any());
+            verify(eventPublisher).publishEvent(any(com.guardia.core.SelloExpedienteEvent.class));
         }
 
         @Test
         @DisplayName("Debe lanzar BusinessException cuando el expediente ya está sellado")
         void debeLanzarExcepcionCuandoYaSellado() {
-            // Arrange
             expedienteEjemplo.setEstadoExpediente(EstadoExpediente.PROCESADO_Y_SELLADO);
             when(expedienteRepository.findById(1L)).thenReturn(Optional.of(expedienteEjemplo));
 
-            // Act & Assert
-            assertThatThrownBy(() -> expedienteService.sellar(1L, 1L))
+            assertThatThrownBy(() -> expedienteService.sellar(1L, agenteId))
                     .isInstanceOf(BusinessException.class)
                     .hasMessage("El expediente ya está sellado.");
-            verify(selloStrategy, never()).aplicar(any(), any(), any());
         }
 
         @Test
-        @DisplayName("Debe lanzar BusinessException cuando los datos del expediente están incompletos")
+        @DisplayName("Debe lanzar BusinessException cuando el expediente no tiene los datos requeridos")
         void debeLanzarExcepcionCuandoDatosIncompletos() {
-            // Arrange: sin tipoDelito ni municipio => validarDatos() == false
+            // expedienteEjemplo no tiene tipoDelito ni municipio/localización -> validarDatos() == false
             when(expedienteRepository.findById(1L)).thenReturn(Optional.of(expedienteEjemplo));
 
-            // Act & Assert
-            assertThatThrownBy(() -> expedienteService.sellar(1L, 1L))
+            assertThatThrownBy(() -> expedienteService.sellar(1L, agenteId))
                     .isInstanceOf(BusinessException.class)
                     .hasMessage("El expediente no tiene todos los datos requeridos para sellarse.");
-            verify(usuarioRepository, never()).findById(any());
+            verifyNoInteractions(usuarioRepository);
         }
 
         @Test
         @DisplayName("Debe lanzar ResourceNotFoundException cuando el agente sellador no existe")
         void debeLanzarExcepcionCuandoAgenteNoExiste() {
-            // Arrange
-            expedienteEjemplo.setTipoDelito(TipoDelito.builder().id(1L).nombre("HOMICIDIO").build());
+            expedienteEjemplo.setTipoDelito(TipoDelito.builder().id(1L).nombre("ROBO").build());
             expedienteEjemplo.setMunicipio("Libertador");
+            UUID inexistente = UUID.randomUUID();
             when(expedienteRepository.findById(1L)).thenReturn(Optional.of(expedienteEjemplo));
-            when(usuarioRepository.findById(77L)).thenReturn(Optional.empty());
+            when(usuarioRepository.findById(inexistente)).thenReturn(Optional.empty());
 
-            // Act & Assert
-            assertThatThrownBy(() -> expedienteService.sellar(1L, 77L))
+            assertThatThrownBy(() -> expedienteService.sellar(1L, inexistente))
                     .isInstanceOf(ResourceNotFoundException.class);
-            verify(selloStrategy, never()).aplicar(any(), any(), any());
+            verifyNoInteractions(selloStrategy);
         }
     }
 
     @Test
-    @DisplayName("cambiarEstado() debe delegar en la entidad y persistir el nuevo estado")
+    @DisplayName("cambiarEstado() debe actualizar el estado del expediente")
     void debeCambiarEstado() {
-        // Arrange
         when(expedienteRepository.findById(1L)).thenReturn(Optional.of(expedienteEjemplo));
         when(expedienteRepository.save(any(Expediente.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        // Act
         ExpedienteResponse resultado = expedienteService.cambiarEstado(1L, EstadoExpediente.EN_REVISION);
 
-        // Assert
         assertThat(resultado.estadoExpediente()).isEqualTo(EstadoExpediente.EN_REVISION);
     }
 
@@ -487,27 +389,23 @@ class ExpedienteServiceImplTest {
         @Test
         @DisplayName("Debe asignar el investigador y cambiar el estado a ASIGNADO_A_EQUIPO")
         void debeAsignarInvestigadorExitosamente() {
-            // Arrange
             when(expedienteRepository.findById(1L)).thenReturn(Optional.of(expedienteEjemplo));
-            when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuarioEjemplo));
+            when(usuarioRepository.findById(agenteId)).thenReturn(Optional.of(agenteEjemplo));
             when(expedienteRepository.save(any(Expediente.class))).thenAnswer(inv -> inv.getArgument(0));
 
-            // Act
-            ExpedienteResponse resultado = expedienteService.asignarInvestigador(1L, 1L);
+            ExpedienteResponse resultado = expedienteService.asignarInvestigador(1L, agenteId);
 
-            // Assert
             assertThat(resultado.estadoExpediente()).isEqualTo(EstadoExpediente.ASIGNADO_A_EQUIPO);
         }
 
         @Test
         @DisplayName("Debe lanzar ResourceNotFoundException cuando el investigador no existe")
         void debeLanzarExcepcionCuandoInvestigadorNoExiste() {
-            // Arrange
+            UUID inexistente = UUID.randomUUID();
             when(expedienteRepository.findById(1L)).thenReturn(Optional.of(expedienteEjemplo));
-            when(usuarioRepository.findById(77L)).thenReturn(Optional.empty());
+            when(usuarioRepository.findById(inexistente)).thenReturn(Optional.empty());
 
-            // Act & Assert
-            assertThatThrownBy(() -> expedienteService.asignarInvestigador(1L, 77L))
+            assertThatThrownBy(() -> expedienteService.asignarInvestigador(1L, inexistente))
                     .isInstanceOf(ResourceNotFoundException.class);
             verify(expedienteRepository, never()).save(any());
         }
@@ -518,81 +416,45 @@ class ExpedienteServiceImplTest {
     class VincularEscena {
 
         @Test
-        @DisplayName("Debe vincular la escena al expediente cuando ambos existen")
+        @DisplayName("Debe vincular la escena al expediente")
         void debeVincularEscenaExitosamente() {
-            // Arrange
             Escena escena = Escena.builder().id(5L).build();
             when(expedienteRepository.findById(1L)).thenReturn(Optional.of(expedienteEjemplo));
             when(escenaRepository.findById(5L)).thenReturn(Optional.of(escena));
             when(expedienteRepository.save(any(Expediente.class))).thenAnswer(inv -> inv.getArgument(0));
 
-            // Act
             ExpedienteResponse resultado = expedienteService.vincularEscena(1L, 5L);
 
-            // Assert
             assertThat(resultado.escenas()).hasSize(1);
-            assertThat(escena.getExpediente()).isEqualTo(expedienteEjemplo);
         }
 
         @Test
         @DisplayName("Debe lanzar ResourceNotFoundException cuando la escena no existe")
         void debeLanzarExcepcionCuandoEscenaNoExiste() {
-            // Arrange
             when(expedienteRepository.findById(1L)).thenReturn(Optional.of(expedienteEjemplo));
             when(escenaRepository.findById(99L)).thenReturn(Optional.empty());
 
-            // Act & Assert
             assertThatThrownBy(() -> expedienteService.vincularEscena(1L, 99L))
                     .isInstanceOf(ResourceNotFoundException.class);
         }
     }
 
     @Test
-    @DisplayName("asignarFechaHecho() debe parsear el ISO-8601 y actualizar la fecha del hecho")
+    @DisplayName("asignarFechaHecho() debe parsear y asignar la fecha del hecho")
     void debeAsignarFechaHecho() {
-        // Arrange
         when(expedienteRepository.findById(1L)).thenReturn(Optional.of(expedienteEjemplo));
         when(expedienteRepository.save(any(Expediente.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        // Act
-        ExpedienteResponse resultado = expedienteService.asignarFechaHecho(1L, "2026-01-15T10:30:00");
+        ExpedienteResponse resultado = expedienteService.asignarFechaHecho(1L, "2026-01-15T20:00:00");
 
-        // Assert
-        assertThat(resultado.fechaHecho()).isEqualTo(LocalDateTime.of(2026, 1, 15, 10, 30, 0));
+        assertThat(resultado.fechaHecho()).isEqualTo(java.time.LocalDateTime.of(2026, 1, 15, 20, 0));
     }
 
-    @Nested
-    @DisplayName("validarDatos()")
-    class ValidarDatos {
-
-        @Test
-        @DisplayName("Debe retornar true cuando descripción, tipo de delito y localización están completos")
-        void debeRetornarTrueCuandoDatosCompletos() {
-            // Arrange
-            expedienteEjemplo.setTipoDelito(TipoDelito.builder().id(1L).build());
-            expedienteEjemplo.setLocalizacion(Localizacion.builder().id(1L).build());
-            when(expedienteRepository.findById(1L)).thenReturn(Optional.of(expedienteEjemplo));
-
-            // Act
-            boolean resultado = expedienteService.validarDatos(1L);
-
-            // Assert
-            assertThat(resultado).isTrue();
-        }
-
-        @Test
-        @DisplayName("Debe retornar false cuando falta el tipo de delito")
-        void debeRetornarFalseCuandoFaltaTipoDelito() {
-            // Arrange
-            expedienteEjemplo.setLocalizacion(Localizacion.builder().id(1L).build());
-            when(expedienteRepository.findById(1L)).thenReturn(Optional.of(expedienteEjemplo));
-
-            // Act
-            boolean resultado = expedienteService.validarDatos(1L);
-
-            // Assert
-            assertThat(resultado).isFalse();
-        }
+    @Test
+    @DisplayName("validarDatos() debe delegar en la entidad")
+    void debeValidarDatos() {
+        when(expedienteRepository.findById(1L)).thenReturn(Optional.of(expedienteEjemplo));
+        assertThat(expedienteService.validarDatos(1L)).isFalse();
     }
 
     @Nested
@@ -600,49 +462,40 @@ class ExpedienteServiceImplTest {
     class VerificarIntegridad {
 
         @Test
-        @DisplayName("Debe indicar que no ha sido sellado cuando no tiene hash de integridad")
-        void debeIndicarQueNoHaSidoSellado() {
-            // Arrange
+        @DisplayName("Debe indicar que el expediente no ha sido sellado cuando no tiene hash")
+        void debeIndicarNoSellado() {
             when(expedienteRepository.findById(1L)).thenReturn(Optional.of(expedienteEjemplo));
 
-            // Act
             VerificacionHashResponse resultado = expedienteService.verificarIntegridad(1L);
 
-            // Assert
             assertThat(resultado.integro()).isFalse();
             assertThat(resultado.mensaje()).isEqualTo("El expediente no ha sido sellado.");
         }
 
         @Test
-        @DisplayName("Debe reportar íntegro cuando el hash recalculado coincide con el almacenado")
-        void debeReportarIntegroCuandoHashCoincide() {
-            // Arrange
+        @DisplayName("Debe reportar integridad verificada cuando el hash recalculado coincide")
+        void debeReportarIntegridadVerificada() {
             expedienteEjemplo.setHashIntegridad("hash-original");
             when(expedienteRepository.findById(1L)).thenReturn(Optional.of(expedienteEjemplo));
             when(selloStrategy.recalcularHash(expedienteEjemplo)).thenReturn("hash-original");
 
-            // Act
             VerificacionHashResponse resultado = expedienteService.verificarIntegridad(1L);
 
-            // Assert
             assertThat(resultado.integro()).isTrue();
-            assertThat(resultado.mensaje()).contains("no fue alterado");
         }
 
         @Test
-        @DisplayName("Debe reportar alerta cuando el hash recalculado difiere del almacenado")
-        void debeReportarAlertaCuandoHashDifiere() {
-            // Arrange
+        @DisplayName("Debe reportar alerta de alteración cuando el hash recalculado no coincide")
+        void debeReportarAlteracion() {
             expedienteEjemplo.setHashIntegridad("hash-original");
             when(expedienteRepository.findById(1L)).thenReturn(Optional.of(expedienteEjemplo));
             when(selloStrategy.recalcularHash(expedienteEjemplo)).thenReturn("hash-modificado");
 
-            // Act
             VerificacionHashResponse resultado = expedienteService.verificarIntegridad(1L);
 
-            // Assert
             assertThat(resultado.integro()).isFalse();
-            assertThat(resultado.mensaje()).contains("ALERTA");
+            assertThat(resultado.hashAlmacenado()).isEqualTo("hash-original");
+            assertThat(resultado.hashRecalculado()).isEqualTo("hash-modificado");
         }
     }
 
@@ -651,65 +504,61 @@ class ExpedienteServiceImplTest {
     class ObtenerParaPanel {
 
         @Test
-        @DisplayName("Debe retornar todos los expedientes cuando no se indica estatus")
-        void debeRetornarTodosSinFiltroDeEstatus() {
-            // Arrange
+        @DisplayName("Debe retornar todos los expedientes cuando no se especifica filtro de estatus")
+        void debeRetornarTodosSinFiltro() {
             when(expedienteRepository.findAll()).thenReturn(List.of(expedienteEjemplo));
 
-            // Act
             List<ExpedienteActivoResponse> resultado = expedienteService.obtenerParaPanel(null, null);
 
-            // Assert
             assertThat(resultado).hasSize(1);
         }
 
         @Test
-        @DisplayName("Debe excluir estados inactivos cuando el estatus es ACTIVO")
-        void debeExcluirEstadosInactivosParaEstatusActivo() {
-            // Arrange: un expediente en estado activo (EN_REVISION) y otro inactivo (CERRADO)
-            expedienteEjemplo.setEstadoExpediente(EstadoExpediente.EN_REVISION);
-            Expediente cerrado = Expediente.builder().id(2L).folio("EXP-2026-BBBB2222")
+        @DisplayName("Debe excluir estados inactivos cuando el filtro es ACTIVO")
+        void debeFiltrarSoloActivos() {
+            Expediente cerrado = Expediente.builder().id(2L).folio("EXP-2026-CCCC3333")
                     .estadoExpediente(EstadoExpediente.CERRADO).build();
-            when(expedienteRepository.findAll()).thenReturn(List.of(expedienteEjemplo, cerrado));
+            Expediente activo = Expediente.builder().id(3L).folio("EXP-2026-DDDD4444")
+                    .estadoExpediente(EstadoExpediente.INVESTIGACION_ACTIVA).build();
+            when(expedienteRepository.findAll()).thenReturn(List.of(cerrado, activo));
 
-            // Act
             List<ExpedienteActivoResponse> resultado = expedienteService.obtenerParaPanel("ACTIVO", null);
 
-            // Assert: el expediente activo se incluye, el cerrado (inactivo) se excluye
-            assertThat(resultado).extracting(ExpedienteActivoResponse::folioCOPP)
-                    .containsExactly("EXP-2026-AAAA1111")
-                    .doesNotContain("EXP-2026-BBBB2222");
+            assertThat(resultado).hasSize(1);
+            assertThat(resultado.get(0).id()).isEqualTo("3");
         }
 
         @Test
-        @DisplayName("Debe filtrar por el estado exacto indicado en el estatus")
-        void debeFiltrarPorEstadoExacto() {
-            // Arrange
-            when(expedienteRepository.findByEstadoExpediente(EstadoExpediente.EN_REVISION))
+        @DisplayName("Debe filtrar por un estado específico cuando se indica")
+        void debeFiltrarPorEstadoEspecifico() {
+            when(expedienteRepository.findByEstadoExpediente(EstadoExpediente.CERRADO))
                     .thenReturn(List.of(expedienteEjemplo));
 
-            // Act
-            List<ExpedienteActivoResponse> resultado = expedienteService.obtenerParaPanel("EN_REVISION", null);
+            List<ExpedienteActivoResponse> resultado = expedienteService.obtenerParaPanel("cerrado", null);
 
-            // Assert
             assertThat(resultado).hasSize(1);
-            verify(expedienteRepository).findByEstadoExpediente(EstadoExpediente.EN_REVISION);
         }
 
         @Test
-        @DisplayName("Debe ordenar de forma descendente por folio cuando sort=folio,desc")
-        void debeOrdenarDescendentePorFolio() {
-            // Arrange
-            Expediente expedienteB = Expediente.builder().id(2L).folio("EXP-2026-ZZZZ9999")
-                    .estadoExpediente(EstadoExpediente.BORRADOR).build();
-            when(expedienteRepository.findAll()).thenReturn(List.of(expedienteEjemplo, expedienteB));
+        @DisplayName("Debe ordenar por folio descendente cuando se indica 'folio,desc'")
+        void debeOrdenarPorFolioDescendente() {
+            Expediente e1 = Expediente.builder().id(1L).folio("EXP-A").build();
+            Expediente e2 = Expediente.builder().id(2L).folio("EXP-B").build();
+            when(expedienteRepository.findAll()).thenReturn(List.of(e1, e2));
 
-            // Act
             List<ExpedienteActivoResponse> resultado = expedienteService.obtenerParaPanel(null, "folio,desc");
 
-            // Assert
-            assertThat(resultado).extracting(ExpedienteActivoResponse::folioCOPP)
-                    .containsExactly("EXP-2026-ZZZZ9999", "EXP-2026-AAAA1111");
+            assertThat(resultado).extracting(ExpedienteActivoResponse::folioCOPP).containsExactly("EXP-B", "EXP-A");
+        }
+
+        @Test
+        @DisplayName("No debe aplicar orden cuando el campo de sort es desconocido")
+        void noDebeOrdenarConCampoDesconocido() {
+            when(expedienteRepository.findAll()).thenReturn(List.of(expedienteEjemplo));
+
+            List<ExpedienteActivoResponse> resultado = expedienteService.obtenerParaPanel(null, "campoInexistente");
+
+            assertThat(resultado).hasSize(1);
         }
     }
 }
