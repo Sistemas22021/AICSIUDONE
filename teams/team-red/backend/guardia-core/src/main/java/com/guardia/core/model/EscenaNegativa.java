@@ -3,6 +3,10 @@ package com.guardia.core.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+/**
+ * Entidad que representa un registro de escena negativa (inspección sin hallazgos).
+ * Contiene el elemento buscado, área inspeccionada, resultado y observaciones.
+ */
 @Entity
 @Table(name = "escena_negativa")
 @Getter
@@ -10,26 +14,22 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-/**
- * Entidad que representa un registro de escena negativa (inspección sin hallazgos).
- * Contiene el elemento buscado, área inspeccionada, resultado y observaciones. 
- */
 public class EscenaNegativa {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "elemento_buscado")
+    @Column(name = "elemento_buscado", columnDefinition = "TEXT")
     private String elementoBuscado;
 
-    @Column(name = "area_inspeccionada")
+    @Column(name = "area_inspeccionada", columnDefinition = "TEXT")
     private String areaInspeccionada;
 
     @Column
     private String resultado;
 
-    @Column
+    @Column(columnDefinition = "TEXT")
     private String observacion;
 
     @Column(name = "sin_elementos_negativos", nullable = false)

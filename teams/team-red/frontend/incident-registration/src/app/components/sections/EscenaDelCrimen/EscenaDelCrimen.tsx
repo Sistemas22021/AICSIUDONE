@@ -5,12 +5,14 @@ import { NeonInput } from '../../ui/NeonInput'
 import { NeonSelect } from '../../ui/NeonSelect'
 import { NeonPanel } from '../../ui/NeonPanel'
 import { NeonTextarea } from '../../ui/NeonTextarea'
+import { NeonCheckbox } from '../../ui/NeonCheckbox'
 import { NeonConfirmModal } from '../../ui/NeonConfirmModal'
 import { useNeonToast } from '../../ui/NeonToast'
 import { StepperVisual } from '../../ui/StepperVisual'
 import { AlertaIntegridad } from '../../ui/AlertaIntegridad'
 import { HistorialEscenas } from './HistorialEscenas'
-import { tiposEvidencia, tiposEmbalaje, resultadoNegativo } from './index'
+import { EscenaNegativaFormItem } from './EscenaNegativaFormItem'
+import { tiposEvidencia, tiposEmbalaje } from './index'
 
 interface EscenaDelCrimenProps {
     expedienteIdInicial?: number
@@ -374,11 +376,15 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
                                                 />
                                             </div>
                                             <div style={{ flex: 3, minWidth: '200px' }}>
-                                                <NeonInput
+                                                <NeonTextarea
                                                     label="Descripción"
                                                     value={ev.descripcion}
                                                     onChange={(e: any) => updateEvidencia(ev.id, { descripcion: e.target.value })}
                                                     disabled={isPaso2Completado}
+                                                    rows={2}
+                                                    showCount
+                                                    maxCount={500}
+                                                    maxLength={500}
                                                 />
                                             </div>
                                         </div>
@@ -420,86 +426,36 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
                         </div>
 
                         {/* Escena Negativa */}
-                        <div style={{ marginBottom: '32px' }}>
+                        <div style={{ marginBottom: '16px' }}>
                             <h4>Escena Negativa</h4>
 
-                            {/* Checkbox "Sin elementos negativos" - NUEVO */}
-                            <div style={{ marginBottom: '16px' }}>
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                                    <input
-                                        type="checkbox"
-                                        checked={state.noHayEscenaNegativa}
-                                        onChange={(e) => setNoHayEscenaNegativa(e.target.checked)}
-                                        disabled={isPaso2Completado}
-                                    />
-                                    <span style={{ color: '#00ffff' }}>✓ No hay elementos negativos a reportar</span>
-                                </label>
+                            <div style={{ marginBottom: '12px' }}>
+                                <NeonCheckbox
+                                    label="Sin elementos negativos que reportar"
+                                    checked={state.noHayEscenaNegativa}
+                                    onChange={(e: any) => setNoHayEscenaNegativa(e.target.checked)}
+                                    disabled={isPaso2Completado}
+                                />
                             </div>
 
-                            {!state.noHayEscenaNegativa && state.escenaNegativa.map((en) => (
-                                <div
-                                    key={en.id}
-                                    style={{
-                                        border: '1px solid #ff00ff33',
-                                        padding: '16px',
-                                        marginBottom: '12px',
-                                        borderRadius: '8px',
-                                    }}
-                                >
-                                    <div style={{ display: 'flex', gap: '12px', flexDirection: 'column' }}>
-                                        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                                            <div style={{ flex: 2, minWidth: '150px' }}>
-                                                <NeonInput
-                                                    label="Elemento buscado"
-                                                    value={en.elemento}
-                                                    onChange={(e: any) => updateEscenaNegativa(en.id, { elemento: e.target.value })}
-                                                    disabled={isPaso2Completado}
-                                                />
-                                            </div>
-                                            <div style={{ flex: 2, minWidth: '150px' }}>
-                                                <NeonInput
-                                                    label="Área inspeccionada"
-                                                    value={en.lugar}
-                                                    onChange={(e: any) => updateEscenaNegativa(en.id, { lugar: e.target.value })}
-                                                    disabled={isPaso2Completado}
-                                                />
-                                            </div>
-                                        </div>
-                                        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                                            <div style={{ flex: 2, minWidth: '200px' }}>
-                                                <NeonSelect
-                                                    label="Resultado"
-                                                    options={resultadoNegativo.map((r: string) => ({ value: r, label: r }))}
-                                                    value={en.resultado}
-                                                    onChange={(e: any) => updateEscenaNegativa(en.id, { resultado: e.target.value })}
-                                                    disabled={isPaso2Completado}
-                                                />
-                                            </div>
-                                            <div style={{ flex: 3, minWidth: '200px' }}>
-                                                <NeonInput
-                                                    label="Observación"
-                                                    value={en.observacion}
-                                                    onChange={(e: any) => updateEscenaNegativa(en.id, { observacion: e.target.value })}
-                                                    disabled={isPaso2Completado}
-                                                    placeholder="Notas adicionales..."
-                                                />
-                                            </div>
-                                        </div>
-                                        {!isPaso2Completado && state.escenaNegativa.length > 1 && (
-                                            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                                                <NeonButton onClick={() => removeEscenaNegativa(en.id)}>
-                                                    Eliminar
-                                                </NeonButton>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-
-                            {!isPaso2Completado && !state.noHayEscenaNegativa && (
-                                <NeonButton onClick={addEscenaNegativa}>
-                                    + Agregar Escena Negativa
-                                </NeonButton>
+                            {!state.noHayEscenaNegativa && (
+                                <>
+                                    {state.escenaNegativa.map((en) => (
+                                        <EscenaNegativaFormItem
+                                            key={en.id}
+                                            item={en}
+                                            disabled={isPaso2Completado}
+                                            canRemove={!isPaso2Completado && state.escenaNegativa.length > 1}
+                                            onChange={(patch) => updateEscenaNegativa(en.id, patch)}
+                                            onRemove={() => removeEscenaNegativa(en.id)}
+                                        />
+                                    ))}
+                                    {!isPaso2Completado && (
+                                        <NeonButton onClick={addEscenaNegativa}>
+                                            + Agregar elemento negativo
+                                        </NeonButton>
+                                    )}
+                                </>
                             )}
                         </div>
 
