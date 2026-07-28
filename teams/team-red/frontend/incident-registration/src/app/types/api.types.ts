@@ -58,6 +58,17 @@ export interface ExpedienteActivo {
   sector:               string | null
 }
 
+export interface FiltrosBusquedaExpediente {
+  tiposDelito: string[]
+  municipio:   string
+  colonia:     string
+  latitud:     number | null
+  longitud:    number | null
+  radioKm:     number | null
+  fechaDesde:  string | null
+  fechaHasta:  string | null
+}
+
 // ─── Payload de creación de incidente ────────────────────────────────────────
 
 export interface DelitoPayload {

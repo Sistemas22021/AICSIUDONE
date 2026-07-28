@@ -1,6 +1,7 @@
 package com.guardia.core.controller;
 
 import com.guardia.core.dto.request.ExpedienteRequest;
+import com.guardia.core.dto.request.ExpedienteFiltroRequest;
 import com.guardia.core.dto.response.ExpedienteResponse;
 import com.guardia.core.dto.response.ExpedienteActivoResponse;
 import com.guardia.core.exception.ApiResponse;
@@ -9,22 +10,24 @@ import com.guardia.core.service.DeteccionModusOperandiService;
 import com.guardia.core.dto.response.VerificacionHashResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import java.time.LocalDate;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
-@RestController
-@RequestMapping("/api/v1/expedientes")
-@RequiredArgsConstructor
 /**
  * Controlador central para la gestión de expedientes.
  * Maneja registro, sellado y verificación de integridad (hash) de expedientes.
  * Ruta principal: /api/expedientes
  */
+@RestController
+@RequestMapping("/api/v1/expedientes")
+@RequiredArgsConstructor
 public class ExpedienteController {
 
     private final ExpedienteService expedienteService;
@@ -58,6 +61,27 @@ public class ExpedienteController {
 
         List<ExpedienteActivoResponse> expedientes = expedienteService.obtenerParaPanel(estatus, sort);
         return ResponseEntity.ok(ApiResponse.ok("Expedientes obtenidos.", expedientes));
+    }
+
+    @GetMapping("/buscar")
+    public ResponseEntity<ApiResponse<List<ExpedienteActivoResponse>>> buscarConFiltros(
+            @RequestParam(required = false) List<String> tiposDelito,
+            @RequestParam(required = false) String municipio,
+            @RequestParam(required = false) String colonia,
+            @RequestParam(required = false) Double latitud,
+            @RequestParam(required = false) Double longitud,
+            @RequestParam(required = false) Double radioKm,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta,
+            @RequestParam(required = false) String sort) {
+
+        ExpedienteFiltroRequest filtro = new ExpedienteFiltroRequest(
+                tiposDelito, municipio, colonia, latitud, longitud, radioKm, fechaDesde, fechaHasta);
+
+        List<ExpedienteActivoResponse> resultado = expedienteService.buscarConFiltros(filtro, sort);
+
+        String mensaje = resultado.isEmpty() ? "Sin resultados." : "Búsqueda completada.";
+        return ResponseEntity.ok(ApiResponse.ok(mensaje, resultado));
     }
 
     @PostMapping("/{id}/reanalizar-mo")
