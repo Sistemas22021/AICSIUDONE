@@ -2705,3 +2705,186 @@ html[data-tema="claro"] .toolbar .btn-ghost:hover { background: #F1F5F9; }
   margin-top: 0;
   padding-top: 4px;
 }
+
+/* ============================================================
+   GRAFO RED THREAD - Rediseño (radar + HUD)
+   PEGAR AL FINAL de styles.css (importante: al final, para que
+   .grafo-radar gane sobre el fondo de puntos de .grafo-canvas).
+   ============================================================ */
+
+/* Fondo radar tactico: pisa el fondo de puntos del .grafo-canvas */
+.grafo-canvas.grafo-radar {
+  background-color: #0a0f1a;
+  background-image:
+    radial-gradient(circle at 50% 45%, rgba(30, 41, 59, 0.5) 0%, rgba(10, 15, 26, 0) 60%),
+    linear-gradient(rgba(19, 28, 46, 0.7) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(19, 28, 46, 0.7) 1px, transparent 1px);
+  background-size: 100% 100%, 34px 34px, 34px 34px;
+  overflow: hidden;
+}
+
+/* Anillos de radar concentricos (decorativos) */
+.grafo-radar::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 680px;
+  height: 680px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 1;
+  background:
+    repeating-radial-gradient(
+      circle,
+      rgba(239, 68, 68, 0.05) 0px,
+      rgba(239, 68, 68, 0.05) 1px,
+      transparent 1px,
+      transparent 90px
+    );
+}
+
+/* Barrido de radar giratorio */
+.grafo-radar::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 900px;
+  height: 900px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 1;
+  background: conic-gradient(
+    from 0deg,
+    rgba(239, 68, 68, 0.08) 0deg,
+    rgba(239, 68, 68, 0) 45deg,
+    rgba(239, 68, 68, 0) 360deg
+  );
+  border-radius: 50%;
+  animation: radar-sweep 8s linear infinite;
+  opacity: 0.5;
+}
+
+@keyframes radar-sweep {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to   { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* El canvas interno de cytoscape queda por encima de los decorados */
+.grafo-radar > div {
+  position: relative;
+  z-index: 2;
+}
+
+/* HUD: indicador de modo foco (hover sobre un nodo) */
+.grafo-hud-focus {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: #7dd3fc;
+  font-size: 11px;
+  font-weight: 600;
+  backdrop-filter: blur(4px);
+  animation: hud-fade 0.2s ease;
+  pointer-events: none;
+}
+
+@keyframes hud-fade {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* HUD: mini stats flotantes (arriba a la derecha del canvas) */
+.grafo-hud-stats {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 5;
+  display: flex;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.grafo-hud-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 58px;
+  padding: 8px 10px;
+  background: rgba(13, 20, 32, 0.85);
+  border: 1px solid var(--slate-800);
+  backdrop-filter: blur(6px);
+}
+
+.grafo-hud-stat.danger {
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.grafo-hud-num {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--slate-100);
+  font-family: var(--font-body);
+  line-height: 1;
+}
+
+.grafo-hud-stat.danger .grafo-hud-num {
+  color: #fca5a5;
+}
+
+.grafo-hud-lbl {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--slate-600);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 3px;
+}
+
+/* ---------- TEMA CLARO: adaptar el radar ---------- */
+html[data-tema="claro"] .grafo-canvas.grafo-radar {
+  background-color: #FFFFFF;
+  background-image:
+    linear-gradient(rgba(203, 213, 225, 0.5) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(203, 213, 225, 0.5) 1px, transparent 1px);
+  background-size: 34px 34px, 34px 34px;
+}
+html[data-tema="claro"] .grafo-radar::before {
+  background:
+    repeating-radial-gradient(
+      circle,
+      rgba(220, 38, 38, 0.06) 0px,
+      rgba(220, 38, 38, 0.06) 1px,
+      transparent 1px,
+      transparent 90px
+    );
+}
+html[data-tema="claro"] .grafo-radar::after {
+  background: conic-gradient(
+    from 0deg,
+    rgba(220, 38, 38, 0.05) 0deg,
+    rgba(220, 38, 38, 0) 45deg,
+    rgba(220, 38, 38, 0) 360deg
+  );
+}
+html[data-tema="claro"] .grafo-hud-stat {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: #E2E8F0;
+}
+html[data-tema="claro"] .grafo-hud-num { color: #0F172A; }
+html[data-tema="claro"] .grafo-hud-stat.danger .grafo-hud-num { color: #DC2626; }
+html[data-tema="claro"] .grafo-hud-lbl { color: #64748B; }
+html[data-tema="claro"] .grafo-hud-focus {
+  background: rgba(14, 165, 233, 0.08);
+  border-color: rgba(14, 165, 233, 0.35);
+  color: #0369A1;
+}
