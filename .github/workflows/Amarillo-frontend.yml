@@ -7,7 +7,7 @@ on:
     branches: [main, dev]
     paths: ["teams/amarrillo/frontend/**"]
   workflow_dispatch:
- 
+
 jobs:
   build-lint-test:
     name: "Build - Lint - Test"
@@ -30,12 +30,12 @@ jobs:
         run: npm run test || true
       - name: Build
         run: npm run build
- 
+
   deploy-y-approval:
     name: "Deploy + Approval Test"
     runs-on: ubuntu-latest
     needs: build-lint-test
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     steps:
       - name: Disparar deploy en Render
         run: |
@@ -43,11 +43,19 @@ jobs:
         env:
           RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
       - name: Esperar propagacion
-        run: sleep 60
-      - name: Approval Test (verificar que el sitio responde)
+        run: sleep 30
+      - name: Approval Test (verificar que el sitio responde, con reintentos por arranque en frio)
         run: |
-          code=$(curl -s -o /dev/null -w "%{http_code}" "$DEPLOY_URL")
-          echo "HTTP $code"
-          test "$code" -ge 200 -a "$code" -lt 400 && echo "APROBADO" || (echo "FALLO" && exit 1)
+          for i in $(seq 1 10); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "$DEPLOY_URL")
+            echo "Intento $i - HTTP $code"
+            if [ "$code" -ge 200 ] && [ "$code" -lt 400 ]; then
+              echo "APROBADO"
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "FALLO"
+          exit 1
         env:
           DEPLOY_URL: ${{ secrets.DEPLOY_URL }}
