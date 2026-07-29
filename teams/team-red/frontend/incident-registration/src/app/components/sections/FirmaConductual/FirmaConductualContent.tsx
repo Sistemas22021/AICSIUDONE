@@ -78,9 +78,10 @@ export const FirmaConductualContent = ({ expedienteId, folioExpediente, analista
         }
         setGuardando(true)
         try {
-            await registrarFirmaConductual(expedienteId, { analistaId, ...campos })
+            const nueva = await registrarFirmaConductual(expedienteId, { analistaId, ...campos })
             showToast(vigente ? 'Firma conductual actualizada (nueva versión).' : 'Firma conductual registrada.', 'success')
-            await cargar()
+            setVigente(nueva)
+            setCampos(VACIO)
             if (mostrarHistorial) await cargarHistorial()
         } catch (err) {
             console.error('[FirmaConductualContent] Error guardando', err)
