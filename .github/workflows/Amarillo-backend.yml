@@ -9,14 +9,13 @@ on:
     paths: ["teams/amarrillo/backend/**"]
   workflow_dispatch:
  
-defaults:
-  run:
-    working-directory: teams/amarrillo/backend
- 
 jobs:
   build-lint-test:
     name: "Build - Lint - Test"
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: teams/amarrillo/backend
     steps:
       - uses: actions/checkout@v4
       - name: Configurar JDK 17
