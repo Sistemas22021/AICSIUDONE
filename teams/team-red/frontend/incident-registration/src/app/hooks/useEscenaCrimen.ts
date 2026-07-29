@@ -187,10 +187,10 @@ export function useEscenaCrimen() {
                     sincronizado: true,
                 }))
             }).catch(() => {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+                setState(prev => { localStorage.setItem(STORAGE_KEY, JSON.stringify(prev)); return prev })
             })
         })
-    }, [state])
+    }, [state.escenaId])
 
     const isPaso1Completado = state.paso1_completado
     const isPaso2Completado = state.paso2_completado
@@ -268,7 +268,7 @@ export function useEscenaCrimen() {
             }
             const nuevaEscena = await crearEscena({
                 expedienteId: state.expedienteId,
-                levantadaPorId: Number(state.investigadorId),
+                levantadaPorId: state.investigadorId,
             })
             escenaIdActual = nuevaEscena.id
 
@@ -298,14 +298,20 @@ export function useEscenaCrimen() {
         if (!canCompletarPaso2) return
         if (isPaso2Completado) return
         if (state.escenaId) {
+            const evidenciasPendientes = state.evidencias.filter(ev => ev.id.includes('-'))
+            for (const ev of evidenciasPendientes) {
+                await guardarEvidenciaEnBackend(ev.id)
+            }
             if (state.noHayEscenaNegativa) {
-                await persistirNoHayEscenaNegativa()          // ← NUEVO
+                await persistirNoHayEscenaNegativa()
             } else {
                 const pendientes = state.escenaNegativa.filter(en => en.id.includes('-'))
                 for (const en of pendientes) {
                     await guardarEscenaNegativaEnBackend(en.id)
                 }
             }
+            const { avanzarPasoEscena } = await import('../services/escenaService')   // ← NUEVO
+            await avanzarPasoEscena(state.escenaId)                                    // ← NUEVO
         }
         setState((prev: EscenaCrimenState) => ({
             ...prev,
@@ -338,7 +344,7 @@ export function useEscenaCrimen() {
                 throw new Error('El investigador responsable es requerido para liberar la escena')
             }
             const resultado = await liberarEscena(state.escenaId, {
-                investigadorResponsableId: Number(state.liberacion.investigadorResponsableId),
+                investigadorResponsableId: state.liberacion.investigadorResponsableId,
                 observaciones: state.liberacion.observaciones || undefined,
             })
             setState((prev: EscenaCrimenState) => ({
@@ -348,7 +354,7 @@ export function useEscenaCrimen() {
                     ...prev.liberacion,
                     hora: resultado.horaLiberacion ?? new Date().toLocaleTimeString(),
                     hashLiberacion: resultado.hashLiberacion ?? undefined,
-                    investigadorNombre: resultado.liberadaPor?.nombre ?? undefined,
+                    investigadorNombre: resultado.liberadaPor?.fullName ?? undefined,
                 },
             }))
         } else {
@@ -406,7 +412,7 @@ export function useEscenaCrimen() {
                 tipo: ev.tipo,
                 descripcion: ev.descripcion,
                 escenaId: state.escenaId,
-                investigadorId: ev.investigadorId ? Number(ev.investigadorId) : undefined,
+                investigadorId: ev.investigadorId || undefined,
             }
             const saved = await crearEvidencia(dto)
             // Actualizar el ID local → ID del backend, y volcar el hash recibido
@@ -438,7 +444,7 @@ export function useEscenaCrimen() {
     }
 
     const updateEvidencia = (id: string, patch: Partial<Evidencia>) => {
-        if (isPaso2Completado) return
+        if (isPaso3Completado) return
         setState((prev: EscenaCrimenState) => ({
             ...prev,
             evidencias: prev.evidencias.map(e => e.id === id ? { ...e, ...patch, timestamp: new Date().toISOString() } : e),

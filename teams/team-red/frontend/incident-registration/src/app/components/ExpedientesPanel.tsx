@@ -1,12 +1,15 @@
-import {useState, useEffect} from 'react'
+import {useState, useEffect, useRef} from 'react'
 import {
     X, RefreshCw, AlertTriangle, Search,
-    ChevronUp, ChevronDown, Dot,
+    ChevronUp, ChevronDown, Dot, MapPin, Eraser,
 } from 'lucide-react'
 import {NeonInput} from './ui/NeonInput'
 import {NeonSelect} from './ui/NeonSelect'
+import {MapaPicker} from './ui/MapaPicker'
+import {FiltroTipoDelitoMultiSelect} from './ui/FiltroTipoDelitoMultiSelect'
 import {useExpedientesActivos} from '../hooks/useExpedientesActivos'
 import {useExpedientesFiltros} from '../hooks/useExpedientesFiltros'
+import {useFiltrosAvanzadosExpedientes} from '../hooks/useFiltrosAvanzadosExpedientes'
 import {SellarExpedienteForm} from './SellarExpedienteForm'
 import type {ExpedienteActivo, EstatusExpediente} from '../types/api.types'
 import type {SortCol} from '../hooks/useExpedientesFiltros'
@@ -91,10 +94,6 @@ export const ExpedientesPanel = ({
                                      showToast,
                                  }: ExpedientesPanelProps) => {
 
-    // El filtro que se pide al backend depende del modo: 'sellado' necesita ver
-    // TODOS los estados (incluido BORRADOR) para poder filtrarlos client-side
-    // exactamente a BORRADOR más abajo; 'busqueda' mantiene el comportamiento
-    // original de solo expedientes activos.
     const {expedientes, loading, usingMock, ultimaActualizacion, refetch} =
         useExpedientesActivos({filtro: modo === 'sellado' ? 'TODOS' : 'ACTIVO'})
 
@@ -106,6 +105,23 @@ export const ExpedientesPanel = ({
         ? expedientes.filter(exp => exp.estatus === 'BORRADOR')
         : expedientes
 
+    const avanzada = useFiltrosAvanzadosExpedientes()
+    const [mostrarZonaPorRadio, setMostrarZonaPorRadio] = useState(false)
+    const radioPopoverRef = useRef<HTMLDivElement>(null)
+    const busquedaAvanzadaActiva = modo !== 'sellado' && avanzada.hayFiltrosActivos
+    const listaBase = busquedaAvanzadaActiva ? avanzada.resultados : expedientesFiltrados
+
+    useEffect(() => {
+        if (!mostrarZonaPorRadio) return
+        function alClicFuera(e: MouseEvent) {
+            if (radioPopoverRef.current && !radioPopoverRef.current.contains(e.target as Node)) {
+                setMostrarZonaPorRadio(false)
+            }
+        }
+        document.addEventListener('mousedown', alClicFuera)
+        return () => document.removeEventListener('mousedown', alClicFuera)
+    }, [mostrarZonaPorRadio])
+
     // Lógica de filtrado y ordenamiento delegada al hook
     const {
         filtrados,
@@ -113,7 +129,7 @@ export const ExpedientesPanel = ({
         filtroEstatus, setFiltroEstatus,
         soloAlertas, setSoloAlertas,
         sortCol, sortAsc, toggleSort,
-    } = useExpedientesFiltros(expedientesFiltrados)
+    } = useExpedientesFiltros(listaBase)
 
 
     useEffect(() => {
@@ -313,11 +329,141 @@ export const ExpedientesPanel = ({
                                     </button>
                                 )}
                             </div>
+
+                            {/* ══ FILTROS COMBINABLES: tipo de delito, zona geográfica, rango de fechas ══
+                                Cada uno es independiente — se pueden aplicar o quitar en cualquier
+                                combinación parcial y los resultados se actualizan sin recargar la página. */}
+                            {modo !== 'sellado' && (
+                                <div className="flex flex-wrap gap-3 items-end mt-3">
+                                    <FiltroTipoDelitoMultiSelect
+                                        seleccionados={avanzada.filtros.tiposDelito}
+                                        onChange={avanzada.setTiposDelito}
+                                    />
+
+                                    <div className="w-40">
+                                        <NeonInput
+                                            placeholder="Municipio"
+                                            value={avanzada.filtros.municipio}
+                                            onChange={e => avanzada.setMunicipio(e.target.value)}
+                                        />
+                                    </div>
+
+                                    <div className="w-40">
+                                        <NeonInput
+                                            placeholder="Colonia / sector"
+                                            value={avanzada.filtros.colonia}
+                                            onChange={e => avanzada.setColonia(e.target.value)}
+                                        />
+                                    </div>
+
+                                    <div className="relative" ref={radioPopoverRef}>
+                                        <button
+                                            onClick={() => setMostrarZonaPorRadio(v => !v)}
+                                            className={[
+                                                'flex items-center gap-1.5 px-3 py-2.5 border rounded text-[10px] uppercase tracking-wider font-medium transition-all',
+                                                avanzada.filtros.radioKm != null
+                                                    ? 'border-cyan-400/70 bg-cyan-400/15 text-cyan-300'
+                                                    : 'border-cyan-400/30 text-cyan-500 hover:border-cyan-400/60 hover:text-cyan-400',
+                                            ].join(' ')}
+                                        >
+                                            <MapPin size={11}/>
+                                            Radio aproximado
+                                        </button>
+
+                                        {/* Popover flotante — no participa del layout en flujo, así la
+                                            tabla de resultados nunca queda fuera del área visible. */}
+                                        {mostrarZonaPorRadio && (
+                                            <div
+                                                className="absolute z-30 mt-1 w-96 max-h-[70vh] overflow-auto rounded border border-cyan-400/40 bg-[#080D13] p-3"
+                                                style={{boxShadow: '0 4px 20px rgba(51,153,255,0.3)'}}
+                                            >
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <span className="text-[10px] uppercase tracking-wider text-cyan-400 font-medium">
+                                                        Zona por radio aproximado
+                                                    </span>
+                                                    <button
+                                                        onClick={() => setMostrarZonaPorRadio(false)}
+                                                        className="text-cyan-500 hover:text-cyan-300 transition-colors"
+                                                    >
+                                                        <X size={13}/>
+                                                    </button>
+                                                </div>
+
+                                                <MapaPicker
+                                                    onChange={coords => avanzada.setPuntoRadio(coords.lat, coords.lng)}
+                                                />
+
+                                                <div className="mt-2 flex items-end gap-2">
+                                                    <div className="w-32">
+                                                        <NeonInput
+                                                            type="number"
+                                                            min={1}
+                                                            placeholder="Radio en km"
+                                                            value={avanzada.filtros.radioKm ?? ''}
+                                                            onChange={e => avanzada.setRadioKm(
+                                                                e.target.value === '' ? null : Number(e.target.value),
+                                                            )}
+                                                        />
+                                                    </div>
+                                                    {(avanzada.filtros.latitud != null || avanzada.filtros.radioKm != null) && (
+                                                        <button
+                                                            onClick={() => avanzada.limpiarRadio()}
+                                                            className="px-3 py-2.5 border border-red-400/30 rounded text-[10px] uppercase tracking-wider text-red-400 hover:bg-red-400/10 hover:border-red-400/60 transition-all"
+                                                        >
+                                                            Quitar
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="w-36">
+                                        <NeonInput
+                                            type="date"
+                                            aria-label="Fecha del hecho desde"
+                                            value={avanzada.filtros.fechaDesde ?? ''}
+                                            onChange={e => avanzada.setFechaDesde(e.target.value || null)}
+                                        />
+                                    </div>
+
+                                    <div className="w-36">
+                                        <NeonInput
+                                            type="date"
+                                            aria-label="Fecha del hecho hasta"
+                                            value={avanzada.filtros.fechaHasta ?? ''}
+                                            onChange={e => avanzada.setFechaHasta(e.target.value || null)}
+                                        />
+                                    </div>
+
+                                    {avanzada.hayFiltrosActivos && (
+                                        <button
+                                            onClick={() => {
+                                                avanzada.limpiarFiltros()
+                                                setMostrarZonaPorRadio(false)
+                                            }}
+                                            className="flex items-center gap-1.5 px-3 py-2.5 border border-red-400/30 rounded text-[10px] uppercase tracking-wider text-red-400 hover:bg-red-400/10 hover:border-red-400/60 transition-all"
+                                        >
+                                            <Eraser size={11}/>
+                                            Limpiar filtros
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Selector de radio aproximado ahora vive como popover flotante junto a
+                                su botón (ver arriba) — así nunca desplaza ni oculta la tabla de resultados. */}
+
+                            {avanzada.error && (
+                                <div className="mt-2 text-[10px] uppercase tracking-wider text-red-400">
+                                    {avanzada.error}
+                                </div>
+                            )}
                         </div>
 
                         {/* ══ TABLA ═════════════════════════════════════════════════════════════ */}
                         <div className="flex-1 overflow-auto">
-                            {loading ? (
+                            {(loading || (busquedaAvanzadaActiva && avanzada.buscando)) ? (
                                 <div className="flex items-center justify-center py-20 gap-3 text-cyan-500">
                                     <RefreshCw size={16} className="animate-spin"/>
                                     <span className="text-[11px] uppercase tracking-wider">Cargando expedientes…</span>
@@ -328,7 +474,7 @@ export const ExpedientesPanel = ({
                                     <span className="text-[11px] uppercase tracking-wider">
             {modo === 'sellado'
                 ? 'No hay expedientes en borrador pendientes de sellar'
-                : 'No se encontraron expedientes con los filtros aplicados'}
+                : 'Sin resultados — ajusta los filtros aplicados'}
           </span>
                                 </div>
                             ) : (
@@ -460,7 +606,7 @@ export const ExpedientesPanel = ({
                         className="flex-shrink-0 px-6 py-2.5 border-t border-cyan-400/15 bg-[#04101E]/40 flex items-center justify-between">
                 <span className="text-[10px] text-cyan-600 uppercase tracking-wider">
                     {filtrados.length} resultado{filtrados.length !== 1 ? 's' : ''}
-                    {filtrados.length !== expedientesFiltrados.length && ` de ${expedientesFiltrados.length}`}
+                    {filtrados.length !== listaBase.length && ` de ${listaBase.length}`}
                 </span>
                         <span className="text-[10px] text-cyan-700 uppercase tracking-wider">
                     Actualización automática cada 30s

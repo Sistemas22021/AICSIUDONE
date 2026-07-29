@@ -6,7 +6,7 @@ interface ModusOperandiPanelProps {
     onClose: () => void
     expedienteId: string
     folioExpediente: string
-    analistaId: number
+    analistaId: string
 }
 
 /** Wrapper de modal para ModusOperandiContent — usado por el botón "Ver MO" de ExpedientesPanel. */

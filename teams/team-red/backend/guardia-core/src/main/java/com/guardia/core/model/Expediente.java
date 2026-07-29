@@ -50,7 +50,7 @@ public class Expediente {
 
     @Column(name = "embedding")
     @JdbcTypeCode(SqlTypes.VECTOR)
-    @Array(length = 768)
+    @Array(length = 3072)
     private float[] embedding;
 
     private LocalDateTime fechaHecho;

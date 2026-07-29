@@ -5,6 +5,7 @@ import com.guardia.core.repository.UsuarioRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -18,7 +19,7 @@ public class RoleValidationHandler implements HandlerInterceptor {
     private final UsuarioRepository usuarioRepository;
 
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws IOException {
+    public boolean preHandle(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull Object handler) throws IOException {
 
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
             return true;
@@ -45,7 +46,7 @@ public class RoleValidationHandler implements HandlerInterceptor {
         boolean permitido = verificarPermisos(rol, method, uri);
 
         if (!permitido) {
-            String mensaje = generarMensajeError(rol, method, uri);
+            String mensaje = generarMensajeError(rol);
             return rechazar(response, mensaje);
         }
 
@@ -63,6 +64,11 @@ public class RoleValidationHandler implements HandlerInterceptor {
 
             // Puede registrar expediente (POST)
             if (method.equals("POST") && uri.equals("/api/v1/expedientes")) {
+                return true;
+            }
+
+            // Puede registrar expediente vía el adaptador de incidentes (POST)
+            if (method.equals("POST") && uri.equals("/api/v1/incidentes")) {
                 return true;
             }
 
@@ -100,11 +106,7 @@ public class RoleValidationHandler implements HandlerInterceptor {
             }
 
             // Puede ver involucrados (GET)
-            if (method.equals("GET") && uri.startsWith("/api/v1/involucrados")) {
-                return true;
-            }
-
-            return false;
+            return method.equals("GET") && uri.startsWith("/api/v1/involucrados");
         }
 
         // ─── ANALISTA: Escenas, Evidencias y MO ────────────────────────────
@@ -126,6 +128,16 @@ public class RoleValidationHandler implements HandlerInterceptor {
 
             // Modus Operandi - CRUD completo
             if (uri.contains("/modus-operandi") || uri.startsWith("/api/v1/modus-operandi")) {
+                return true;
+            }
+
+            // Firma conductual - CRUD completo
+            if (uri.contains("/firma-conductual") || uri.startsWith("/api/v1/firmas-conductuales")) {
+                return true;
+            }
+
+            // Puede forzar el reanálisis de Modus Operandi de un expediente (POST)
+            if (method.equals("POST") && uri.matches("^/api/v1/expedientes/\\d+/reanalizar-mo$")) {
                 return true;
             }
 
@@ -177,26 +189,33 @@ public class RoleValidationHandler implements HandlerInterceptor {
                 return false;
             }
 
+            // PROHIBIDO: Registrar expediente vía el adaptador de incidentes
+            if (method.equals("POST") && uri.equals("/api/v1/incidentes")) {
+                return false;
+            }
+
             // PROHIBIDO: Sellar expediente
             if (method.equals("PATCH") && uri.matches("^/api/v1/expedientes/\\d+/sellar$")) {
                 return false;
             }
 
+            // Puede agrupar expedientes en un caso (POST) — HU1 "Agrupar delitos en un caso"
+            if (method.equals("POST") && uri.equals("/api/v1/casos")) {
+                return true;
+            }
+
+            // El resto de operaciones de escritura sobre casos permanece prohibido
             if (uri.startsWith("/api/v1/casos") && !method.equals("GET")) {
                 return false;
             }
 
-            if (uri.startsWith("/api/v1/usuarios") && !method.equals("GET")) {
-                return false;
-            }
-
-            return true;
+            return !(uri.startsWith("/api/v1/usuarios") && !method.equals("GET"));
         }
 
         return false;
     }
 
-    private String generarMensajeError(String rol, String method, String uri) {
+    private String generarMensajeError(String rol) {
         if ("OFICIAL".equalsIgnoreCase(rol)) {
             return "Los Oficiales solo pueden: " +
                     "Ver y registrar expedientes, " +
@@ -206,8 +225,8 @@ public class RoleValidationHandler implements HandlerInterceptor {
         }
         if ("ANALISTA".equalsIgnoreCase(rol)) {
             return "Los Analistas solo pueden: " +
-                    "Gestionar Escenas, Evidencias y Modus Operandi, " +
-                    "Ver expedientes, casos, delitos y usuarios. " +
+                    "Gestionar Escenas, Evidencias, Modus Operandi y Casos, " +
+                    "Ver expedientes, delitos y usuarios. " +
                     "NO pueden registrar o sellar expedientes.";
         }
         return "No tiene permisos para acceder a este recurso.";

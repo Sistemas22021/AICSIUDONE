@@ -5,12 +5,13 @@ import { NeonInput } from '../../ui/NeonInput'
 import { NeonSelect } from '../../ui/NeonSelect'
 import { NeonPanel } from '../../ui/NeonPanel'
 import { NeonTextarea } from '../../ui/NeonTextarea'
+import { NeonCheckbox } from '../../ui/NeonCheckbox'
 import { NeonConfirmModal } from '../../ui/NeonConfirmModal'
 import { useNeonToast } from '../../ui/NeonToast'
 import { StepperVisual } from '../../ui/StepperVisual'
 import { AlertaIntegridad } from '../../ui/AlertaIntegridad'
-import { HistorialEscenas } from './HistorialEscenas'
-import { tiposEvidencia, tiposEmbalaje, resultadoNegativo } from './index'
+import { EscenaNegativaFormItem } from './EscenaNegativaFormItem'
+import { tiposEvidencia, tiposEmbalaje } from './index'
 
 interface EscenaDelCrimenProps {
     expedienteIdInicial?: number
@@ -18,7 +19,6 @@ interface EscenaDelCrimenProps {
 }
 
 export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDelCrimenProps) => {
-    const [mostrarHistorial, setMostrarHistorial] = useState(false)
     const [busquedaInvestigador, setBusquedaInvestigador] = useState('')
     const [buscandoInvestigador, setBuscandoInvestigador] = useState(false)
     const [errorBusqueda, setErrorBusqueda] = useState<string | null>(null)
@@ -54,10 +54,11 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
     } = useEscenaCrimen()
 
     useEffect(() => {
-        if (expedienteIdInicial && folioInicial && !state.expedienteId) {
+        if (expedienteIdInicial && folioInicial && state.expedienteId !== expedienteIdInicial) {
+            resetEscena()
             vincularExpediente(expedienteIdInicial, folioInicial)
         }
-    }, [expedienteIdInicial, folioInicial])
+    }, [expedienteIdInicial, folioInicial, state.expedienteId, resetEscena, vincularExpediente])
 
     const { showToast, ToastContainer } = useNeonToast()
     const [mostrarConfirmLiberacion, setMostrarConfirmLiberacion] = useState(false)
@@ -88,7 +89,7 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
 
     const handleVerificarIntegridad = () => {
         if (state.folioExpediente) {
-            verificarIntegridad(state.folioExpediente)
+            verificarIntegridad()
         } else {
             alert('Primero vincula este formulario a un expediente usando el campo "Folio del Expediente"')
         }
@@ -99,15 +100,12 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
         setBuscandoInvestigador(true)
         setErrorBusqueda(null)
         try {
-            const { buscarInvestigadorPorCorreo, buscarInvestigadorPorNombre } = await import('../../../services/escenaService')
-            const esCorreo = busquedaInvestigador.includes('@')
-            const usuario = esCorreo
-                ? await buscarInvestigadorPorCorreo(busquedaInvestigador.trim())
-                : await buscarInvestigadorPorNombre(busquedaInvestigador.trim())
-            setInvestigador(usuario.id, usuario.nombre)
+            const { buscarInvestigadorPorNombre } = await import('../../../services/escenaService')
+            const usuario = await buscarInvestigadorPorNombre(busquedaInvestigador.trim())
+            setInvestigador(usuario.id, usuario.fullName)
             setBusquedaInvestigador('')
         } catch {
-            setErrorBusqueda('No se encontró un investigador con ese correo o identificación.')
+            setErrorBusqueda('No se encontró un investigador con ese nombre de usuario.')
         } finally {
             setBuscandoInvestigador(false)
         }
@@ -118,18 +116,15 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
         setBuscandoInvestigador(true)
         setErrorBusqueda(null)
         try {
-            const { buscarInvestigadorPorCorreo, buscarInvestigadorPorNombre } = await import('../../../services/escenaService')
-            const esCorreo = busquedaInvestigador.includes('@')
-            const usuario = esCorreo
-                ? await buscarInvestigadorPorCorreo(busquedaInvestigador.trim())
-                : await buscarInvestigadorPorNombre(busquedaInvestigador.trim())
+            const {buscarInvestigadorPorNombre} = await import('../../../services/escenaService')
+            const usuario = await buscarInvestigadorPorNombre(busquedaInvestigador.trim())
             updateLiberacion({
                 investigadorResponsableId: usuario.id,
-                investigadorNombre: usuario.nombre,
+                investigadorNombre: usuario.fullName,
             })
             setBusquedaInvestigador('')
         } catch {
-            setErrorBusqueda('No se encontró un investigador con ese correo o identificación.')
+            setErrorBusqueda('No se encontró un investigador con ese nombre de usuario.')
         } finally {
             setBuscandoInvestigador(false)
         }
@@ -264,7 +259,7 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
                                     {!isPaso1Completado && (
                                         <NeonButton
                                             variant="ghost"
-                                            onClick={() => setInvestigador(0, '')}
+                                            onClick={() => setInvestigador('', '')}
                                             style={{ fontSize: '11px', padding: '2px 8px' }}
                                         >
                                             Cambiar
@@ -276,14 +271,14 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
                                     <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
                                         <div style={{ flex: 1 }}>
                                             <NeonInput
-                                                label="Investigador responsable (correo o identificación) *"
+                                                label="Investigador responsable (nombre de usuario)  *"
                                                 value={busquedaInvestigador}
                                                 onChange={(e: any) => {
                                                     setBusquedaInvestigador(e.target.value)
                                                     setErrorBusqueda(null)
                                                 }}
                                                 onKeyDown={(e: any) => e.key === 'Enter' && handleBuscarInvestigador()}
-                                                placeholder="correo@guardia.com  o  001-1234567-8"
+                                                placeholder="usuario.guardia"
                                                 disabled={isPaso1Completado || buscandoInvestigador}
                                                 error={!!errorBusqueda}
                                                 errorMessage={errorBusqueda ?? undefined}
@@ -379,11 +374,15 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
                                                 />
                                             </div>
                                             <div style={{ flex: 3, minWidth: '200px' }}>
-                                                <NeonInput
+                                                <NeonTextarea
                                                     label="Descripción"
                                                     value={ev.descripcion}
                                                     onChange={(e: any) => updateEvidencia(ev.id, { descripcion: e.target.value })}
                                                     disabled={isPaso2Completado}
+                                                    rows={2}
+                                                    showCount
+                                                    maxCount={500}
+                                                    maxLength={500}
                                                 />
                                             </div>
                                         </div>
@@ -425,86 +424,36 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
                         </div>
 
                         {/* Escena Negativa */}
-                        <div style={{ marginBottom: '32px' }}>
+                        <div style={{ marginBottom: '16px' }}>
                             <h4>Escena Negativa</h4>
 
-                            {/* Checkbox "Sin elementos negativos" - NUEVO */}
-                            <div style={{ marginBottom: '16px' }}>
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                                    <input
-                                        type="checkbox"
-                                        checked={state.noHayEscenaNegativa}
-                                        onChange={(e) => setNoHayEscenaNegativa(e.target.checked)}
-                                        disabled={isPaso2Completado}
-                                    />
-                                    <span style={{ color: '#00ffff' }}>✓ No hay elementos negativos a reportar</span>
-                                </label>
+                            <div style={{ marginBottom: '12px' }}>
+                                <NeonCheckbox
+                                    label="Sin elementos negativos que reportar"
+                                    checked={state.noHayEscenaNegativa}
+                                    onChange={(e: any) => setNoHayEscenaNegativa(e.target.checked)}
+                                    disabled={isPaso2Completado}
+                                />
                             </div>
 
-                            {!state.noHayEscenaNegativa && state.escenaNegativa.map((en) => (
-                                <div
-                                    key={en.id}
-                                    style={{
-                                        border: '1px solid #ff00ff33',
-                                        padding: '16px',
-                                        marginBottom: '12px',
-                                        borderRadius: '8px',
-                                    }}
-                                >
-                                    <div style={{ display: 'flex', gap: '12px', flexDirection: 'column' }}>
-                                        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                                            <div style={{ flex: 2, minWidth: '150px' }}>
-                                                <NeonInput
-                                                    label="Elemento buscado"
-                                                    value={en.elemento}
-                                                    onChange={(e: any) => updateEscenaNegativa(en.id, { elemento: e.target.value })}
-                                                    disabled={isPaso2Completado}
-                                                />
-                                            </div>
-                                            <div style={{ flex: 2, minWidth: '150px' }}>
-                                                <NeonInput
-                                                    label="Área inspeccionada"
-                                                    value={en.lugar}
-                                                    onChange={(e: any) => updateEscenaNegativa(en.id, { lugar: e.target.value })}
-                                                    disabled={isPaso2Completado}
-                                                />
-                                            </div>
-                                        </div>
-                                        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                                            <div style={{ flex: 2, minWidth: '200px' }}>
-                                                <NeonSelect
-                                                    label="Resultado"
-                                                    options={resultadoNegativo.map((r: string) => ({ value: r, label: r }))}
-                                                    value={en.resultado}
-                                                    onChange={(e: any) => updateEscenaNegativa(en.id, { resultado: e.target.value })}
-                                                    disabled={isPaso2Completado}
-                                                />
-                                            </div>
-                                            <div style={{ flex: 3, minWidth: '200px' }}>
-                                                <NeonInput
-                                                    label="Observación"
-                                                    value={en.observacion}
-                                                    onChange={(e: any) => updateEscenaNegativa(en.id, { observacion: e.target.value })}
-                                                    disabled={isPaso2Completado}
-                                                    placeholder="Notas adicionales..."
-                                                />
-                                            </div>
-                                        </div>
-                                        {!isPaso2Completado && state.escenaNegativa.length > 1 && (
-                                            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                                                <NeonButton onClick={() => removeEscenaNegativa(en.id)}>
-                                                    Eliminar
-                                                </NeonButton>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-
-                            {!isPaso2Completado && !state.noHayEscenaNegativa && (
-                                <NeonButton onClick={addEscenaNegativa}>
-                                    + Agregar Escena Negativa
-                                </NeonButton>
+                            {!state.noHayEscenaNegativa && (
+                                <>
+                                    {state.escenaNegativa.map((en) => (
+                                        <EscenaNegativaFormItem
+                                            key={en.id}
+                                            item={en}
+                                            disabled={isPaso2Completado}
+                                            canRemove={!isPaso2Completado && state.escenaNegativa.length > 1}
+                                            onChange={(patch) => updateEscenaNegativa(en.id, patch)}
+                                            onRemove={() => removeEscenaNegativa(en.id)}
+                                        />
+                                    ))}
+                                    {!isPaso2Completado && (
+                                        <NeonButton onClick={addEscenaNegativa}>
+                                            + Agregar elemento negativo
+                                        </NeonButton>
+                                    )}
+                                </>
                             )}
                         </div>
 
@@ -649,7 +598,7 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
                                             <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
                                                 <div style={{ flex: 1 }}>
                                                     <NeonInput
-                                                        label="Investigador responsable de la liberación (correo o identificación) *"
+                                                        label="Investigador responsable de la liberación (nombre de usuario) *"
                                                         value={busquedaInvestigador}
                                                         onChange={(e: any) => {
                                                             setBusquedaInvestigador(e.target.value)
@@ -808,20 +757,9 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
 
     return (
         <div style={{ padding: '24px' }}>
-            {/* Título y botón de historial */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <h2 style={{ fontSize: '24px', color: '#00ffff' }}>Escena del Crimen</h2>
-                <NeonButton onClick={() => setMostrarHistorial(!mostrarHistorial)}>
-                    {mostrarHistorial ? '📋 Ocultar Historial' : '📋 Ver Historial'}
-                </NeonButton>
-            </div>
-
-            {/* Historial */}
-            {mostrarHistorial && (
-                <div style={{ marginBottom: '24px' }}>
-                    <HistorialEscenas />
-                </div>
-            )}
+            <h2 style={{ fontSize: '24px', color: '#00ffff', marginBottom: '16px' }}>
+                Escena del Crimen
+            </h2>
 
             {/* Stepper Visual - NUEVO */}
             <StepperVisual

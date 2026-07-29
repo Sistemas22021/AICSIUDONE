@@ -1,4 +1,4 @@
-type SubTab = 'analisis' | 'validar' | 'buscar' | 'casos'
+type SubTab = 'analisis' | 'validar' | 'buscar' | 'firma' | 'casos'
 
 interface InteligenciaSubTabsProps {
     activo: SubTab
@@ -8,6 +8,7 @@ interface InteligenciaSubTabsProps {
 const SUB_TABS: { id: SubTab; label: string }[] = [
     { id: 'analisis', label: 'Análisis de MO' },
     { id: 'validar',  label: 'Validar MO' },
+    { id: 'firma',    label: 'Firma Conductual' },
     { id: 'casos',    label: 'Agrupar delitos en casos' },
 ]
 

@@ -1,5 +1,4 @@
 export { EscenaDelCrimen } from './EscenaDelCrimen'
-export { HistorialEscenas } from './HistorialEscenas'
 // ─── Tipos de opciones ────────────────────────────────────────────────────────
 export const tiposEvidencia = [
     'Huella dactilar',
@@ -22,7 +21,27 @@ export const tiposEmbalaje = [
     'Tubo de ensayo',
     'Sobresito de papel para drogas',
     'Bolsa de papel',
-    'Lata metálica'
+    'Lata metálica',
+    'Kit de hisopos estériles con tubo',
+    'Sobre de papel secante',
+    'Contenedor de plástico hermético',
+    'Microtubo Eppendorf',
+    'Caja de portaobjetos',
+    'Caja alargada de cartón rígido',
+    'Tubo de PVC con tapa',
+    'Caja con inserto de espuma',
+    'Funda de acetato',
+    'Carpeta de cartulina sin ácido',
+    'Bolsa antiestática (ESD)',
+    'Caja de cartón con acolchado',
+    'Frasco de vidrio ámbar',
+    'Bolsa de nylon sellada al vacío',
+    'Contenedor metálico hermético',
+    'Bolsa de papel kraft grande',
+    'Caja genérica con relleno de espuma',
+    'Frasco de boca ancha',
+    'Bolsa de bioseguridad (roja)',
+    'Otro'
 ] as const
 
 export const resultadoNegativo = [

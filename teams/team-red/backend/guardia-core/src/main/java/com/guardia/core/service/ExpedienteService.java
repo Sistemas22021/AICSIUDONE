@@ -1,6 +1,7 @@
 package com.guardia.core.service;
 
 import com.guardia.core.dto.request.ExpedienteRequest;
+import com.guardia.core.dto.request.ExpedienteFiltroRequest;
 import com.guardia.core.dto.response.ExpedienteResponse;
 import com.guardia.core.dto.response.VerificacionHashResponse;
 import com.guardia.core.dto.response.ExpedienteActivoResponse;
@@ -29,4 +30,5 @@ public interface ExpedienteService {
     VerificacionHashResponse verificarIntegridad(Long id);
     boolean validarDatos(Long id);
     List<ExpedienteActivoResponse> obtenerParaPanel(String estatus, String sort);
+    List<ExpedienteActivoResponse> buscarConFiltros(ExpedienteFiltroRequest filtro, String sort);
 }

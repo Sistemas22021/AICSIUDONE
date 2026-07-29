@@ -6,7 +6,7 @@ export function useSellarExpediente() {
 
     const sellarExpediente = async (
         expedienteId: number,
-        agenteSelladorId: number,
+        agenteSelladorId: string,
     ): Promise<{ exito: true } | { exito: false; mensaje: string }> => {
         setSellando(true)
         try {

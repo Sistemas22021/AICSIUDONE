@@ -1,0 +1,32 @@
+package com.guardia.core.repository;
+
+import com.guardia.core.model.FirmaConductual;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface FirmaConductualRepository extends JpaRepository<FirmaConductual, Long> {
+
+    Optional<FirmaConductual> findByExpedienteIdAndVigenteTrue(Long expedienteId);
+
+    List<FirmaConductual> findByExpedienteIdOrderByVersionDesc(Long expedienteId);
+
+    /**
+     * Búsqueda de texto plano sobre los 5 campos (HU: "la firma conductual es
+     * indexada para búsqueda en el componente de detección de patrones").
+     * Usa la columna generada busqueda_tsv + índice GIN (ver DDL). Nativa
+     * porque tsvector/plainto_tsquery no tienen equivalente en JPQL.
+     */
+    @Query(value = """
+            SELECT * FROM firmas_conductuales
+            WHERE vigente = true
+              AND busqueda_tsv @@ plainto_tsquery('spanish', :texto)
+            ORDER BY fecha_registro DESC
+            """, nativeQuery = true)
+    List<FirmaConductual> buscarPorTexto(@Param("texto") String texto);
+}

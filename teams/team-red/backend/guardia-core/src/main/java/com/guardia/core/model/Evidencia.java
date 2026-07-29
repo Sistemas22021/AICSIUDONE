@@ -6,6 +6,10 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
+/**
+ * Entidad que representa una evidencia forense vinculada a una escena.
+ * Maneja hash de integridad, timestamp y metadatos del investigador.
+ */
 @Entity
 @Table(name = "evidencia")
 @Getter
@@ -13,10 +17,6 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-/**
- * Entidad que representa una evidencia forense vinculada a una escena.
- * Maneja hash de integridad, timestamp y metadatos del investigador.
- */
 public class Evidencia {
 
     @Id
@@ -29,7 +29,7 @@ public class Evidencia {
     @Column(nullable = false)
     private String tipo;
 
-    @Column
+    @Column(columnDefinition = "TEXT")
     private String descripcion;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -85,4 +85,11 @@ public class Evidencia {
     public void vincularEscena(Escena escena) {
         this.escena = escena;
     }
+
+    /**
+     * Registra la firma de conformidad del investigador sobre el levantamiento
+     * de esta evidencia. Punto de extensión para auditoría — de momento no
+     * persiste un campo dedicado (ej. firmadoPor/fechaFirma); solo valida que
+     * el flujo de firma pueda ejecutarse sin romper el contrato del service.
+     */
 }

@@ -23,6 +23,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.Year;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -34,8 +35,9 @@ import static org.mockito.Mockito.*;
  * Pruebas unitarias para {@link CasoServiceImpl} (HU1 - "Agrupar delitos en un caso").
  *
  * <p>Refleja el contrato vigente: el creador se identifica por
- * {@code creadoPorIdentificacion} (no por id), y ya no existe dependencia
- * alguna de {@code AlertaPatron} (funcionalidad retirada del proyecto).</p>
+ * {@code creadoPorUsername} (Usuario ahora usa id UUID sincronizado con el
+ * servicio de SSO), y la respuesta siempre retorna {@code alertaOrigenId}
+ * en null porque la entidad {@code Caso} no persiste ese campo.</p>
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("CasoServiceImpl - Pruebas Unitarias")
@@ -55,7 +57,13 @@ class CasoServiceImplTest {
     @BeforeEach
     void setUp() {
         // Arrange (fixture común)
-        creador = Usuario.builder().id(1L).nombre("Analista Pérez").identificacion("V-12345678").correo("a@x.com").build();
+        creador = Usuario.builder()
+                .id(UUID.randomUUID())
+                .username("aperez")
+                .password("hash")
+                .fullName("Analista Pérez")
+                .rol("ANALISTA")
+                .build();
         expedienteA = Expediente.builder().id(10L).folio("EXP-2026-AAAA1111").build();
         expedienteB = Expediente.builder().id(20L).folio("EXP-2026-BBBB2222").build();
     }
@@ -68,8 +76,8 @@ class CasoServiceImplTest {
         @DisplayName("Debe agrupar dos expedientes distintos y generar un código de caso correlativo")
         void debeCrearCasoExitosamente() {
             // Arrange
-            CasoRequest request = new CasoRequest("V-12345678", List.of(10L, 20L), "Mismo patrón de actuación", null);
-            when(usuarioRepository.findByIdentificacion("V-12345678")).thenReturn(Optional.of(creador));
+            CasoRequest request = new CasoRequest("aperez", List.of(10L, 20L), "Mismo patrón de actuación", null);
+            when(usuarioRepository.findByUsername("aperez")).thenReturn(Optional.of(creador));
             when(expedienteRepository.findById(10L)).thenReturn(Optional.of(expedienteA));
             when(expedienteRepository.findById(20L)).thenReturn(Optional.of(expedienteB));
             when(casoRepository.contarCasos()).thenReturn(3L);
@@ -82,7 +90,7 @@ class CasoServiceImplTest {
             // Assert
             assertThat(resultado.codigoCaso()).isEqualTo("CASO-%d-0004".formatted(Year.now().getValue()));
             assertThat(resultado.motivo()).isEqualTo("Mismo patrón de actuación");
-            assertThat(resultado.creadoPor().identificacion()).isEqualTo("V-12345678");
+            assertThat(resultado.creadoPor().username()).isEqualTo("aperez");
             assertThat(resultado.alertaOrigenId()).isNull();
             assertThat(resultado.expedientes()).hasSize(2);
             assertThat(expedienteA.getCaso()).isNotNull();
@@ -95,8 +103,8 @@ class CasoServiceImplTest {
         @DisplayName("Debe ignorar cualquier alertaOrigenId enviado: la respuesta siempre lo retorna en null")
         void debeIgnorarAlertaOrigenId() {
             // Arrange: aunque el cliente envíe un alertaOrigenId, el campo ya no existe en la entidad
-            CasoRequest request = new CasoRequest("V-12345678", List.of(10L, 20L), "Motivo", 999L);
-            when(usuarioRepository.findByIdentificacion("V-12345678")).thenReturn(Optional.of(creador));
+            CasoRequest request = new CasoRequest("aperez", List.of(10L, 20L), "Motivo", UUID.randomUUID());
+            when(usuarioRepository.findByUsername("aperez")).thenReturn(Optional.of(creador));
             when(expedienteRepository.findById(10L)).thenReturn(Optional.of(expedienteA));
             when(expedienteRepository.findById(20L)).thenReturn(Optional.of(expedienteB));
             when(casoRepository.contarCasos()).thenReturn(0L);
@@ -114,7 +122,7 @@ class CasoServiceImplTest {
         @DisplayName("Debe lanzar BusinessException cuando se envían menos de dos expedientes distintos")
         void debeLanzarExcepcionConMenosDeDosExpedientes() {
             // Arrange: ids duplicados colapsan a un único id tras el Set
-            CasoRequest request = new CasoRequest("V-12345678", List.of(10L, 10L), "Motivo", null);
+            CasoRequest request = new CasoRequest("aperez", List.of(10L, 10L), "Motivo", null);
 
             // Act & Assert
             assertThatThrownBy(() -> casoService.crear(request))
@@ -124,16 +132,16 @@ class CasoServiceImplTest {
         }
 
         @Test
-        @DisplayName("Debe lanzar ResourceNotFoundException con el mensaje que referencia la identificación cuando el creador no existe")
+        @DisplayName("Debe lanzar ResourceNotFoundException cuando el usuario creador no existe")
         void debeLanzarExcepcionCuandoCreadorNoExiste() {
             // Arrange
-            CasoRequest request = new CasoRequest("X-000", List.of(10L, 20L), "Motivo", null);
-            when(usuarioRepository.findByIdentificacion("X-000")).thenReturn(Optional.empty());
+            CasoRequest request = new CasoRequest("desconocido", List.of(10L, 20L), "Motivo", null);
+            when(usuarioRepository.findByUsername("desconocido")).thenReturn(Optional.empty());
 
             // Act & Assert
             assertThatThrownBy(() -> casoService.crear(request))
                     .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessage("Usuario con identificación 'X-000' no encontrado.");
+                    .hasMessage("Usuario con username 'desconocido' no encontrado.");
             verify(expedienteRepository, never()).findById(any());
         }
 
@@ -141,8 +149,8 @@ class CasoServiceImplTest {
         @DisplayName("Debe lanzar ResourceNotFoundException cuando alguno de los expedientes no existe")
         void debeLanzarExcepcionCuandoExpedienteNoExiste() {
             // Arrange
-            CasoRequest request = new CasoRequest("V-12345678", List.of(10L, 999L), "Motivo", null);
-            when(usuarioRepository.findByIdentificacion("V-12345678")).thenReturn(Optional.of(creador));
+            CasoRequest request = new CasoRequest("aperez", List.of(10L, 999L), "Motivo", null);
+            when(usuarioRepository.findByUsername("aperez")).thenReturn(Optional.of(creador));
             when(expedienteRepository.findById(10L)).thenReturn(Optional.of(expedienteA));
             when(expedienteRepository.findById(999L)).thenReturn(Optional.empty());
 
@@ -158,8 +166,8 @@ class CasoServiceImplTest {
             // Arrange
             Caso casoPrevio = Caso.builder().id(500L).codigoCaso("CASO-2026-0001").build();
             expedienteA.setCaso(casoPrevio);
-            CasoRequest request = new CasoRequest("V-12345678", List.of(10L, 20L), "Motivo", null);
-            when(usuarioRepository.findByIdentificacion("V-12345678")).thenReturn(Optional.of(creador));
+            CasoRequest request = new CasoRequest("aperez", List.of(10L, 20L), "Motivo", null);
+            when(usuarioRepository.findByUsername("aperez")).thenReturn(Optional.of(creador));
             when(expedienteRepository.findById(10L)).thenReturn(Optional.of(expedienteA));
             when(expedienteRepository.findById(20L)).thenReturn(Optional.of(expedienteB));
 
@@ -175,8 +183,8 @@ class CasoServiceImplTest {
         @DisplayName("Debe incrementar el correlativo cuando el código candidato ya existe (colisión)")
         void debeEvitarColisionDeCodigoDeCaso() {
             // Arrange
-            CasoRequest request = new CasoRequest("V-12345678", List.of(10L, 20L), "Motivo", null);
-            when(usuarioRepository.findByIdentificacion("V-12345678")).thenReturn(Optional.of(creador));
+            CasoRequest request = new CasoRequest("aperez", List.of(10L, 20L), "Motivo", null);
+            when(usuarioRepository.findByUsername("aperez")).thenReturn(Optional.of(creador));
             when(expedienteRepository.findById(10L)).thenReturn(Optional.of(expedienteA));
             when(expedienteRepository.findById(20L)).thenReturn(Optional.of(expedienteB));
             when(casoRepository.contarCasos()).thenReturn(0L);

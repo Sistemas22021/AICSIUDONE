@@ -20,11 +20,8 @@
 
     <properties>
         <java.version>21</java.version>
-        <spring-ai.version>1.0.1</spring-ai.version>
-
-
+        <spring-ai.version>1.1.8</spring-ai.version>
         <lombok.version>1.18.46</lombok.version>
-
         <jacoco.version>0.8.13</jacoco.version>
     </properties>
 
@@ -88,7 +85,11 @@
 
         <dependency>
             <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-starter-model-ollama</artifactId>
+            <artifactId>spring-ai-starter-model-google-genai</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-model-google-genai-embedding</artifactId>
         </dependency>
 
         <!-- Mapea el tipo `vector` de pgvector a float[] (HU2: columna embedding) -->
@@ -161,6 +162,27 @@
                 </configuration>
             </plugin>
 
+            <!--
+                Fix para JDKs recientes (Java 24+) ejecutando Maven: la versión de
+                Mockito/Byte Buddy que trae spring-boot-starter-parent 3.3.4 todavía
+                no reconoce oficialmente esas versiones de classfile al mockear
+                clases concretas (p. ej. RoleValidationHandler), y falla con
+                "Java 24 (68) is not supported by the current version of Byte Buddy...".
+                Byte Buddy soporta Java 24 sin marcarlo como experimental recién desde
+                la 1.15.4; mientras no fijemos esa versión explícitamente, esta bandera
+                (sugerida por el propio mensaje de error de Byte Buddy) es la forma
+                segura de decirle que continúe igual. `@{argLine}` (con arroba) es
+                obligatorio aquí: es la sintaxis que permite encadenar el argLine que
+                inyecta jacoco:prepare-agent en vez de sobreescribirlo.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <argLine>@{argLine} -Dnet.bytebuddy.experimental=true</argLine>
+                </configuration>
+            </plugin>
+
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
@@ -178,6 +200,53 @@
                         <goals>
                             <goal>report</goal>
                         </goals>
+                        <configuration>
+                            <excludes>
+                                <exclude>com/guardia/core/GuardiaCoreApplication.class</exclude>
+                                <exclude>com/guardia/core/config/AsyncConfig.class</exclude>
+                                <exclude>com/guardia/core/config/CorsConfig.class</exclude>
+                                <exclude>com/guardia/core/config/CorsConfig$1.class</exclude>
+                                <exclude>com/guardia/core/config/OpenApiConfig.class</exclude>
+                                <exclude>com/guardia/core/logging/LoggingConfiguration.class</exclude>
+                                <exclude>com/guardia/core/middleware/MiddlewareConfiguration.class</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                    <!--
+                        Gate de cobertura: falla el build (mvn verify) si la cobertura de
+                        líneas del proyecto cae por debajo del 80% acordado. Se excluyen
+                        clases de mero cableado de Spring (arranque, CORS, OpenAPI, registro
+                        de interceptores) que no aportan lógica de negocio verificable.
+                    -->
+                    <execution>
+                        <id>jacoco-check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <excludes>
+                                <exclude>com/guardia/core/GuardiaCoreApplication.class</exclude>
+                                <exclude>com/guardia/core/config/AsyncConfig.class</exclude>
+                                <exclude>com/guardia/core/config/CorsConfig.class</exclude>
+                                <exclude>com/guardia/core/config/CorsConfig$1.class</exclude>
+                                <exclude>com/guardia/core/config/OpenApiConfig.class</exclude>
+                                <exclude>com/guardia/core/logging/LoggingConfiguration.class</exclude>
+                                <exclude>com/guardia/core/middleware/MiddlewareConfiguration.class</exclude>
+                            </excludes>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.80</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

@@ -1,5 +1,6 @@
 package com.guardia.core.service;
 
+import com.guardia.core.dto.request.ExpedienteFiltroRequest;
 import com.guardia.core.dto.request.ExpedienteRequest;
 import com.guardia.core.dto.request.DelitoRequest;
 import com.guardia.core.dto.response.ExpedienteResponse;
@@ -24,14 +25,15 @@ import com.guardia.core.model.Escena;
 import com.guardia.core.model.enums.EstadoExpediente;
 import com.guardia.core.model.enums.TipoRol;
 import com.guardia.core.repository.ExpedienteRepository;
+import com.guardia.core.repository.specification.ExpedienteSpecifications;
 import com.guardia.core.repository.UsuarioRepository;
 import com.guardia.core.repository.TipoDelitoRepository;
 import com.guardia.core.repository.SubtipoDelitoRepository;
 import com.guardia.core.repository.LocalizacionRepository;
-import com.guardia.core.repository.InvolucradoRepository;
 import com.guardia.core.repository.EscenaRepository;
 import com.guardia.core.SelloStrategy;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,13 +44,13 @@ import java.util.Set;
 import java.util.Comparator;
 import java.util.UUID;
 
-@Service
-@RequiredArgsConstructor
-@Transactional
 /**
  * Implementación de ExpedienteService que contiene la lógica de negocio principal
  * para crear, sellar y verificar expedientes, así como validaciones asociadas.
  */
+@Service
+@RequiredArgsConstructor
+@Transactional
 public class ExpedienteServiceImpl implements ExpedienteService {
 
     private final ExpedienteRepository expedienteRepository;
@@ -59,7 +61,6 @@ public class ExpedienteServiceImpl implements ExpedienteService {
     private final EscenaRepository escenaRepository;
     private final SelloStrategy selloStrategy;
     private final org.springframework.context.ApplicationEventPublisher eventPublisher;
-    private final InvolucradoRepository involucradoRepository;
 
     @Override
     public ExpedienteResponse crear(ExpedienteRequest request) {
@@ -73,6 +74,12 @@ public class ExpedienteServiceImpl implements ExpedienteService {
                     request.getUbicacion().getDireccion(),
                     request.getUbicacion().getReferencia()
             );
+            if (request.getUbicacion().getCoordenadas() != null) {
+                localizacion.registrarGPS(
+                        request.getUbicacion().getCoordenadas().getLatitud(),
+                        request.getUbicacion().getCoordenadas().getLongitud()
+                );
+            }
             localizacion = localizacionRepository.save(localizacion);
         }
 
@@ -101,48 +108,11 @@ public class ExpedienteServiceImpl implements ExpedienteService {
         );
 
         if (request.getDenunciante() != null) {
-
-            Involucrado denunciante = new Involucrado();
-
-            denunciante.setNombre(
-                    request.getDenunciante().getNombre()
-            );
-
-            denunciante.setIdentificacion(
-                    request.getDenunciante().getCedula()
-            );
-
-            denunciante.setNumeroTelefono(
-                    request.getDenunciante().getTelefono()
-            );
-
-            denunciante.setNacionalidad(
-                    request.getDenunciante().getNacionalidad()
-            );
-
-            denunciante.setDireccion(
-                    request.getDenunciante().getDireccion()
-            );
-
-            denunciante.setRelacionConHecho(
-                    request.getDenunciante().getRelacionConHecho()
-            );
-
-            denunciante.setRol(
-                    TipoRol.DENUNCIANTE
-            );
-
-            denunciante.setExpediente(
-                    expediente
-            );
-
-            expediente.getInvolucrados()
-                    .add(denunciante);
+            expediente.getInvolucrados().add(crearDenunciante(request.getDenunciante(), expediente));
         }
 
 
-        // Mapear delitos (si vienen)
-        // Mapear delitos (si vienen)
+        // Mapear delitos
         if (request.getDelitos() != null && !request.getDelitos().isEmpty()) {
             request.getDelitos().forEach(dReq -> {
                 DelitoEnExpediente delito = new DelitoEnExpediente();
@@ -155,9 +125,13 @@ public class ExpedienteServiceImpl implements ExpedienteService {
             });
 
             // Promover el primer delito a la FK directa del expediente
-            DelitoRequest primero = request.getDelitos().get(0);
+            DelitoRequest primero = request.getDelitos().getFirst();
             tipoDelitoRepository.findByNombre(primero.getDelito())
                     .ifPresent(expediente::setTipoDelito);
+
+            expediente.setFechaHecho(
+                    java.time.LocalDateTime.of(primero.getFechaHecho(), primero.getHoraInicioHecho())
+            );
 
             // Promover subtipo si el tipoDelito fue encontrado y tiene subDelito
             if (expediente.getTipoDelito() != null && primero.getSubDelito() != null) {
@@ -220,6 +194,20 @@ public class ExpedienteServiceImpl implements ExpedienteService {
         return toResponse(guardado);
     }
 
+    /** Construye el Involucrado con rol DENUNCIANTE a partir de los datos del request. */
+    private Involucrado crearDenunciante(com.guardia.core.dto.request.InvolucradosRequest req, Expediente expediente) {
+        Involucrado denunciante = new Involucrado();
+        denunciante.setNombre(req.getNombre());
+        denunciante.setIdentificacion(req.getCedula());
+        denunciante.setNumeroTelefono(req.getTelefono());
+        denunciante.setNacionalidad(req.getNacionalidad());
+        denunciante.setDireccion(req.getDireccion());
+        denunciante.setRelacionConHecho(req.getRelacionConHecho());
+        denunciante.setRol(TipoRol.DENUNCIANTE);
+        denunciante.setExpediente(expediente);
+        return denunciante;
+    }
+
     @Override
     @Transactional(readOnly = true)
     public ExpedienteResponse obtenerPorId(Long id) {
@@ -261,7 +249,7 @@ public class ExpedienteServiceImpl implements ExpedienteService {
 
         expediente.setDescripcionHecho(request.getDescripcion());
         if (request.getDelitos() != null && !request.getDelitos().isEmpty()) {
-            var dReq = request.getDelitos().get(0);
+            var dReq = request.getDelitos().getFirst();
             java.time.LocalDate date = dReq.getFechaHecho();
             java.time.LocalTime time = dReq.getHoraInicioHecho();
             expediente.setFechaHecho(java.time.LocalDateTime.of(date, time));
@@ -352,8 +340,9 @@ public class ExpedienteServiceImpl implements ExpedienteService {
 
         SubtipoDelitoResponse subtipoDelito = e.getSubtipoDelito() == null ? null :
                 new SubtipoDelitoResponse(e.getSubtipoDelito().getId(), e.getSubtipoDelito().getNombre(),
-                        e.getSubtipoDelito().getDescripcion(), e.getTipoDelito().getId(),
-                        e.getTipoDelito().getNombre());
+                        e.getSubtipoDelito().getDescripcion(),
+                        e.getTipoDelito() != null ? e.getTipoDelito().getId() : null,
+                        e.getTipoDelito() != null ? e.getTipoDelito().getNombre() : null);
 
         List<InvolucradoResponse> involucrados =
                 e.getInvolucrados() == null
@@ -473,6 +462,20 @@ public class ExpedienteServiceImpl implements ExpedienteService {
 
         if (comparador == null) return null;
         return desc ? comparador.reversed() : comparador;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ExpedienteActivoResponse> buscarConFiltros(ExpedienteFiltroRequest filtro, String sort) {
+        Specification<Expediente> especificacion = ExpedienteSpecifications.combinar(filtro);
+        List<Expediente> expedientes = expedienteRepository.findAll(especificacion);
+
+        Comparator<Expediente> comparador = resolverComparador(sort);
+        if (comparador != null) {
+            expedientes = expedientes.stream().sorted(comparador).toList();
+        }
+
+        return expedientes.stream().map(this::toActivoResponse).toList();
     }
 
     private ExpedienteActivoResponse toActivoResponse(Expediente e) {

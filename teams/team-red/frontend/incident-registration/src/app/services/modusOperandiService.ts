@@ -20,6 +20,10 @@ export async function fetchHistorialMO(expedienteId: string): Promise<PropuestaM
     return res.data
 }
 
+export async function solicitarAnalisisMO(expedienteId: string): Promise<void> {
+    await apiClient.post<{ data: null }>(`${basePath(expedienteId)}/analizar`, {})
+}
+
 export async function aprobarPropuestaMO(
     expedienteId: string,
     propuestaId: number,

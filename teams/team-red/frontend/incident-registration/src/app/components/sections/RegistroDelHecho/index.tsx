@@ -86,8 +86,8 @@ function validarInvolucrado(inv: Involucrado): InvolucradoFieldErrors {
     if (!inv.direccion.trim())
         errors.direccion = 'La dirección es obligatoria'
 
-    if (inv.tipoInvolucrado === 'victima' && !inv.foto)
-        errors.foto = 'La fotografía es obligatoria para la víctima'
+    if ((inv.tipoInvolucrado === 'victima' || inv.tipoInvolucrado === 'imputado_sospechoso') && !inv.foto)
+        errors.foto = 'La fotografía es obligatoria para la víctima o el imputado'
 
     return errors
 }
@@ -340,6 +340,7 @@ export const RegistroDelHecho = () => {
                         {formData.involucrados.map((inv, index) => {
                             const isDenuncianteFijo = requiresDenunciante && index === 0
                             const esVictima         = inv.tipoInvolucrado === 'victima'
+                            const esImputado         = inv.tipoInvolucrado === 'imputado_sospechoso'
                             const errs              = involucradoErrors[inv.id] ?? {}
 
                             return (
@@ -479,65 +480,64 @@ export const RegistroDelHecho = () => {
                                             />
                                         )}
 
-                                        {/* Fotografía — (obligatoria para víctima) */}
-                                        <div className="flex flex-col gap-1.5">
-                                            <label className={[
-                                                'text-[11px] uppercase tracking-[0.1em] font-medium',
-                                                isDenuncianteFijo ? 'text-emerald-400' : 'text-cyan-400',
-                                            ].join(' ')}>
-                                                {isDenuncianteFijo
-                                                    ? 'Fotografía del Denunciante'
-                                                    : `Fotografía del Involucrado${esVictima ? ' *' : ''}`}
-                                                {esVictima && (
+                                        {/* Fotografía — solo se pide para víctima o imputado/sospechoso */}
+                                        {(esVictima || esImputado) && (
+                                            <div className="flex flex-col gap-1.5">
+                                                <label className={[
+                                                    'text-[11px] uppercase tracking-[0.1em] font-medium',
+                                                    isDenuncianteFijo ? 'text-emerald-400' : 'text-cyan-400',
+                                                ].join(' ')}>
+                                                    {isDenuncianteFijo
+                                                        ? 'Fotografía del Denunciante'
+                                                        : 'Fotografía del Involucrado *'}
                                                     <span className="ml-2 normal-case text-[9px] text-cyan-500/60 tracking-normal font-normal">
-                                                        (obligatoria para víctima)
-                                                    </span>
-                                                )}
-                                            </label>
-                                            <label className="cursor-pointer">
-                                                <input
-                                                    type="file"
-                                                    accept="image/*"
-                                                    className="sr-only"
-                                                    onChange={e => {
-                                                        const file = e.target.files?.[0] ?? null
-                                                        updateInvolucrado(inv.id, { foto: file })
-                                                        if (errs.foto) clearFieldError(inv.id, 'foto')
-                                                    }}
-                                                />
-                                                {inv.foto ? (
-                                                    <div
-                                                        className={[
-                                                            'relative w-24 h-24 border-2 rounded overflow-hidden group',
-                                                            isDenuncianteFijo
-                                                                ? 'border-emerald-400/60'
-                                                                : errs.foto
-                                                                    ? 'border-red-400/70'
-                                                                    : 'border-cyan-400/60',
-                                                        ].join(' ')}
-                                                        style={{ boxShadow: isDenuncianteFijo ? '0 0 12px rgba(0,255,136,0.3)' : '0 0 12px rgba(51,153,255,0.3)' }}
-                                                    >
-                                                        <img
-                                                            src={URL.createObjectURL(inv.foto)}
-                                                            alt="Foto involucrado"
-                                                            className="w-full h-full object-cover"
-                                                        />
-                                                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                            <span className={['text-[9px] uppercase tracking-wider', isDenuncianteFijo ? 'text-emerald-300' : 'text-cyan-300'].join(' ')}>Cambiar</span>
+                                                    {esVictima ? '(obligatoria para víctima)' : '(obligatoria para imputado)'}
+                                                </span>
+                                                </label>
+                                                <label className="cursor-pointer">
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        className="sr-only"
+                                                        onChange={e => {
+                                                            const file = e.target.files?.[0] ?? null
+                                                            updateInvolucrado(inv.id, { foto: file })
+                                                            if (errs.foto) clearFieldError(inv.id, 'foto')
+                                                        }}
+                                                    />
+                                                    {inv.foto ? (
+                                                        <div
+                                                            className={[
+                                                                'relative w-24 h-24 border-2 rounded overflow-hidden group',
+                                                                isDenuncianteFijo
+                                                                    ? 'border-emerald-400/60'
+                                                                    : errs.foto
+                                                                        ? 'border-red-400/70'
+                                                                        : 'border-cyan-400/60',
+                                                            ].join(' ')}
+                                                            style={{ boxShadow: isDenuncianteFijo ? '0 0 12px rgba(0,255,136,0.3)' : '0 0 12px rgba(51,153,255,0.3)' }}
+                                                        >
+                                                            <img
+                                                                src={URL.createObjectURL(inv.foto)}
+                                                                alt="Foto involucrado"
+                                                                className="w-full h-full object-cover"
+                                                            />
+                                                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                                <span className={['text-[9px] uppercase tracking-wider', isDenuncianteFijo ? 'text-emerald-300' : 'text-cyan-300'].join(' ')}>Cambiar</span>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                ) : (
-                                                    <div
-                                                        className={[
-                                                            'w-24 h-24 border-2 border-dashed rounded flex flex-col items-center justify-center gap-1 transition-all',
-                                                            isDenuncianteFijo
-                                                                ? 'border-emerald-400/30 hover:border-emerald-400/60 hover:bg-emerald-400/5'
-                                                                : errs.foto
-                                                                    ? 'border-red-400/60 bg-red-400/5 hover:border-red-400/80'
-                                                                    : 'border-cyan-400/30 hover:border-cyan-400/60 hover:bg-cyan-400/5',
-                                                        ].join(' ')}
-                                                        style={{ boxShadow: 'inset 0 1px 3px rgba(51,153,255,0.05)' }}
-                                                    >
+                                                    ) : (
+                                                        <div
+                                                            className={[
+                                                                'w-24 h-24 border-2 border-dashed rounded flex flex-col items-center justify-center gap-1 transition-all',
+                                                                isDenuncianteFijo
+                                                                    ? 'border-emerald-400/30 hover:border-emerald-400/60 hover:bg-emerald-400/5'
+                                                                    : errs.foto
+                                                                        ? 'border-red-400/60 bg-red-400/5 hover:border-red-400/80'
+                                                                        : 'border-cyan-400/30 hover:border-cyan-400/60 hover:bg-cyan-400/5',
+                                                            ].join(' ')}
+                                                            style={{ boxShadow: 'inset 0 1px 3px rgba(51,153,255,0.05)' }}
+                                                        >
                                                         <span className={
                                                             isDenuncianteFijo
                                                                 ? 'text-emerald-600'
@@ -545,27 +545,28 @@ export const RegistroDelHecho = () => {
                                                                     ? 'text-red-500'
                                                                     : 'text-cyan-600'
                                                         } style={{ fontSize: 22 }}>＋</span>
-                                                        <span className={[
-                                                            'text-[9px] uppercase tracking-wider',
-                                                            isDenuncianteFijo
-                                                                ? 'text-emerald-600'
-                                                                : errs.foto
-                                                                    ? 'text-red-500'
-                                                                    : 'text-cyan-600',
-                                                        ].join(' ')}>Foto</span>
-                                                    </div>
-                                                )}
-                                            </label>
-                                            {/* Mensaje de error de foto */}
-                                            {errs.foto && (
-                                                <span
-                                                    className="text-[10px] text-red-400 tracking-wide"
-                                                    style={{ textShadow: '0 0 5px rgba(255,75,75,0.4)' }}
-                                                >
+                                                            <span className={[
+                                                                'text-[9px] uppercase tracking-wider',
+                                                                isDenuncianteFijo
+                                                                    ? 'text-emerald-600'
+                                                                    : errs.foto
+                                                                        ? 'text-red-500'
+                                                                        : 'text-cyan-600',
+                                                            ].join(' ')}>Foto</span>
+                                                        </div>
+                                                    )}
+                                                </label>
+                                                {/* Mensaje de error de foto */}
+                                                {errs.foto && (
+                                                    <span
+                                                        className="text-[10px] text-red-400 tracking-wide"
+                                                        style={{ textShadow: '0 0 5px rgba(255,75,75,0.4)' }}
+                                                    >
                                                     ⚠ {errs.foto}
                                                 </span>
-                                            )}
-                                        </div>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             )

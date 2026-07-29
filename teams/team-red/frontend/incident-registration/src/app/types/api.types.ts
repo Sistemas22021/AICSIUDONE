@@ -58,6 +58,17 @@ export interface ExpedienteActivo {
   sector:               string | null
 }
 
+export interface FiltrosBusquedaExpediente {
+  tiposDelito: string[]
+  municipio:   string
+  colonia:     string
+  latitud:     number | null
+  longitud:    number | null
+  radioKm:     number | null
+  fechaDesde:  string | null
+  fechaHasta:  string | null
+}
+
 // ─── Payload de creación de incidente ────────────────────────────────────────
 
 export interface DelitoPayload {
@@ -144,10 +155,10 @@ export interface ExpedienteResumenDTO {
 }
 
 export interface CasoRequestDTO {
-  creadoPorIdentificacion: number
+  creadoPorUsername: string
   expedienteIds: number[]
   motivo: string
-  alertaOrigenId?: number | null
+  alertaOrigenId?: string | null
 }
 
 export interface CasoResponseDTO {
@@ -198,11 +209,11 @@ export interface PropuestaModusOperandi {
 }
 
 export interface AprobarPropuestaMoPayload {
-  analistaId: number
+  analistaId: string
 }
 
 export interface CorregirPropuestaMoPayload {
-  analistaId: number
+  analistaId: string
   caracteristicasComunes?: string
   posibleFirma?: string
   consistenciaHorarioZona?: string
@@ -210,7 +221,34 @@ export interface CorregirPropuestaMoPayload {
 }
 
 export interface RechazarPropuestaMoPayload {
-  analistaId: number
+  analistaId: string
   clasificacionManual: string
   justificacion: string
+}
+
+// ─── Firma conductual ─────────────────────────────────────────────────────────
+
+export interface FirmaConductual {
+  id: number
+  expedienteId: number
+  folioExpediente: string
+  version: number
+  vigente: boolean
+  comportamientoPreDelictivo: string | null
+  metodoAproximacion: string | null
+  metodoAtaque: string | null
+  comportamientoPostDelictivo: string | null
+  elementosDistintivos: string | null
+  analistaId: string
+  analistaNombre: string
+  fechaRegistro: string
+}
+
+export interface FirmaConductualPayload {
+  analistaId: string
+  comportamientoPreDelictivo?: string
+  metodoAproximacion?: string
+  metodoAtaque?: string
+  comportamientoPostDelictivo?: string
+  elementosDistintivos?: string
 }
