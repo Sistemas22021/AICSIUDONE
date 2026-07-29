@@ -43,7 +43,7 @@ eureka:
 sso:
   auth:
     jwt-secret: ${JWT_SECRET}
-    access-token-expiry-minutes: ${ACCESS_TOKEN_EXPIRY_MINUTES:15}
+    access-token-expiry-minutes: ${ACCESS_TOKEN_EXPIRY_MINUTES:60}
     refresh-token-expiry-days: ${REFRESH_TOKEN_EXPIRY_DAYS:7}
 
 # Swagger — disponible en /swagger-ui.html

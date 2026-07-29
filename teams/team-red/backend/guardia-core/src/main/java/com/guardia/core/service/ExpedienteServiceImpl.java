@@ -126,7 +126,7 @@ public class ExpedienteServiceImpl implements ExpedienteService {
 
             // Promover el primer delito a la FK directa del expediente
             DelitoRequest primero = request.getDelitos().getFirst();
-            tipoDelitoRepository.findByNombre(primero.getDelito())
+            tipoDelitoRepository.findByNombreIgnoreCase(primero.getDelito())
                     .ifPresent(expediente::setTipoDelito);
 
             expediente.setFechaHecho(

@@ -14,6 +14,7 @@ import java.util.Optional;
  */
 public interface TipoDelitoRepository extends JpaRepository<TipoDelito, Long> {
     Optional<TipoDelito> findByNombre(String nombre);
+    Optional<TipoDelito> findByNombreIgnoreCase(String nombre);
     List<TipoDelito> findByRequiereSubtipo(Boolean requiereSubtipo);
     boolean existsByNombre(String nombre);
 }
