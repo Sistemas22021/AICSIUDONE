@@ -44,11 +44,11 @@ export const Header = ({ onSearchClick, onSellarClick }: HeaderProps) => {
                 fontWeight: 700,
               }}
             >
-              [ ZAC ]
+              [ ZAC ENFRONT ]
             </span>
           </div>
           <div className="text-[9px] text-cyan-400/80 uppercase tracking-[0.15em] mb-4">
-            Sistema de Análisis Criminal
+            Sistema de Análisis Criminal de SCDS
           </div>
         </div>
 
