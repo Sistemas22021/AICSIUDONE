@@ -1,5 +1,4 @@
 export { EscenaDelCrimen } from './EscenaDelCrimen'
-export { HistorialEscenas } from './HistorialEscenas'
 // ─── Tipos de opciones ────────────────────────────────────────────────────────
 export const tiposEvidencia = [
     'Huella dactilar',
@@ -41,7 +40,8 @@ export const tiposEmbalaje = [
     'Bolsa de papel kraft grande',
     'Caja genérica con relleno de espuma',
     'Frasco de boca ancha',
-    'Bolsa de bioseguridad (roja)'
+    'Bolsa de bioseguridad (roja)',
+    'Otro'
 ] as const
 
 export const resultadoNegativo = [

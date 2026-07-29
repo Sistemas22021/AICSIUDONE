@@ -10,7 +10,6 @@ import { NeonConfirmModal } from '../../ui/NeonConfirmModal'
 import { useNeonToast } from '../../ui/NeonToast'
 import { StepperVisual } from '../../ui/StepperVisual'
 import { AlertaIntegridad } from '../../ui/AlertaIntegridad'
-import { HistorialEscenas } from './HistorialEscenas'
 import { EscenaNegativaFormItem } from './EscenaNegativaFormItem'
 import { tiposEvidencia, tiposEmbalaje } from './index'
 
@@ -20,7 +19,6 @@ interface EscenaDelCrimenProps {
 }
 
 export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDelCrimenProps) => {
-    const [mostrarHistorial, setMostrarHistorial] = useState(false)
     const [busquedaInvestigador, setBusquedaInvestigador] = useState('')
     const [buscandoInvestigador, setBuscandoInvestigador] = useState(false)
     const [errorBusqueda, setErrorBusqueda] = useState<string | null>(null)
@@ -759,20 +757,9 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
 
     return (
         <div style={{ padding: '24px' }}>
-            {/* Título y botón de historial */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <h2 style={{ fontSize: '24px', color: '#00ffff' }}>Escena del Crimen</h2>
-                <NeonButton onClick={() => setMostrarHistorial(!mostrarHistorial)}>
-                    {mostrarHistorial ? '📋 Ocultar Historial' : '📋 Ver Historial'}
-                </NeonButton>
-            </div>
-
-            {/* Historial */}
-            {mostrarHistorial && (
-                <div style={{ marginBottom: '24px' }}>
-                    <HistorialEscenas />
-                </div>
-            )}
+            <h2 style={{ fontSize: '24px', color: '#00ffff', marginBottom: '16px' }}>
+                Escena del Crimen
+            </h2>
 
             {/* Stepper Visual - NUEVO */}
             <StepperVisual
