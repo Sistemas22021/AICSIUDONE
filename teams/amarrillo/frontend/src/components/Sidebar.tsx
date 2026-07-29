@@ -52,7 +52,7 @@ export default function Sidebar() {
         </NavLink>
         <NavLink to="/vehiculos" className={link}>
           <span className="material-symbols-outlined">directions_car</span>
-          {t('Vehículos')}
+          {t('Automoviles')}
         </NavLink>
         <NavLink to="/ubicaciones" className={link}>
           <span className="material-symbols-outlined">distance</span>
