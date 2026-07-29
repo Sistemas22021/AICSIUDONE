@@ -94,8 +94,12 @@ export const ExpedientesPanel = ({
                                      showToast,
                                  }: ExpedientesPanelProps) => {
 
-    const {expedientes, loading, usingMock, ultimaActualizacion, refetch} =
-        useExpedientesActivos({filtro: modo === 'sellado' ? 'TODOS' : 'ACTIVO'})
+    const {
+        expedientes, loading, usingMock, ultimaActualizacion, refetch,
+        page, totalPages, totalElements, setPage,
+        busqueda, setBusqueda,
+        sortCol, sortAsc, toggleSort,
+    } = useExpedientesActivos({filtro: modo === 'sellado' ? 'TODOS' : 'ACTIVO'})
 
     const [vista, setVista] = useState<'lista' | 'sellar'>('lista')
     const [expedienteASellar, setExpedienteASellar] = useState<ExpedienteActivo | null>(null)
@@ -125,10 +129,8 @@ export const ExpedientesPanel = ({
     // Lógica de filtrado y ordenamiento delegada al hook
     const {
         filtrados,
-        busqueda, setBusqueda,
         filtroEstatus, setFiltroEstatus,
         soloAlertas, setSoloAlertas,
-        sortCol, sortAsc, toggleSort,
     } = useExpedientesFiltros(listaBase)
 
 
@@ -489,7 +491,9 @@ export const ExpedientesPanel = ({
                                         <Th col="folioCOPP" label="Folio COPP"/>
                                         <Th col="tipoDelito" label="Delito"/>
                                         <Th col="fechaHecho" label="Fecha Hecho"/>
-                                        <Th col="investigadorAsignado" label="Investigador"/>
+                                        <th className="text-left py-2.5 px-3 text-[10px] uppercase tracking-[0.12em] text-cyan-400 font-semibold whitespace-nowrap">
+                                            Investigador
+                                        </th>
                                         <Th col="estatus" label="Estatus"/>
                                         {/* Acción */}
                                         <th className="py-2.5 px-3 text-[10px] uppercase tracking-wider text-cyan-400 text-center">
@@ -603,14 +607,34 @@ export const ExpedientesPanel = ({
                 {/* ══ PIE ═══════════════════════════════════════════════════════════════ */}
                 {vista === 'lista' && (
                     <div
-                        className="flex-shrink-0 px-6 py-2.5 border-t border-cyan-400/15 bg-[#04101E]/40 flex items-center justify-between">
-                <span className="text-[10px] text-cyan-600 uppercase tracking-wider">
-                    {filtrados.length} resultado{filtrados.length !== 1 ? 's' : ''}
-                    {filtrados.length !== listaBase.length && ` de ${listaBase.length}`}
-                </span>
+                        className="flex-shrink-0 px-6 py-2.5 border-t border-cyan-400/15 bg-[#04101E]/40 flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-[10px] text-cyan-600 uppercase tracking-wider">
+                            {filtrados.length} en esta página · {totalElements} en total
+                        </span>
+
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => setPage(page - 1)}
+                                disabled={page <= 0 || loading}
+                                className="px-2.5 py-1 border border-cyan-400/30 rounded text-[10px] uppercase tracking-wider text-cyan-400 hover:bg-cyan-400/10 hover:border-cyan-400 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                                ← Anterior
+                            </button>
+                            <span className="text-[10px] text-cyan-500 uppercase tracking-wider">
+                                Página {totalPages === 0 ? 0 : page + 1} de {totalPages}
+                            </span>
+                            <button
+                                onClick={() => setPage(page + 1)}
+                                disabled={page + 1 >= totalPages || loading}
+                                className="px-2.5 py-1 border border-cyan-400/30 rounded text-[10px] uppercase tracking-wider text-cyan-400 hover:bg-cyan-400/10 hover:border-cyan-400 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                                Siguiente →
+                            </button>
+                        </div>
+
                         <span className="text-[10px] text-cyan-700 uppercase tracking-wider">
-                    Actualización automática cada 30s
-                </span>
+                            Actualización automática cada 30s
+                        </span>
                     </div>
                 )}
 

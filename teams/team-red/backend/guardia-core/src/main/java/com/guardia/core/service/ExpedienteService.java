@@ -29,6 +29,7 @@ public interface ExpedienteService {
     ExpedienteResponse asignarFechaHecho(Long id, String fecha);
     VerificacionHashResponse verificarIntegridad(Long id);
     boolean validarDatos(Long id);
-    List<ExpedienteActivoResponse> obtenerParaPanel(String estatus, String sort);
+    com.guardia.core.dto.response.PageResponse<ExpedienteActivoResponse> obtenerParaPanel(
+            String estatus, String sort, String busqueda, int page, int size);
     List<ExpedienteActivoResponse> buscarConFiltros(ExpedienteFiltroRequest filtro, String sort);
 }

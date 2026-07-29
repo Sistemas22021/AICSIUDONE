@@ -19,7 +19,7 @@ import java.util.UUID;
  */
 @Repository
 public interface ExpedienteRepository extends JpaRepository<Expediente, Long>,
-        JpaSpecificationExecutor<Expediente> {
+        org.springframework.data.jpa.repository.JpaSpecificationExecutor<Expediente> {
     Optional<Expediente> findByFolio(String folio);
     List<Expediente> findByEstadoExpediente(EstadoExpediente estado);
     List<Expediente> findByCreadoPorId(UUID creadoPorId);

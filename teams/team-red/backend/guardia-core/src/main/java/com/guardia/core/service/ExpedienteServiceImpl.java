@@ -26,6 +26,7 @@ import com.guardia.core.model.enums.EstadoExpediente;
 import com.guardia.core.model.enums.TipoRol;
 import com.guardia.core.repository.ExpedienteRepository;
 import com.guardia.core.repository.specification.ExpedienteSpecifications;
+import com.guardia.core.repository.specification.ExpedientePanelSpecifications;
 import com.guardia.core.repository.UsuarioRepository;
 import com.guardia.core.repository.TipoDelitoRepository;
 import com.guardia.core.repository.SubtipoDelitoRepository;
@@ -36,11 +37,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.guardia.core.dto.response.PageResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.Comparator;
 import java.util.UUID;
 
@@ -126,7 +131,7 @@ public class ExpedienteServiceImpl implements ExpedienteService {
 
             // Promover el primer delito a la FK directa del expediente
             DelitoRequest primero = request.getDelitos().getFirst();
-            tipoDelitoRepository.findByNombre(primero.getDelito())
+            tipoDelitoRepository.findByNombreIgnoreCase(primero.getDelito())
                     .ifPresent(expediente::setTipoDelito);
 
             expediente.setFechaHecho(
@@ -409,38 +414,43 @@ public class ExpedienteServiceImpl implements ExpedienteService {
                 expediente.getHashIntegridad(), recalculado);
     }
 
-    private static final Set<EstadoExpediente> ESTADOS_INACTIVOS = Set.of(
-            EstadoExpediente.BORRADOR,
-            EstadoExpediente.CERRADO,
-            EstadoExpediente.SOLICITUD_DE_REAPERTURA,
-            EstadoExpediente.ARCHIVADO
-    );
-
     @Override
     @Transactional(readOnly = true)
-    public List<ExpedienteActivoResponse> obtenerParaPanel(String estatus, String sort) {
-        List<Expediente> expedientes;
+    public PageResponse<ExpedienteActivoResponse> obtenerParaPanel(
+            String estatus, String sort, String busqueda, int page, int size) {
 
-        if (estatus != null && !estatus.isBlank()) {
-            if ("ACTIVO".equalsIgnoreCase(estatus)) {
-                expedientes = expedienteRepository.findAll().stream()
-                        .filter(e -> e.getEstadoExpediente() != null
-                                && !ESTADOS_INACTIVOS.contains(e.getEstadoExpediente()))
-                        .toList();
-            } else {
-                EstadoExpediente estado = EstadoExpediente.valueOf(estatus.toUpperCase());
-                expedientes = expedienteRepository.findByEstadoExpediente(estado);
-            }
-        } else {
-            expedientes = expedienteRepository.findAll();
+        Specification<Expediente> spec = Specification
+                .where(ExpedientePanelSpecifications.conEstatus(estatus))
+                .and(ExpedientePanelSpecifications.conBusqueda(busqueda));
+
+        Pageable pageable = PageRequest.of(
+                Math.max(page, 0),
+                size <= 0 ? 10 : Math.min(size, 100),
+                resolverSort(sort));
+
+        Page<Expediente> resultado = expedienteRepository.findAll(spec, pageable);
+
+        return PageResponse.from(resultado.map(this::toActivoResponse));
+    }
+
+    /** Mapea "campo,asc|desc" del frontend a un Sort de Spring Data. Por defecto: fechaCreacion desc. */
+    private Sort resolverSort(String sort) {
+        if (sort == null || sort.isBlank()) {
+            return Sort.by(Sort.Direction.DESC, "fechaCreacion");
         }
+        String[] partes = sort.split(",");
+        String campoFrontend = partes[0].trim();
+        boolean desc = partes.length > 1 && "desc".equalsIgnoreCase(partes[1].trim());
+        Sort.Direction direccion = desc ? Sort.Direction.DESC : Sort.Direction.ASC;
 
-        Comparator<Expediente> comparador = resolverComparador(sort);
-        if (comparador != null) {
-            expedientes = expedientes.stream().sorted(comparador).toList();
-        }
-
-        return expedientes.stream().map(this::toActivoResponse).toList();
+        String propiedad = switch (campoFrontend) {
+            case "folioCOPP", "folio" -> "folio";
+            case "fechaHecho" -> "fechaHecho";
+            case "tipoDelito" -> "tipoDelito.nombre";
+            case "estatus" -> "estadoExpediente";
+            default -> "fechaCreacion";
+        };
+        return Sort.by(direccion, propiedad);
     }
 
     private Comparator<Expediente> resolverComparador(String sort) {

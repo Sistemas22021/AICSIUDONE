@@ -252,3 +252,13 @@ export interface FirmaConductualPayload {
   comportamientoPostDelictivo?: string
   elementosDistintivos?: string
 }
+
+export interface PageResponse<T> {
+  content:        T[]
+  page:           number
+  size:           number
+  totalElements:  number
+  totalPages:     number
+  hasNext:        boolean
+  hasPrevious:    boolean
+}

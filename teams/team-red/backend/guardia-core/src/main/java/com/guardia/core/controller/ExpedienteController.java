@@ -55,11 +55,14 @@ public class ExpedienteController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<ExpedienteActivoResponse>>> listar(
+    public ResponseEntity<ApiResponse<com.guardia.core.dto.response.PageResponse<ExpedienteActivoResponse>>> listar(
             @RequestParam(required = false) String estatus,
-            @RequestParam(required = false) String sort) {
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String busqueda,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
 
-        List<ExpedienteActivoResponse> expedientes = expedienteService.obtenerParaPanel(estatus, sort);
+        var expedientes = expedienteService.obtenerParaPanel(estatus, sort, busqueda, page, size);
         return ResponseEntity.ok(ApiResponse.ok("Expedientes obtenidos.", expedientes));
     }
 

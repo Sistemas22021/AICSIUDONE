@@ -12,7 +12,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-/**
+/*
  * Entidad que representa un tipo de delito. Puede contener subtipos.
  * Usada para clasificar delitos en expedientes.
  */
