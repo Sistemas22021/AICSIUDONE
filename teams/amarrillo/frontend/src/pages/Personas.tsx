@@ -9,8 +9,11 @@ import ModalConfirmar from '../components/ModalConfirmar';
 import Modal from '../components/Modal';
 import { exportarCSV } from '../services/exportar';
 import FormPersona from '../components/FormPersona';
+import { useAuth } from '../services/AuthContext';
+import { puedeEditar, puedeEliminar } from '../services/permisos';
 
 const ROLES: RolPersona[] = ['VICTIMA', 'SOSPECHOSO', 'TESTIGO', 'PROPIETARIO', 'INTERMEDIARIO'];
+
 const TIPOS_REL: TipoRelacion[] = [
   'FAMILIAR', 'AMIGO', 'LABORAL', 'CONTACTO_TELEFONICO', 'REDES_SOCIALES', 'OTRO',
 ];
@@ -47,6 +50,8 @@ const iniciales = (n: string, a: string) =>
   `${n.charAt(0)}${a.charAt(0)}`.toUpperCase();
 
 export default function Personas() {
+  const { user } = useAuth();
+
   const [lista, setLista] = useState<Persona[]>([]);
   const [relaciones, setRelaciones] = useState<Relacion[]>([]);
   const [filtro, setFiltro] = useState('');
@@ -229,6 +234,7 @@ export default function Personas() {
       </div>
 
       {ok && <div className="success" style={{ marginBottom: 16 }}>{ok}</div>}
+      {err && <div className="error" style={{ marginBottom: 16 }}>{err}</div>}
 
       {/* Tabla */}
       <div className="table-wrap">
@@ -261,6 +267,7 @@ export default function Personas() {
             </div>
           </div>
         </div>
+
         <div className="table-scroll">
           <table>
             <thead>
@@ -311,36 +318,42 @@ export default function Personas() {
                           visibility
                         </span>
                       </button>
-                      <button
-                        className="btn-icon"
-                        onClick={() => {
-                          setPersonaParaRelacion(p);
-                          setRelacionAbierto(true);
-                        }}
-                        title="Crear relación"
-                      >
-                        <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-                          group_add
-                        </span>
-                      </button>
-                      <button
-                        className="btn-icon"
-                        onClick={() => editar(p)}
-                        title="Editar"
-                      >
-                        <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-                          edit
-                        </span>
-                      </button>
-                      <button
-                        className="btn-icon danger"
-                        onClick={() => setAEliminar(p)}
-                        title="Eliminar"
-                      >
-                        <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-                          delete
-                        </span>
-                      </button>
+                      {puedeEditar(user?.rol) && (
+                        <button
+                          className="btn-icon"
+                          onClick={() => {
+                            setPersonaParaRelacion(p);
+                            setRelacionAbierto(true);
+                          }}
+                          title="Crear relación"
+                        >
+                          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                            group_add
+                          </span>
+                        </button>
+                      )}
+                      {puedeEditar(user?.rol) && (
+                        <button
+                          className="btn-icon"
+                          onClick={() => editar(p)}
+                          title="Editar"
+                        >
+                          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                            edit
+                          </span>
+                        </button>
+                      )}
+                      {puedeEliminar(user?.rol) && (
+                        <button
+                          className="btn-icon danger"
+                          onClick={() => setAEliminar(p)}
+                          title="Eliminar"
+                        >
+                          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                            delete
+                          </span>
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -355,6 +368,7 @@ export default function Personas() {
             </tbody>
           </table>
         </div>
+
         <Paginacion
           total={total}
           pagina={pagina}
@@ -441,33 +455,35 @@ export default function Personas() {
             )
           }
           acciones={
-            <>
-              <button
-                className="btn-ghost"
-                onClick={() => {
-                  editar(detalle);
-                  setDetalle(null);
-                }}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-                  edit
-                </span>
-                Editar
-              </button>
-              <button
-                className="btn-secondary"
-                onClick={() => {
-                  setPersonaParaRelacion(detalle);
-                  setDetalle(null);
-                  setRelacionAbierto(true);
-                }}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-                  group_add
-                </span>
-                Crear relación
-              </button>
-            </>
+            puedeEditar(user?.rol) ? (
+              <>
+                <button
+                  className="btn-ghost"
+                  onClick={() => {
+                    editar(detalle);
+                    setDetalle(null);
+                  }}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                    edit
+                  </span>
+                  Editar
+                </button>
+                <button
+                  className="btn-secondary"
+                  onClick={() => {
+                    setPersonaParaRelacion(detalle);
+                    setDetalle(null);
+                    setRelacionAbierto(true);
+                  }}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                    group_add
+                  </span>
+                  Crear relación
+                </button>
+              </>
+            ) : null
           }
         />
       )}
@@ -526,7 +542,6 @@ export default function Personas() {
           Encontrá personas que conectan a una víctima con un sospechoso a través de la red
           social. El motor busca caminos de hasta 2 grados de separación.
         </p>
-
         <div className="form-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
           <div className="form-group">
             <label className="form-label">Víctima</label>
@@ -555,7 +570,6 @@ export default function Personas() {
             </select>
           </div>
         </div>
-
         <button
           className="btn-primary"
           onClick={buscarIntermediarios}

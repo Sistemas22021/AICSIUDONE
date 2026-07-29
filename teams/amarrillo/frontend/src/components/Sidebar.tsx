@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../services/AuthContext';
 import { usePrefs } from '../services/PrefsContext';
+import { puedeEditar } from '../services/permisos';
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
@@ -79,10 +80,12 @@ export default function Sidebar() {
       </nav>
 
       <div className="sidebar-footer">
-        <button className="btn-investigation" onClick={nuevaInvestigacion}>
-          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>add_circle</span>
-          {t('Nueva Investigación')}
-        </button>
+        {puedeEditar(user?.rol) && (
+          <button className="btn-investigation" onClick={nuevaInvestigacion}>
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>add_circle</span>
+            {t('Nueva Investigación')}
+          </button>
+        )}
 
         <div className="user-card">
           <div className="user-avatar">

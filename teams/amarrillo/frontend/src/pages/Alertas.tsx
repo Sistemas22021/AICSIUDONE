@@ -7,6 +7,8 @@ import ModalDetalle from '../components/ModalDetalle';
 import { exportarCSV } from '../services/exportar';
 import { useConfirm } from '../services/ConfirmContext';
 import { useToast } from '../services/ToastContext';
+import { useAuth } from '../services/AuthContext';
+import { puedeValidarAlertas } from '../services/permisos';
 
 const ESTADOS: EstadoAlerta[] = ['PENDIENTE', 'EN_REVISION', 'CONFIRMADA', 'DESCARTADA'];
 
@@ -34,6 +36,9 @@ const tipoLabel: Record<string, string> = {
 };
 
 export default function Alertas() {
+  const { user } = useAuth();
+  const puedeValidar = puedeValidarAlertas(user?.rol);
+
   const [lista, setLista] = useState<Alerta[]>([]);
   const [soloPendientes, setSoloPendientes] = useState(false);
   const [filtroNivel, setFiltroNivel] = useState<string>('');
@@ -42,6 +47,7 @@ export default function Alertas() {
   const toast = useToast();
 
   const cargar = async () => setLista(await alertaService.listar(soloPendientes));
+
   useEffect(() => { cargar(); }, [soloPendientes]);
 
   const cambiar = async (id: number, estado: EstadoAlerta) => {
@@ -237,7 +243,7 @@ export default function Alertas() {
                     <button className="btn-icon" onClick={() => setDetalle(a)} title="Ver detalle">
                       <span className="material-symbols-outlined" style={{ fontSize: 18 }}>visibility</span>
                     </button>
-                    {a.estado === 'PENDIENTE' && (
+                    {puedeValidar && a.estado === 'PENDIENTE' && (
                       <>
                         <button className="btn-secondary" onClick={() => analizar(a)}
                           style={{ fontSize: 10, padding: '6px 12px' }}>
@@ -251,7 +257,7 @@ export default function Alertas() {
                         )}
                       </>
                     )}
-                    {a.estado === 'EN_REVISION' && (
+                    {puedeValidar && a.estado === 'EN_REVISION' && (
                       <>
                         <button className="btn-primary" onClick={() => cambiar(a.id, 'CONFIRMADA')}
                           style={{ fontSize: 10, padding: '6px 12px' }}>
@@ -321,7 +327,7 @@ export default function Alertas() {
             ) : null
           }
           acciones={
-            <>
+            puedeValidar ? (
               <select value={detalle.estado}
                 onChange={(e) => {
                   cambiar(detalle.id, e.target.value as EstadoAlerta);
@@ -330,7 +336,7 @@ export default function Alertas() {
                 style={{ width: 160, fontSize: 11 }}>
                 {ESTADOS.map(e => <option key={e} value={e}>{estadoLabel[e]}</option>)}
               </select>
-            </>
+            ) : null
           }
         />
       )}

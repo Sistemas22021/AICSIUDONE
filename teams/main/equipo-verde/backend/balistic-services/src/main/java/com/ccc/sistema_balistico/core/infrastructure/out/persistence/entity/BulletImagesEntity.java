@@ -2,12 +2,10 @@ package com.ccc.sistema_balistico.core.infrastructure.out.persistence.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.envers.Audited;
 
 import java.util.UUID;
 
 @Entity
-@Audited
 @Getter
 @Setter
 @AllArgsConstructor

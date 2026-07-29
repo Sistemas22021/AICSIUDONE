@@ -9,12 +9,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.Builder;
-import org.hibernate.envers.Audited;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Audited
 @Getter
 @Setter
 @NoArgsConstructor

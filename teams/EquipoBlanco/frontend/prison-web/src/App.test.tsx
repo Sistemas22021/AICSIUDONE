@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import App from './App'
 
@@ -57,12 +57,17 @@ describe('App', () => {
   it('hides Bitácora de Incidentes for Oficial Penitenciario (Supervisor only)', () => {
     setMockUser('Carlos Méndez', 'Oficial Penitenciario')
     render(<App />)
+    const securityMenu = screen.queryByText('Seguridad y Control')
+    if (securityMenu) {
+      fireEvent.click(securityMenu)
+    }
     expect(screen.queryByText('Bitácora de Incidentes')).not.toBeInTheDocument()
   })
 
   it('shows Bitácora de Incidentes for Supervisor', () => {
     setMockUser('Pedro Castillo', 'Supervisor')
     render(<App />)
+    fireEvent.click(screen.getByText('Seguridad y Control'))
     expect(screen.getByText('Bitácora de Incidentes')).toBeInTheDocument()
   })
 })

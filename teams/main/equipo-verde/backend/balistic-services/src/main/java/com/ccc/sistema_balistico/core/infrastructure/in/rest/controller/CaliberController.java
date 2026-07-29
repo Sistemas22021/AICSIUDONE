@@ -11,7 +11,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("api/v1/caliber")
+@RequestMapping("/api/v1/caliber")
 @Tag(name = "Calibre", description = "Endpoints para la gestión y búsqueda de calibres balísticos")
 @Validated
 public class CaliberController {

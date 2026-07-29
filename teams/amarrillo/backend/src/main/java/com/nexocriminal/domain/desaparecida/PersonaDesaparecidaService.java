@@ -27,15 +27,12 @@ public class PersonaDesaparecidaService {
     public PersonaDesaparecida actualizar(Long id, PersonaDesaparecida datos) {
         PersonaDesaparecida existente = repository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Persona desaparecida no encontrada: " + id));
-
         datos.setId(id);
         datos.setCreadoEn(existente.getCreadoEn());
         datos.setActualizadoEn(LocalDateTime.now());
-
         if (datos.getEstado() != EstadoDesaparicion.BUSCADA && existente.getFechaResolucion() == null) {
             datos.setFechaResolucion(LocalDateTime.now());
         }
-
         return repository.save(datos);
     }
 
@@ -107,11 +104,25 @@ public class PersonaDesaparecidaService {
     @Transactional
     public FotoDesaparecida agregarFoto(Long personaId, MultipartFile archivo) {
         PersonaDesaparecida persona = obtener(personaId);
-
         String url = fileStorageService.guardarFotoDesaparecida(archivo);
 
         long cantidadActual = fotoRepository.countByPersonaDesaparecidaId(personaId);
-        boolean esPrincipal = cantidadActual == 0;
+
+        // Marcar esta foto como principal SOLO si la persona no tiene ya una foto
+        // principal. Ojo: la foto principal puede vivir en dos lugares distintos:
+        //   1. Como registro principal=true en la tabla foto_desaparecida, o
+        //   2. Como el campo foto_url de la persona (subido con "subir foto principal",
+        //      que no crea registro en la galeria).
+        // Si NO contemplaramos el caso 2, al subir la primera foto a la galeria se
+        // marcaria principal y pisaria la foto_url existente, borrando la principal.
+        boolean tienePrincipalEnGaleria = fotoRepository
+                .findByPersonaDesaparecidaIdOrderByOrdenAsc(personaId)
+                .stream()
+                .anyMatch(f -> Boolean.TRUE.equals(f.getPrincipal()));
+        boolean tieneFotoUrl = persona.getFotoUrl() != null && !persona.getFotoUrl().isBlank();
+        boolean yaTienePrincipal = tienePrincipalEnGaleria || tieneFotoUrl;
+
+        boolean esPrincipal = !yaTienePrincipal;
 
         FotoDesaparecida foto = FotoDesaparecida.builder()
                 .url(url)
@@ -119,9 +130,10 @@ public class PersonaDesaparecidaService {
                 .principal(esPrincipal)
                 .personaDesaparecida(persona)
                 .build();
-
         foto = fotoRepository.save(foto);
 
+        // Solo si esta foto pasa a ser la principal, sincronizamos el campo foto_url.
+        // Si la persona ya tenia principal, NO tocamos foto_url: se preserva.
         if (esPrincipal) {
             persona.setFotoUrl(url);
             persona.setActualizadoEn(LocalDateTime.now());
@@ -139,7 +151,6 @@ public class PersonaDesaparecidaService {
     @Transactional
     public void eliminarFoto(Long personaId, Long fotoId) {
         PersonaDesaparecida persona = obtener(personaId);
-
         FotoDesaparecida foto = persona.getFotos().stream()
                 .filter(f -> f.getId().equals(fotoId))
                 .findFirst()
@@ -162,6 +173,7 @@ public class PersonaDesaparecidaService {
                 persona.setFotoUrl(null);
             }
         }
+
         persona.setActualizadoEn(LocalDateTime.now());
         repository.save(persona);
 
@@ -173,9 +185,7 @@ public class PersonaDesaparecidaService {
     public void marcarPrincipal(Long personaId, Long fotoId) {
         List<FotoDesaparecida> fotos = fotoRepository
                 .findByPersonaDesaparecidaIdOrderByOrdenAsc(personaId);
-
         PersonaDesaparecida persona = obtener(personaId);
-
         for (FotoDesaparecida f : fotos) {
             boolean esLaElegida = f.getId().equals(fotoId);
             f.setPrincipal(esLaElegida);

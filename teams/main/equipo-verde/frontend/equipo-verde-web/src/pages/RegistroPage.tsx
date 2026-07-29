@@ -7,7 +7,7 @@ import { SectionTitle } from '../components/SectionTitle';
 import { DataCard } from '../components/DataCard';
 import {
   UploadCloud, Hash, CheckCircle2, X, Image as ImageIcon,
-  ArrowLeft, Eraser, Plus, Pencil, Trash2, Database
+  ArrowLeft, Eraser, Plus, Pencil, Trash2, Database, Archive, ArchiveRestore
 } from 'lucide-react';
 import {
   TwistDirection,
@@ -18,8 +18,8 @@ import {
   EvidenceRecord
 } from '../types/evidence';
 import {
-  getBullets, createBullet, updateBullet, deleteBullet,
-  getBulletImageUrl, searchCalibers, CaliberDTO, BackendApiError
+  getBullets, getArchivedBullets, createBullet, updateBullet, deleteBullet,
+  unarchiveBullet, getBulletImageUrl, searchCalibers, CaliberDTO, BackendApiError
 } from '../services/bulletService';
 import { getExpedientes } from '../services/expedienteService';
 import { ExpedienteDTO } from '../types/expediente';
@@ -35,7 +35,8 @@ const INITIAL_FORM_STATE: EvidenceFormState = {
   estrias: '',
   twist: '',
   percussion: '',
-  marca: ''
+  marca: '',
+  status: ''
 };
 
 const premiumInputStyles = {
@@ -68,6 +69,7 @@ const premiumInputStyles = {
 export const RegistroPage = () => {
   // Estado general
   const [viewMode, setViewMode] = useState<'list' | 'form'>('list');
+  const [filterMode, setFilterMode] = useState<'active' | 'archived'>('active');
   const [records, setRecords] = useState<EvidenceRecord[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -96,11 +98,36 @@ export const RegistroPage = () => {
   const [expedienteLoading, setExpedienteLoading] = useState(false);
   const debounceExpRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const loadBullets = useCallback(async () => {
+    try {
+      const data = filterMode === 'active' 
+        ? await getBullets(0, 50) 
+        : await getArchivedBullets(0, 50);
+      const mappedRecords: EvidenceRecord[] = data.content.map(b => ({
+        id: String(b.idBullet),
+        createdAt: b.createdAt || '',
+        expediente: b.caseFile,
+        calibre: String(b.caliber),
+        caliberId: String(b.caliber),
+        caliberName: b.caliberName,
+        status: b.status,
+        estrias: String(b.landsAndGrooves),
+        twist: b.twistDirection as TwistDirection,
+        percussion: b.percussionType as PercussionType,
+        marca: b.manufacturer,
+        previewUrl: b.images && b.images.length > 0 ? getBulletImageUrl(b.images[0]) : null
+      }));
+      setRecords(mappedRecords);
+    } catch (error) {
+      console.error("Error loading bullets:", error);
+    }
+  }, [filterMode]);
+
   useEffect(() => {
     if (viewMode === 'list') {
       loadBullets();
     }
-  }, [viewMode]);
+  }, [viewMode, loadBullets]);
 
   // Búsqueda de calibres con debounce 300ms
   const fetchCalibers = useCallback((q: string) => {
@@ -142,23 +169,38 @@ export const RegistroPage = () => {
     fetchExpedientes(expedienteInputValue);
   }, [expedienteInputValue, fetchExpedientes]);
 
-  const loadBullets = async () => {
-    try {
-      const data = await getBullets(0, 50);
-      const mappedRecords: EvidenceRecord[] = data.content.map(b => ({
-        id: String(b.idBullet),
-        createdAt: b.createdAt || '',
-        expediente: b.caseFile,
-        calibre: String(b.caliber),
-        estrias: String(b.landsAndGrooves),
-        twist: b.twistDirection as TwistDirection,
-        percussion: b.percussionType as PercussionType,
-        marca: b.manufacturer,
-        previewUrl: b.images && b.images.length > 0 ? getBulletImageUrl(b.images[0]) : null
-      }));
-      setRecords(mappedRecords);
-    } catch (error) {
-      console.error("Error loading bullets:", error);
+  const renderStatusBadge = (status?: string) => {
+    switch (status) {
+      case 'EN_INVESTIGACION':
+        return (
+          <span className="inline-flex items-center text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full">
+            En Investigación
+          </span>
+        );
+      case 'EN_BOVEDA':
+        return (
+          <span className="inline-flex items-center text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">
+            En Bóveda
+          </span>
+        );
+      case 'EN_TRIBUNAL':
+        return (
+          <span className="inline-flex items-center text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-full">
+            En Tribunal
+          </span>
+        );
+      case 'ARCHIVADO':
+        return (
+          <span className="inline-flex items-center text-xs font-bold text-slate-600 bg-slate-100 border border-slate-300 px-2.5 py-1 rounded-full">
+            Archivado
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center text-xs font-bold text-slate-400 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-full">
+            Desconocido
+          </span>
+        );
     }
   };
 
@@ -176,7 +218,8 @@ export const RegistroPage = () => {
       estrias: record.estrias,
       twist: record.twist,
       percussion: record.percussion,
-      marca: record.marca
+      marca: record.marca,
+      status: record.status || ''
     });
     setEditingId(record.id);
     setExpedienteSelected(record.expediente ? { caseNumber: record.expediente } as ExpedienteDTO : null);
@@ -198,6 +241,19 @@ export const RegistroPage = () => {
         setRecords(prev => prev.filter(r => r.id !== id));
       } catch (err) {
         console.error("Error al eliminar", err);
+      }
+    }
+  };
+
+  const handleUnarchive = async (id: string) => {
+    if (window.confirm('¿Deseas restaurar esta evidencia archivada?')) {
+      try {
+        await unarchiveBullet(Number(id));
+        setRecords(prev => prev.filter(r => r.id !== id));
+        setStatus(FormStatus.SUCCESS);
+      } catch (err) {
+        console.error("Error al desarchivar", err);
+        setStatus(FormStatus.ERROR);
       }
     }
   };
@@ -365,7 +421,8 @@ export const RegistroPage = () => {
         percussionType: formData.percussion,
         twistDirection: formData.twist,
         caliber: Number(formData.calibre),
-        manufacturer: formData.marca
+        manufacturer: formData.marca,
+        status: formData.status as any
       };
 
       if (editingId) {
@@ -417,16 +474,55 @@ export const RegistroPage = () => {
     return (
       <Box className="animate-fade-in max-w-7xl mx-auto px-6 py-6">
         <Box className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-          <SectionTitle className="!mb-0">Lista de expedientes balisticos</SectionTitle>
-          <Button
-            variant="contained"
-            startIcon={<Plus size={20} strokeWidth={2.5} />}
-            onClick={handleCreateNew}
-            className="bg-slate-900 text-white hover:bg-indigo-600 shadow-md hover:shadow-lg hover:-translate-y-0.5 px-6 py-2.5 font-bold transition-all duration-300"
-            sx={{ textTransform: 'none', borderRadius: '999px', bgcolor: '#0f172a' }}
-          >
-            Crear registro
-          </Button>
+          <div>
+            <SectionTitle className="!mb-1">Lista de expedientes balísticos</SectionTitle>
+            <p className="text-xs text-slate-500 font-medium">
+              {filterMode === 'active' 
+                ? 'Evidencias activas registradas en el sistema' 
+                : 'Histórico de evidencias archivadas (Borrado Lógico en base de datos y almacenamiento)'}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="bg-slate-100 p-1 rounded-xl flex items-center gap-1 border border-slate-200">
+              <Button
+                size="small"
+                onClick={() => setFilterMode('active')}
+                className={`font-bold transition-all px-4 py-1.5 ${
+                  filterMode === 'active' 
+                    ? 'bg-white text-slate-900 shadow-sm hover:bg-white' 
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+                sx={{ textTransform: 'none', borderRadius: '8px' }}
+              >
+                Activas
+              </Button>
+              <Button
+                size="small"
+                startIcon={<Archive size={15} />}
+                onClick={() => setFilterMode('archived')}
+                className={`font-bold transition-all px-4 py-1.5 ${
+                  filterMode === 'archived' 
+                    ? 'bg-amber-600 text-white shadow-sm hover:bg-amber-700' 
+                    : 'text-slate-600 hover:text-amber-700'
+                }`}
+                sx={{ textTransform: 'none', borderRadius: '8px' }}
+              >
+                Ver Archivados
+              </Button>
+            </div>
+
+            {filterMode === 'active' && (
+              <Button
+                variant="contained"
+                startIcon={<Plus size={20} strokeWidth={2.5} />}
+                onClick={handleCreateNew}
+                className="bg-slate-900 text-white hover:bg-indigo-600 shadow-md hover:shadow-lg hover:-translate-y-0.5 px-6 py-2.5 font-bold transition-all duration-300"
+                sx={{ textTransform: 'none', borderRadius: '999px', bgcolor: '#0f172a' }}
+              >
+                Crear registro
+              </Button>
+            )}
+          </div>
         </Box>
 
         <DataCard noPadding>
@@ -436,20 +532,24 @@ export const RegistroPage = () => {
                 <Database size={32} className="text-slate-300" strokeWidth={1.5} />
               </Box>
               <Typography variant="h6" className="text-slate-800 font-bold mb-2">
-                No hay registros aún
+                {filterMode === 'active' ? 'No hay registros aún' : 'No hay evidencias archivadas'}
               </Typography>
               <Typography variant="body2" className="text-slate-500 max-w-sm mb-6">
-                Crea tu primer registro de metadatos balísticos para empezar a armar la base de datos de expedientes.
+                {filterMode === 'active'
+                  ? 'Crea tu primer registro de metadatos balísticos para empezar a armar la base de datos de expedientes.'
+                  : 'Las evidencias eliminadas con borrado lógico aparecerán en este histórico.'}
               </Typography>
-              <Button
-                variant="outlined"
-                startIcon={<Plus size={18} />}
-                onClick={handleCreateNew}
-                className="font-bold border-slate-200 text-slate-700 hover:bg-slate-50 px-6 py-2"
-                sx={{ textTransform: 'none', borderRadius: '999px' }}
-              >
-                Comenzar ahora
-              </Button>
+              {filterMode === 'active' && (
+                <Button
+                  variant="outlined"
+                  startIcon={<Plus size={18} />}
+                  onClick={handleCreateNew}
+                  className="font-bold border-slate-200 text-slate-700 hover:bg-slate-50 px-6 py-2"
+                  sx={{ textTransform: 'none', borderRadius: '999px' }}
+                >
+                  Comenzar ahora
+                </Button>
+              )}
             </Box>
           ) : (
             <div className="overflow-x-auto pb-4">
@@ -460,6 +560,7 @@ export const RegistroPage = () => {
                     <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Calibre</th>
                     <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Estrías/Giro</th>
                     <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Marca</th>
+                    <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Estado</th>
                     <th className="p-4 pr-8 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Acción</th>
                   </tr>
                 </thead>
@@ -469,28 +570,42 @@ export const RegistroPage = () => {
                       <td className="p-4 pl-8 font-bold text-slate-800">{record.expediente}</td>
                       <td className="p-4">
                         <span className="inline-flex items-center text-xs font-extrabold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-md">
-                          {record.calibre}
+                          {record.caliberName || record.calibre}
                         </span>
                       </td>
                       <td className="p-4 text-slate-600 font-medium">{record.estrias} / {record.twist.split(' ')[0]}</td>
                       <td className="p-4 text-slate-600 font-medium">{record.marca}</td>
+                      <td className="p-4">
+                        {renderStatusBadge(record.status)}
+                      </td>
                       <td className="p-4 pr-8 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                        {filterMode === 'active' ? (
+                          <div className="flex items-center justify-end gap-2">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleEdit(record)}
+                              className="bg-white border border-slate-200 text-slate-500 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 shadow-sm transition-colors"
+                            >
+                              <Pencil size={16} />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              onClick={() => handleDelete(record.id)}
+                              className="bg-white border border-slate-200 text-slate-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50 shadow-sm transition-colors"
+                            >
+                              <Trash2 size={16} />
+                            </IconButton>
+                          </div>
+                        ) : (
                           <IconButton
                             size="small"
-                            onClick={() => handleEdit(record)}
-                            className="bg-white border border-slate-200 text-slate-500 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 shadow-sm transition-colors"
+                            title="Desarchivar evidencia"
+                            onClick={() => handleUnarchive(record.id)}
+                            className="bg-white border border-slate-200 text-slate-500 hover:text-emerald-600 hover:border-emerald-200 hover:bg-emerald-50 shadow-sm transition-colors"
                           >
-                            <Pencil size={16} />
+                            <ArchiveRestore size={16} />
                           </IconButton>
-                          <IconButton
-                            size="small"
-                            onClick={() => handleDelete(record.id)}
-                            className="bg-white border border-slate-200 text-slate-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50 shadow-sm transition-colors"
-                          >
-                            <Trash2 size={16} />
-                          </IconButton>
-                        </div>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -657,6 +772,32 @@ export const RegistroPage = () => {
                 size="medium"
                 sx={premiumInputStyles}
               />
+
+              {/* Estado (solo cuando se está editando) */}
+              {editingId && (
+                <TextField
+                  fullWidth
+                  select
+                  label="Estado"
+                  value={formData.status || ''}
+                  onChange={(e) => handleInputChange('status', e.target.value)}
+                  disabled={formData.status !== 'EN_BOVEDA' && formData.status !== 'EN_TRIBUNAL'}
+                  variant="outlined"
+                  size="medium"
+                  sx={premiumInputStyles}
+                >
+                  {formData.status === 'EN_INVESTIGACION' && (
+                    <MenuItem value="EN_INVESTIGACION">En Investigación</MenuItem>
+                  )}
+                  {formData.status === 'ARCHIVADO' && (
+                    <MenuItem value="ARCHIVADO">Archivado</MenuItem>
+                  )}
+                  {(formData.status === 'EN_BOVEDA' || formData.status === 'EN_TRIBUNAL') && [
+                    <MenuItem key="EN_BOVEDA" value="EN_BOVEDA">En Bóveda</MenuItem>,
+                    <MenuItem key="EN_TRIBUNAL" value="EN_TRIBUNAL">En Tribunal</MenuItem>
+                  ]}
+                </TextField>
+              )}
             </Box>
 
             <Box className="mt-10 pt-8 border-t border-slate-100 flex flex-col sm:flex-row justify-end items-center gap-4">

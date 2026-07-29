@@ -10,9 +10,11 @@ import java.util.List;
 
 public interface BulletService {
     Page<BulletDTO> getAll(Pageable pageable);
+    Page<BulletDTO> getArchivedBullets(Pageable pageable);
     BulletDTO getBullet(Long idBullet);
     BulletDTO createBullet(BulletDTO bulletDTO, List<MultipartFile> files);
     BulletDTO updateBullet(Long idBullet,BulletDTO bulletDTO);
     void deleteBullet(Long idBullet);
+    void unarchiveBullet(Long idBullet);
     Page<BulletDTO> searchBullets(String query, Pageable pageable);
 }

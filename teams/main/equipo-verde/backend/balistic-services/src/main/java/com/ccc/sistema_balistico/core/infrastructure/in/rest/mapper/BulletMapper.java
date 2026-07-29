@@ -14,6 +14,8 @@ public class BulletMapper {
                 percussionType(bulletEntity.getPercussionType()).
                 twistDirection(bulletEntity.getTwistDirection()).
                 caliber(bulletEntity.getCaliberEntity().getIdCaliber()).
+                caliberName(bulletEntity.getCaliberEntity() != null ? bulletEntity.getCaliberEntity().getName() : null).
+                status(bulletEntity.getStatus()).
                 manufacturer(bulletEntity.getManufacturer()).
                 createdAt(bulletEntity.getCreatedAt()).
                 images(bulletEntity.getImagePaths().stream().map(BulletImagesEntity::getPathImage).toList()).
@@ -30,6 +32,7 @@ public class BulletMapper {
                 percussionType(bulletEntity.getPercussionType()).
                 twistDirection(bulletEntity.getTwistDirection()).
                 caliberEntity(caliberEntity).
+                status(bulletEntity.getStatus()).
                 manufacturer(bulletEntity.getManufacturer()).
                 createdAt(bulletEntity.getCreatedAt()).isDelete(false).
                 build();

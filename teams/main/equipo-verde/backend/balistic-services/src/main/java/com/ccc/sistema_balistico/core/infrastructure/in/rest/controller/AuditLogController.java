@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("api/v1/audit-log")
+@RequestMapping("/api/v1/audit-log")
 @Tag(name = "Logs de Auditoría", description = "Endpoints para la consulta paginada de auditoría con Envers")
 public class AuditLogController {
 
@@ -29,7 +30,9 @@ public class AuditLogController {
     )
     @GetMapping
     public ResponseEntity<Page<AuditLogViewEntity>> getAuditLogs(
-            @PageableDefault() Pageable pageable) {
+            @PageableDefault(
+                    sort = "revTimestamp",
+                    direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(auditLogService.getAuditLogs(pageable));
     }
 }

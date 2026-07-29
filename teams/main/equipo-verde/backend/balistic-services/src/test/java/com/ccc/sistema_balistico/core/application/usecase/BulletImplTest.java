@@ -2,6 +2,7 @@ package com.ccc.sistema_balistico.core.application.usecase;
 
 import com.ccc.sistema_balistico.core.application.dto.BulletDTO;
 import com.ccc.sistema_balistico.core.application.services.BulletImagesService;
+import com.ccc.sistema_balistico.core.domain.enums.BulletStatus;
 import com.ccc.sistema_balistico.core.domain.exceptions.custom.BulletIsDeleted;
 import com.ccc.sistema_balistico.core.domain.exceptions.custom.BulletNotFound;
 import com.ccc.sistema_balistico.core.domain.exceptions.custom.caliber.CaliberIsDeleted;
@@ -184,6 +185,20 @@ class BulletImplTest {
         bulletService.deleteBullet(1L);
 
         assertTrue(sampleBulletEntity.getIsDelete());
+        assertEquals(BulletStatus.ARCHIVADO, sampleBulletEntity.getStatus());
         verify(bulletRepository, times(1)).save(sampleBulletEntity);
+    }
+
+    @Test
+    void testGetArchivedBullets() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<BulletEntity> page = new PageImpl<>(Collections.singletonList(sampleBulletEntity));
+        when(bulletRepository.findByIsDeleteTrue(pageable)).thenReturn(page);
+
+        Page<BulletDTO> result = bulletService.getArchivedBullets(pageable);
+
+        assertNotNull(result);
+        assertEquals(1, result.getTotalElements());
+        verify(bulletRepository, times(1)).findByIsDeleteTrue(pageable);
     }
 }
