@@ -74,7 +74,7 @@ export const CorrelacionPage = () => {
           id: String(b.idBullet),
           createdAt: b.createdAt || '',
           expediente: b.caseFile,
-          calibre: String(b.caliber),
+          calibre: b.caliberName || String(b.caliber),
           estrias: String(b.landsAndGrooves),
           twist: b.twistDirection as any,
           percussion: b.percussionType as any,
@@ -297,7 +297,9 @@ export const CorrelacionPage = () => {
                   </TableCell>
                   <TableCell className="py-3">
                     <Typography className="font-bold text-slate-800 text-sm">{row.targetEvidence.expediente}</Typography>
-                    <Typography className="text-xs text-slate-500">{row.targetEvidence.createdAt}</Typography>
+                    <Typography className="text-xs text-slate-500">
+                      {row.targetEvidence.createdAt ? new Date(row.targetEvidence.createdAt).toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
+                    </Typography>
                   </TableCell>
                   <TableCell className="py-3">
                     <Typography variant="body2" className="text-slate-700 font-bold">{row.targetEvidence.calibre}</Typography>
