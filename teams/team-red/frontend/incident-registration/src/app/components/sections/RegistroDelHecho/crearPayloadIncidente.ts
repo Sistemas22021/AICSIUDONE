@@ -53,7 +53,7 @@ export function crearPayloadIncidente({
         // ── Delitos ──────────────────────────────────────────────────────────────
         delitos: delitos.map(d => ({
             tipoDelito:    d.tipoLabel,
-            subtipoDelito: d.subtipoValue,
+            subtipoDelito: d.subtipoLabel,
             fechaHecho:    d.fechaHecho,
             horaInicio:    d.horaInicio,
             horaFin:       d.hechoEnCurso ? null : (d.horaFin || null),
