@@ -10,8 +10,10 @@ export interface Evidencia {
     descripcion: string
     ubicacion: string
     responsable: string  // Nombre del investigador
+    responsableId?: string
     embalaje: string
     horaRecoleccion: string
+    fechaRecoleccion: string
     hashIntegridad?: string
     hashLocal?: string
     timestamp?: string
@@ -40,10 +42,10 @@ export interface EscenaCrimenState {
     sincronizado: boolean                // true = estado viene del backend
     investigadorId: string | null
     investigadorNombre: string | null
+    expedienteSellado: boolean | null
     perimetro: {
-        sellado: boolean
         agentes: number
-        horaCierre: string
+        horaAseguramientoPerimetro: string
     }
     evidencias: Evidencia[]
     liberacion: {
@@ -85,10 +87,10 @@ function makeInitialState(): EscenaCrimenState {
         expedienteId: null,
         escenaId: null,
         sincronizado: false,
+        expedienteSellado: null,
         perimetro: {
-            sellado: false,
             agentes: 0,
-            horaCierre: '',
+            horaAseguramientoPerimetro: '',
         },
         evidencias: [],
         liberacion: {
@@ -122,8 +124,10 @@ export function useEscenaCrimen() {
                     descripcion: e.descripcion ?? '',
                     ubicacion: e.ubicacion ?? '',
                     responsable: e.responsable ?? '',
+                    responsableId: e.responsableId,
                     embalaje: e.embalaje ?? '',
                     horaRecoleccion: e.horaRecoleccion ?? '',
+                    fechaRecoleccion: e.fechaRecoleccion ?? '',
                     hashIntegridad: e.hashIntegridad,
                     timestamp: e.timestamp,
                 }))
@@ -153,6 +157,7 @@ export function useEscenaCrimen() {
                 if (parsed.sincronizado === undefined) parsed.sincronizado = false
                 if (parsed.investigadorId === undefined) parsed.investigadorId = null
                 if (parsed.investigadorNombre === undefined) parsed.investigadorNombre = null
+                if (parsed.expedienteSellado === undefined) parsed.expedienteSellado = null
 
                 if (parsed.evidencias.length > 0) {
                     const ultimo = parsed.evidencias[parsed.evidencias.length - 1]
@@ -185,6 +190,13 @@ export function useEscenaCrimen() {
                     paso3_completado: pasoBackend > 3 || completado,
                     paso4_completado: completado,
                     sincronizado: true,
+                    perimetro: {
+                        agentes: escenaDTO.perimetroAgentes ?? prev.perimetro.agentes,
+                        horaAseguramientoPerimetro:
+                            escenaDTO.horaAseguramientoPerimetro ?? prev.perimetro.horaAseguramientoPerimetro,
+                    },
+                    investigadorId: escenaDTO.levantadaPor?.id ?? prev.investigadorId,
+                    investigadorNombre: escenaDTO.levantadaPor?.fullName ?? prev.investigadorNombre,
                 }))
             }).catch(() => {
                 setState(prev => { localStorage.setItem(STORAGE_KEY, JSON.stringify(prev)); return prev })
@@ -192,13 +204,33 @@ export function useEscenaCrimen() {
         })
     }, [state.escenaId])
 
+    useEffect(() => {
+        const expedienteId = state.expedienteId
+        if (!expedienteId) return
+        let cancelado = false
+        import('../services/expedientesService').then(({ obtenerExpedientePorId }) => {
+            obtenerExpedientePorId(expedienteId)
+                .then(exp => {
+                    if (cancelado) return
+                    setState(prev => ({
+                        ...prev,
+                        expedienteSellado: exp.estadoExpediente === 'PROCESADO_Y_SELLADO',
+                    }))
+                })
+                .catch(() => {
+                    if (!cancelado) setState(prev => ({ ...prev, expedienteSellado: null }))
+                })
+        })
+        return () => { cancelado = true }
+    }, [state.expedienteId])
+
     const isPaso1Completado = state.paso1_completado
     const isPaso2Completado = state.paso2_completado
     const isPaso3Completado = state.paso3_completado
     const isPaso4Completado = state.paso4_completado
 
     const canCompletarPaso1 = (state.tipoEscena === 'solo_evidencia' ||
-            (state.perimetro.sellado && state.perimetro.agentes > 0 && !!state.perimetro.horaCierre))
+            (state.perimetro.agentes > 0 && !!state.perimetro.horaAseguramientoPerimetro))
         && !!state.investigadorId
 
     const todasEvidenciasCompletas = state.evidencias.length > 0 && state.evidencias.every(e =>
@@ -266,9 +298,14 @@ export function useEscenaCrimen() {
             if (!state.investigadorId) {
                 throw new Error('El ID del investigador es requerido')
             }
+
             const nuevaEscena = await crearEscena({
                 expedienteId: state.expedienteId,
                 levantadaPorId: state.investigadorId,
+                ...(state.tipoEscena === 'escena_completa' ? {
+                    perimetroAgentes: state.perimetro.agentes,
+                    horaAseguramientoPerimetro: state.perimetro.horaAseguramientoPerimetro || undefined,
+                } : {}),
             })
             escenaIdActual = nuevaEscena.id
 
@@ -394,6 +431,7 @@ export function useEscenaCrimen() {
                 responsable: '',
                 embalaje: '',
                 horaRecoleccion: '',
+                fechaRecoleccion: '',
                 hashIntegridad: undefined,
                 timestamp: undefined,
                 investigadorId: prev.investigadorId || '',

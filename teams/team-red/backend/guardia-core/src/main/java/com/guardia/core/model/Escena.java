@@ -10,6 +10,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Comparator;
 
+/**
+ * Entidad que representa una escena de levantamiento asociada a un expediente.
+ * Gestiona checklist, evidencias, timestamps y estado del proceso.
+ */
 @Entity
 @Table(name = "escena")
 @Getter
@@ -17,10 +21,6 @@ import java.util.Comparator;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-/**
- * Entidad que representa una escena de levantamiento asociada a un expediente.
- * Gestiona checklist, evidencias, timestamps y estado del proceso.
- */
 public class Escena {
 
     @Id
@@ -35,6 +35,12 @@ public class Escena {
 
     @Column(name = "cierre_proceso")
     private LocalDateTime cierreProceso;
+
+    @Column(name = "perimetro_agentes")
+    private Integer perimetroAgentes;
+
+    @Column(name = "hora_aseguramiento_perimetro")
+    private LocalDateTime horaAseguramientoPerimetro;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "levantada_por_id")

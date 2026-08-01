@@ -31,14 +31,13 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-
+/**
+ * Implementación de EscenaService: maneja la lógica de checklist, pasos y estados de escena.
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional
 @Slf4j
-/**
- * Implementación de EscenaService: maneja la lógica de checklist, pasos y estados de escena.
- */
 public class EscenaServiceImpl implements EscenaService {
 
     private final EscenaRepository escenaRepository;
@@ -65,6 +64,9 @@ public class EscenaServiceImpl implements EscenaService {
 
         escena.setEstadoChecklist("PENDIENTE");
         escena.setPasoActual( PasoChecklist.ASEGURAMIENTO_PERIMETRO);
+
+        escena.setPerimetroAgentes(request.perimetroAgentes());
+        escena.setHoraAseguramientoPerimetro(request.horaAseguramientoPerimetro());
 
         return toResponse(escenaRepository.save(escena));
     }
@@ -331,9 +333,9 @@ public class EscenaServiceImpl implements EscenaService {
 
         List<EscenaNegativaResponse> negativas = e.getEscenasNegativas() == null ? List.of() :
                 e.getEscenasNegativas().stream()
-                        .map(en -> new EscenaNegativaResponse(en.getId(), en.getElementoBuscado(),
-                                en.getAreaInspeccionada(), en.getResultado(), en.getObservacion(), e.getId(), en.getSinElementosNegativos()))
-                        .toList();
+                .map(en -> new EscenaNegativaResponse(en.getId(), en.getElementoBuscado(),
+                        en.getAreaInspeccionada(), en.getResultado(), en.getObservacion(), e.getId(), en.getSinElementosNegativos()))
+                .toList();
 
 
         return new EscenaResponse(
@@ -350,7 +352,9 @@ public class EscenaServiceImpl implements EscenaService {
                 liberadaPor,
                 e.getHoraLiberacion(),
                 e.getObservacionesLiberacion(),
-                e.getHashLiberacion()
+                e.getHashLiberacion(),
+                e.getPerimetroAgentes(),
+                e.getHoraAseguramientoPerimetro()
         );
     }
     @Override

@@ -53,7 +53,10 @@ export const EscenaNegativaFormItem = ({
             <div style={{ flex: 2, minWidth: '200px' }}>
                 <NeonSelect
                     label="Resultado"
-                    options={resultadoNegativo.map((r: string) => ({ value: r, label: r }))}
+                    options={[
+                        { value: '', label: '— Seleccione resultado —' },
+                        ...resultadoNegativo.map((r: string) => ({ value: r, label: r })),
+                    ]}
                     value={item.resultado}
                     onChange={(e: any) => onChange({ resultado: e.target.value })}
                     disabled={disabled}

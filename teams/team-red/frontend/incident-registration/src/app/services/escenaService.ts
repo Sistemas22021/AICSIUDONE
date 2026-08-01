@@ -11,10 +11,20 @@ import type { Usuario } from '../types/api.types'
 export interface EscenaResponseDTO {
     id: number
     estadoChecklist: 'INICIADO' | 'COMPLETADO' | 'CERRADO'
+    estado: 'ACTIVA' | 'LIBERADA'
     pasoActual: string
+    inicioProceso: string | null
+    cierreProceso: string | null
     expedienteId: number
+    levantadaPor: { id: string; username: string; fullName: string; profilePhotoUrl: string | null; rol: string } | null
     evidencias: EvidenciaResponseDTO[]
     escenasNegativas: EscenaNegativaResponseDTO[]
+    liberadaPor: { id: string; username: string; fullName: string; profilePhotoUrl: string | null; rol: string } | null
+    horaLiberacion: string | null
+    observacionesLiberacion: string | null
+    hashLiberacion: string | null
+    perimetroAgentes: number | null
+    horaAseguramientoPerimetro: string | null
 }
 
 export interface EvidenciaResponseDTO {
@@ -58,6 +68,8 @@ export interface EscenaNegativaRequestDTO {
 export interface EscenaCrearRequestDTO {
     expedienteId: number
     levantadaPorId: string
+    perimetroAgentes?: number
+    horaAseguramientoPerimetro?: string
 }
 
 export interface LiberarEscenaRequestDTO {

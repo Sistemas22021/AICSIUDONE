@@ -9,7 +9,6 @@ import com.guardia.core.model.Usuario;
 import com.guardia.core.repository.EscenaRepository;
 import com.guardia.core.repository.EvidenciaRepository;
 import com.guardia.core.repository.UsuarioRepository;
-import com.guardia.core.service.EvidenciaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,12 +16,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 
-@Service
-@RequiredArgsConstructor
-@Transactional
 /**
  * Implementación de EvidenciaService: lógica para persistencia y verificación de evidencias.
  */
+@Service
+@RequiredArgsConstructor
+@Transactional
 public class EvidenciaServiceImpl implements EvidenciaService {
 
     private final EvidenciaRepository evidenciaRepository;

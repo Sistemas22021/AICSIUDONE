@@ -21,6 +21,9 @@ public record EscenaResponse(
         UsuarioResponse liberadaPor,
         LocalDateTime horaLiberacion,
         String observacionesLiberacion,
-        String hashLiberacion
+        String hashLiberacion,
+
+        Integer perimetroAgentes,
+        LocalDateTime horaAseguramientoPerimetro
 
 ) {}

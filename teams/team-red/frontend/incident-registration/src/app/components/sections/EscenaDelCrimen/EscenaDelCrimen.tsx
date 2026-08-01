@@ -11,6 +11,8 @@ import { useNeonToast } from '../../ui/NeonToast'
 import { StepperVisual } from '../../ui/StepperVisual'
 import { AlertaIntegridad } from '../../ui/AlertaIntegridad'
 import { EscenaNegativaFormItem } from './EscenaNegativaFormItem'
+import { BuscadorUsuario } from '../../ui/BuscadorUsuario'
+import { useAuth } from '../../../context/AuthContext'
 import { tiposEvidencia, tiposEmbalaje } from './index'
 
 interface EscenaDelCrimenProps {
@@ -22,6 +24,7 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
     const [busquedaInvestigador, setBusquedaInvestigador] = useState('')
     const [buscandoInvestigador, setBuscandoInvestigador] = useState(false)
     const [errorBusqueda, setErrorBusqueda] = useState<string | null>(null)
+    const { userId, username } = useAuth()
 
     const {
         state,
@@ -59,6 +62,22 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
             vincularExpediente(expedienteIdInicial, folioInicial)
         }
     }, [expedienteIdInicial, folioInicial, state.expedienteId, resetEscena, vincularExpediente])
+
+    useEffect(() => {
+        if (!isPaso1Completado && userId && username && !state.investigadorId) {
+            setInvestigador(userId, username)
+        }
+    }, [isPaso1Completado, userId, username, state.investigadorId, setInvestigador])
+
+    useEffect(() => {
+        if (!state.liberacion.investigadorResponsableId && state.investigadorId && state.investigadorNombre) {
+            updateLiberacion({
+                investigadorResponsableId: state.investigadorId,
+                investigadorNombre: state.investigadorNombre,
+            })
+        }
+    }, [state.investigadorId, state.investigadorNombre, state.liberacion.investigadorResponsableId, updateLiberacion])
+
 
     const { showToast, ToastContainer } = useNeonToast()
     const [mostrarConfirmLiberacion, setMostrarConfirmLiberacion] = useState(false)
@@ -208,16 +227,31 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
 
                         {state.tipoEscena === 'escena_completa' && (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                <NeonSelect
-                                    label="Sellado"
-                                    options={[
-                                        { value: 'true', label: 'Sí' },
-                                        { value: 'false', label: 'No' },
-                                    ]}
-                                    value={String(state.perimetro.sellado)}
-                                    onChange={(e: any) => updatePerimetro({ sellado: e.target.value === 'true' })}
-                                    disabled={isPaso1Completado}
-                                />
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '8px', color: '#00ffff' }}>
+                                        Sellado
+                                    </label>
+                                    <div
+                                        style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                            padding: '8px 14px',
+                                            borderRadius: '6px',
+                                            fontSize: '13px',
+                                            border: `1px solid ${state.expedienteSellado ? '#00ff8866' : '#ff4b4b66'}`,
+                                            backgroundColor: state.expedienteSellado ? '#00ff8811' : '#ff4b4b11',
+                                            color: state.expedienteSellado ? '#00ff88' : '#ff8080',
+                                        }}
+                                    >
+                                        {state.expedienteSellado === null
+                                            ? (state.expedienteId ? '⏳ Verificando sellado del expediente…' : '— Vincula un expediente para verificar —')
+                                            : state.expedienteSellado
+                                                ? 'Perímetro sellado'
+                                                : 'Perímetro sin sellar'}
+                                    </div>
+                                </div>
+
                                 <NeonInput
                                     label="Agentes asignados"
                                     type="number"
@@ -226,10 +260,10 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
                                     disabled={isPaso1Completado}
                                 />
                                 <NeonInput
-                                    label="Hora de cierre"
-                                    type="time"
-                                    value={state.perimetro.horaCierre}
-                                    onChange={(e: any) => updatePerimetro({ horaCierre: e.target.value })}
+                                    label="Hora de aseguramiento del perímetro"
+                                    type="datetime-local"
+                                    value={state.perimetro.horaAseguramientoPerimetro}
+                                    onChange={(e: any) => updatePerimetro({ horaAseguramientoPerimetro: e.target.value })}
                                     disabled={isPaso1Completado}
                                 />
                             </div>
@@ -367,7 +401,10 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
                                             <div style={{ flex: 2, minWidth: '150px' }}>
                                                 <NeonSelect
                                                     label="Tipo"
-                                                    options={tiposEvidencia.map((t: string) => ({ value: t, label: t }))}
+                                                    options={[
+                                                        { value: '', label: '— Seleccione tipo —' },
+                                                        ...tiposEvidencia.map((t: string) => ({ value: t, label: t })),
+                                                    ]}
                                                     value={ev.tipo}
                                                     onChange={(e: any) => updateEvidencia(ev.id, { tipo: e.target.value })}
                                                     disabled={isPaso2Completado}
@@ -397,12 +434,11 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
                                                 />
                                             </div>
                                             <div style={{ flex: 2, minWidth: '150px' }}>
-                                                <NeonInput
+                                                <BuscadorUsuario
                                                     label="Responsable (Investigador)"
                                                     value={ev.responsable}
-                                                    onChange={(e: any) => updateEvidencia(ev.id, { responsable: e.target.value })}
+                                                    onSeleccionar={(u) => updateEvidencia(ev.id, { responsable: u.fullName, responsableId: u.id })}
                                                     disabled={isPaso2Completado}
-                                                    placeholder="Nombre del investigador"
                                                 />
                                             </div>
                                         </div>
@@ -497,17 +533,20 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
                                         <div style={{ flex: 2, minWidth: '150px' }}>
                                             <NeonSelect
                                                 label="Tipo de embalaje"
-                                                options={tiposEmbalaje.map((t: string) => ({ value: t, label: t }))}
+                                                options={[
+                                                    { value: '', label: '— Seleccione embalaje —' },
+                                                    ...tiposEmbalaje.map((t: string) => ({ value: t, label: t })),
+                                                ]}
                                                 value={ev.embalaje || ''}
                                                 onChange={(e: any) => updateEvidencia(ev.id, { embalaje: e.target.value })}
                                                 disabled={state.paso3_completado}
                                             />
                                         </div>
                                         <div style={{ flex: 2, minWidth: '150px' }}>
-                                            <NeonInput
+                                            <BuscadorUsuario
                                                 label="Responsable de la cadena"
                                                 value={ev.responsable || ''}
-                                                onChange={(e: any) => updateEvidencia(ev.id, { responsable: e.target.value })}
+                                                onSeleccionar={(u) => updateEvidencia(ev.id, { responsable: u.fullName, responsableId: u.id })}
                                                 disabled={state.paso3_completado}
                                                 placeholder="Quién recibe la evidencia"
                                             />
@@ -518,6 +557,15 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
                                                 type="time"
                                                 value={ev.horaRecoleccion || ''}
                                                 onChange={(e: any) => updateEvidencia(ev.id, { horaRecoleccion: e.target.value })}
+                                                disabled={state.paso3_completado}
+                                            />
+                                        </div>
+                                        <div style={{ flex: 1, minWidth: '140px' }}>
+                                            <NeonInput
+                                                label="Fecha de recolección"
+                                                type="date"
+                                                value={ev.fechaRecoleccion || ''}
+                                                onChange={(e: any) => updateEvidencia(ev.id, { fechaRecoleccion: e.target.value })}
                                                 disabled={state.paso3_completado}
                                             />
                                         </div>
@@ -690,7 +738,7 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
                                         <h4 style={{ color: '#00ffff', marginBottom: '12px' }}>📋 Resumen de la escena:</h4>
                                         <div style={{ fontSize: '14px', lineHeight: '1.6' }}>
                                             <p><strong>📄 Folio expediente:</strong> {state.folioExpediente || 'No vinculado'}</p>
-                                            <p><strong>🔒 Perímetro:</strong> {state.perimetro.sellado ? 'Sellado ✓' : 'No sellado'}</p>
+                                            <p><strong>🔒 Perímetro:</strong> {state.expedienteSellado ? 'Sellado ✓' : 'No sellado'}</p>
                                             <p><strong>👮 Agentes:</strong> {state.perimetro.agentes}</p>
                                             <p><strong>🔬 Evidencias:</strong> {state.evidencias.length}</p>
                                             <ul style={{ marginLeft: '20px' }}>
@@ -757,11 +805,32 @@ export const EscenaDelCrimen = ({ expedienteIdInicial, folioInicial }: EscenaDel
 
     return (
         <div style={{ padding: '24px' }}>
-            <h2 style={{ fontSize: '24px', color: '#00ffff', marginBottom: '16px' }}>
-                Escena del Crimen
-            </h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                <h2 style={{ fontSize: '24px', color: '#00ffff', margin: 0 }}>
+                    Escena del Crimen
+                </h2>
 
-            {/* Stepper Visual - NUEVO */}
+                {state.expedienteId && state.expedienteSellado !== null && (
+                    <span
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '4px 10px',
+                            borderRadius: '999px',
+                            fontSize: '11px',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            border: `1px solid ${state.expedienteSellado ? '#00ff8866' : '#ff4b4b66'}`,
+                            backgroundColor: state.expedienteSellado ? '#00ff8811' : '#ff4b4b11',
+                            color: state.expedienteSellado ? '#00ff88' : '#ff8080',
+                        }}
+                    >
+                        {state.expedienteSellado ? 'Perímetro sellado' : 'Perímetro sin sellar'}
+                    </span>
+                )}
+            </div>
+
             <StepperVisual
                 pasoActual={state.paso_actual}
                 pasosCompletados={pasosCompletadosArray}

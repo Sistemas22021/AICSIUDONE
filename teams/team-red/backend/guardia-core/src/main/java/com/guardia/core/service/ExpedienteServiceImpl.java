@@ -383,7 +383,9 @@ public class ExpedienteServiceImpl implements ExpedienteService {
                           null,
                           es.getHoraLiberacion(),
                           es.getObservacionesLiberacion(),
-                          es.getHashLiberacion()
+                          es.getHashLiberacion(),
+                          es.getPerimetroAgentes(),
+                          es.getHoraAseguramientoPerimetro()
                   ))
                   .toList();
 

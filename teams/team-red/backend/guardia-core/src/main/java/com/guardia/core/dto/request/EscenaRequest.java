@@ -2,6 +2,7 @@ package com.guardia.core.dto.request;
 
 import jakarta.validation.constraints.NotNull;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
@@ -13,8 +14,14 @@ public record EscenaRequest(
         Long expedienteId,
 
         @NotNull(message = "El investigador responsable es obligatorio")
-        UUID levantadaPorId
+        UUID levantadaPorId,
+
+        Integer perimetroAgentes,
+
+        LocalDateTime horaAseguramientoPerimetro
 ) {
     public Long getExpedienteId() { return this.expedienteId; }
     public UUID getLevantadaPorId() { return this.levantadaPorId; }
+    public Integer getPerimetroAgentes() { return this.perimetroAgentes; }
+    public LocalDateTime getHoraAseguramientoPerimetro() { return this.horaAseguramientoPerimetro; }
 }

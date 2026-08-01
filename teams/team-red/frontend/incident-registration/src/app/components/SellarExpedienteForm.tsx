@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { CheckCircle2, Lock, ArrowLeft } from 'lucide-react'
-import { NeonSelect } from './ui/NeonSelect'
 import { NeonButton } from './ui/NeonButton'
-import { useUsuarios } from '../hooks/useUsuarios'
+import { useAuth } from '../context/AuthContext'
 import { useSellarExpediente } from '../hooks/useSellarExpediente'
 import type { ExpedienteActivo } from '../types/api.types'
 
@@ -13,21 +12,20 @@ interface SellarExpedienteFormProps {
 }
 
 export const SellarExpedienteForm = ({ expediente, onSellado, onCancelar }: SellarExpedienteFormProps) => {
-    const { usuarios, loading: cargandoUsuarios } = useUsuarios()
+    const { userId, username } = useAuth()
     const { sellando, sellarExpediente } = useSellarExpediente()
 
-    const [agenteSelladorId, setAgenteSelladorId] = useState('')
     const [error, setError] = useState<string | null>(null)
     const [exito, setExito] = useState(false)
 
     const handleConfirmar = async () => {
-        if (!agenteSelladorId) {
-            setError('Debes seleccionar el agente que sella el expediente.')
+        if (!userId) {
+            setError('No se pudo identificar tu sesión. Vuelve a iniciar sesión e intenta de nuevo.')
             return
         }
         setError(null)
 
-        const resultado = await sellarExpediente(Number(expediente.id), agenteSelladorId)
+        const resultado = await sellarExpediente(Number(expediente.id), userId)
         if (resultado.exito) {
             setExito(true)
         } else {
@@ -88,19 +86,16 @@ export const SellarExpedienteForm = ({ expediente, onSellado, onCancelar }: Sell
                 </div>
             </div>
 
-            {/* Dato necesario para completar el sellado */}
-            <NeonSelect
-                label="Agente Sellador"
-                required
-                error={!!error && !agenteSelladorId}
-                disabled={cargandoUsuarios}
-                value={agenteSelladorId}
-                onChange={e => setAgenteSelladorId(e.target.value)}
-                options={[
-                    { value: '', label: cargandoUsuarios ? 'Cargando usuarios…' : 'Selecciona un agente' },
-                    ...usuarios.map(u => ({ value: String(u.id), label: `${u.fullName} (${u.username})` })),
-                ]}
-            />
+            {/* El agente sellador es siempre el usuario que tiene la sesión abierta */}
+            <div>
+                <label className="text-[11px] uppercase tracking-[0.1em] text-cyan-400 font-medium">
+                    Agente Sellador
+                </label>
+                <div className="mt-1.5 flex items-center gap-2 px-3 py-2.5 border border-cyan-400/40 rounded bg-[#04101E]/40">
+                    <Lock size={13} className="text-cyan-500" />
+                    <span className="text-cyan-300 text-sm">Sellará como: <strong>{username ?? '—'}</strong></span>
+                </div>
+            </div>
 
             {error && <p className="mt-2 text-[11px] text-red-400">{error}</p>}
 
@@ -108,7 +103,7 @@ export const SellarExpedienteForm = ({ expediente, onSellado, onCancelar }: Sell
                 <NeonButton variant="outline" onClick={onCancelar} disabled={sellando}>
                     Cancelar
                 </NeonButton>
-                <NeonButton variant="danger" onClick={handleConfirmar} disabled={sellando || cargandoUsuarios}>
+                <NeonButton variant="danger" onClick={handleConfirmar} disabled={sellando}>
                     {sellando ? 'Sellando…' : 'Confirmar Sellado'}
                 </NeonButton>
             </div>

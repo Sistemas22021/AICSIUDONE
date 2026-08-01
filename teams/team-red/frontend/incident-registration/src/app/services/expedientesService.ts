@@ -2,6 +2,16 @@ import { apiClient } from './api'
 import type { ExpedienteActivo, FiltrosBusquedaExpediente } from '../types/api.types'
 
 
+export interface ExpedienteEstadoDTO {
+  id: number
+  estadoExpediente: string
+}
+
+export async function obtenerExpedientePorId(id: number): Promise<ExpedienteEstadoDTO> {
+  const res = await apiClient.get<{ data: ExpedienteEstadoDTO }>(`/expedientes/${id}`)
+  return res.data
+}
+
 export async function fetchExpedientesActivos(): Promise<ExpedienteActivo[]> {
   const res = await apiClient.get<{ data: ExpedienteActivo[] }>(
       '/expedientes?estatus=ACTIVO&sort=fechaCreacion,desc',

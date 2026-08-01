@@ -39,6 +39,11 @@ public class ExpedienteController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok("Expediente registrado.", nuevoExpediente));
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<ExpedienteResponse>> obtenerPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.ok("Expediente obtenido.", expedienteService.obtenerPorId(id)));
+    }
+
     @PatchMapping("/{id}/sellar")
     public ResponseEntity<ApiResponse<ExpedienteResponse>> sellar(
         @PathVariable Long id,
