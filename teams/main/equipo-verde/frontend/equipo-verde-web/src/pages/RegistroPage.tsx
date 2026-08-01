@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   Box, TextField, MenuItem, Button, Typography, Snackbar,
   CircularProgress, LinearProgress, IconButton, Autocomplete
@@ -7,7 +8,7 @@ import { SectionTitle } from '../components/SectionTitle';
 import { DataCard } from '../components/DataCard';
 import {
   UploadCloud, Hash, CheckCircle2, X, Image as ImageIcon,
-  ArrowLeft, Eraser, Plus, Pencil, Trash2, Database, Archive, ArchiveRestore
+  ArrowLeft, Eraser, Plus, Pencil, Trash2, Database, Archive, ArchiveRestore, Search
 } from 'lucide-react';
 import {
   TwistDirection,
@@ -19,7 +20,7 @@ import {
 } from '../types/evidence';
 import {
   getBullets, getArchivedBullets, createBullet, updateBullet, deleteBullet,
-  unarchiveBullet, getBulletImageUrl, searchCalibers, CaliberDTO, BackendApiError
+  unarchiveBullet, getBulletImageUrl, searchCalibers, searchBullets, CaliberDTO, BackendApiError
 } from '../services/bulletService';
 import { getExpedientes } from '../services/expedienteService';
 import { ExpedienteDTO } from '../types/expediente';
@@ -67,11 +68,31 @@ const premiumInputStyles = {
 };
 
 export const RegistroPage = () => {
+  const location = useLocation();
   // Estado general
   const [viewMode, setViewMode] = useState<'list' | 'form'>('list');
   const [filterMode, setFilterMode] = useState<'active' | 'archived'>('active');
   const [records, setRecords] = useState<EvidenceRecord[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const s = params.get('search');
+    if (s) {
+      setSearchQuery(s);
+      setFilterMode('active');
+    }
+  }, [location.search]);
+
+  // Debounce para la búsqueda
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Estados del formulario
   const [formData, setFormData] = useState<EvidenceFormState>(INITIAL_FORM_STATE);
@@ -100,9 +121,17 @@ export const RegistroPage = () => {
 
   const loadBullets = useCallback(async () => {
     try {
-      const data = filterMode === 'active' 
-        ? await getBullets(0, 50) 
-        : await getArchivedBullets(0, 50);
+      let data;
+      if (filterMode === 'active') {
+        if (debouncedSearchQuery.trim()) {
+          data = await searchBullets(debouncedSearchQuery, 0, 50);
+        } else {
+          data = await getBullets(0, 50);
+        }
+      } else {
+        data = await getArchivedBullets(0, 50);
+      }
+      
       const mappedRecords: EvidenceRecord[] = data.content.map(b => ({
         id: String(b.idBullet),
         createdAt: b.createdAt || '',
@@ -121,7 +150,7 @@ export const RegistroPage = () => {
     } catch (error) {
       console.error("Error loading bullets:", error);
     }
-  }, [filterMode]);
+  }, [filterMode, debouncedSearchQuery]);
 
   useEffect(() => {
     if (viewMode === 'list') {
@@ -486,7 +515,10 @@ export const RegistroPage = () => {
             <div className="bg-slate-100 p-1 rounded-xl flex items-center gap-1 border border-slate-200">
               <Button
                 size="small"
-                onClick={() => setFilterMode('active')}
+                onClick={() => {
+                  setFilterMode('active');
+                  setSearchQuery('');
+                }}
                 className={`font-bold transition-all px-4 py-1.5 ${
                   filterMode === 'active' 
                     ? 'bg-white text-slate-900 shadow-sm hover:bg-white' 
@@ -499,7 +531,10 @@ export const RegistroPage = () => {
               <Button
                 size="small"
                 startIcon={<Archive size={15} />}
-                onClick={() => setFilterMode('archived')}
+                onClick={() => {
+                  setFilterMode('archived');
+                  setSearchQuery('');
+                }}
                 className={`font-bold transition-all px-4 py-1.5 ${
                   filterMode === 'archived' 
                     ? 'bg-amber-600 text-white shadow-sm hover:bg-amber-700' 
@@ -512,15 +547,34 @@ export const RegistroPage = () => {
             </div>
 
             {filterMode === 'active' && (
-              <Button
-                variant="contained"
-                startIcon={<Plus size={20} strokeWidth={2.5} />}
-                onClick={handleCreateNew}
-                className="bg-slate-900 text-white hover:bg-indigo-600 shadow-md hover:shadow-lg hover:-translate-y-0.5 px-6 py-2.5 font-bold transition-all duration-300"
-                sx={{ textTransform: 'none', borderRadius: '999px', bgcolor: '#0f172a' }}
-              >
-                Crear registro
-              </Button>
+              <Box className="flex items-center gap-2">
+                <TextField
+                  placeholder="Buscar por expediente o marca..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  size="small"
+                  InputProps={{
+                    startAdornment: <Search size={18} className="text-slate-400 mr-2" />
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '12px',
+                      backgroundColor: 'white',
+                      width: '260px',
+                      '& fieldset': { borderColor: '#e2e8f0' }
+                    }
+                  }}
+                />
+                <Button
+                  variant="contained"
+                  startIcon={<Plus size={20} strokeWidth={2.5} />}
+                  onClick={handleCreateNew}
+                  className="bg-slate-900 text-white hover:bg-indigo-600 shadow-md hover:shadow-lg hover:-translate-y-0.5 px-6 py-2.5 font-bold transition-all duration-300"
+                  sx={{ textTransform: 'none', borderRadius: '999px', bgcolor: '#0f172a', height: '40px' }}
+                >
+                  Crear registro
+                </Button>
+              </Box>
             )}
           </div>
         </Box>

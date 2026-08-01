@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box, TextField, MenuItem, Button, Typography, Snackbar,
   CircularProgress, LinearProgress, IconButton, Paper, Chip
@@ -6,11 +7,11 @@ import {
 import { SectionTitle } from '../components/SectionTitle';
 import { DataCard } from '../components/DataCard';
 import {
-  FolderOpen, FolderPlus, Edit2, ArrowLeft, CheckCircle2
+  FolderOpen, FolderPlus, Edit2, ArrowLeft, CheckCircle2, Eye, Database
 } from 'lucide-react';
-import {
-  ExpedienteDTO
-} from '../types/expediente';
+import { ExpedienteDTO } from '../types/expediente';
+import { EvidenceRecord } from '../types/evidence';
+import { searchBullets, getBulletImageUrl } from '../services/bulletService';
 import {
   getExpedientes, createExpediente, updateExpediente
 } from '../services/expedienteService';
@@ -43,7 +44,9 @@ const premiumInputStyles = {
 };
 
 export const ExpedientePage = () => {
-  const [viewMode, setViewMode] = useState<'list' | 'form'>('list');
+  const navigate = useNavigate();
+  const [viewMode, setViewMode] = useState<'list' | 'form' | 'evidences'>('list');
+  const [selectedCaseNumber, setSelectedCaseNumber] = useState<string>('');
   const [expedientes, setExpedientes] = useState<ExpedienteDTO[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
@@ -58,6 +61,9 @@ export const ExpedientePage = () => {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [snackbar, setSnackbar] = useState<{ open: boolean, message: string, severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
+
+  const [caseEvidences, setCaseEvidences] = useState<EvidenceRecord[]>([]);
+  const [loadingEvidences, setLoadingEvidences] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
@@ -77,6 +83,35 @@ export const ExpedientePage = () => {
       loadData();
     }
   }, [viewMode, search]);
+
+  useEffect(() => {
+    if (viewMode === 'evidences' && selectedCaseNumber) {
+      const fetchEvidences = async () => {
+        setLoadingEvidences(true);
+        try {
+          const data = await searchBullets(selectedCaseNumber, 0, 50);
+          const mappedRecords: EvidenceRecord[] = data.content.map(b => ({
+            id: String(b.idBullet),
+            createdAt: b.createdAt || '',
+            expediente: b.caseFile,
+            calibre: b.caliberName || String(b.caliber),
+            estrias: String(b.landsAndGrooves),
+            twist: b.twistDirection as any,
+            percussion: b.percussionType as any,
+            marca: b.manufacturer,
+            status: b.status,
+            previewUrl: b.images && b.images.length > 0 ? getBulletImageUrl(b.images[0]) : null
+          }));
+          setCaseEvidences(mappedRecords);
+        } catch (error) {
+          console.error("Error al cargar evidencias del expediente", error);
+        } finally {
+          setLoadingEvidences(false);
+        }
+      };
+      fetchEvidences();
+    }
+  }, [viewMode, selectedCaseNumber]);
 
   const showSnackbar = (message: string, severity: 'success' | 'error') => {
     setSnackbar({ open: true, message, severity });
@@ -205,10 +240,21 @@ export const ExpedientePage = () => {
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 3, minHeight: '40px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                       {exp.description}
                     </Typography>
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                      <IconButton size="small" onClick={() => handleEdit(exp)} sx={{ color: '#3b82f6', bgcolor: '#eff6ff', '&:hover': { bgcolor: '#dbeafe' } }}>
-                        <Edit2 size={16} />
-                      </IconButton>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 500 }}>
+                        {exp.createdAt ? new Date(exp.createdAt).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Fecha no disponible'}
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <IconButton size="small" onClick={() => {
+                          setSelectedCaseNumber(exp.caseNumber);
+                          setViewMode('evidences');
+                        }} sx={{ color: '#10b981', bgcolor: '#ecfdf5', '&:hover': { bgcolor: '#d1fae5' } }}>
+                          <Eye size={16} />
+                        </IconButton>
+                        <IconButton size="small" onClick={() => handleEdit(exp)} sx={{ color: '#3b82f6', bgcolor: '#eff6ff', '&:hover': { bgcolor: '#dbeafe' } }}>
+                          <Edit2 size={16} />
+                        </IconButton>
+                      </Box>
                     </Box>
                   </Box>
                 </DataCard>
@@ -216,6 +262,80 @@ export const ExpedientePage = () => {
             ))}
           </Box>
         )}
+      </Box>
+    );
+  }
+
+  if (viewMode === 'evidences') {
+    return (
+      <Box sx={{ maxWidth: '1000px', mx: 'auto', p: 4 }}>
+        <Button
+          startIcon={<ArrowLeft size={20} />}
+          onClick={() => setViewMode('list')}
+          sx={{ mb: 3, color: '#64748b', textTransform: 'none', fontWeight: 600 }}
+        >
+          Volver a Expedientes
+        </Button>
+
+        <SectionTitle>
+          <Box className="flex items-center gap-2">
+            <Database size={28} className="text-indigo-600" />
+            Evidencias del Expediente: {selectedCaseNumber}
+          </Box>
+        </SectionTitle>
+
+        <DataCard noPadding>
+          {loadingEvidences ? (
+            <Box className="p-12 text-center flex justify-center">
+              <CircularProgress />
+            </Box>
+          ) : caseEvidences.length === 0 ? (
+            <Box className="flex flex-col items-center justify-center py-16 px-4 text-center">
+              <Typography variant="h6" className="text-slate-700 font-bold mb-2">
+                No hay evidencias registradas
+              </Typography>
+              <Typography variant="body2" className="text-slate-500 max-w-sm">
+                No se encontraron registros balísticos asociados a este expediente.
+              </Typography>
+            </Box>
+          ) : (
+            <div className="overflow-x-auto pb-4">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/50 border-b border-slate-100">
+                    <th className="p-4 pl-8 text-xs font-bold text-slate-500 uppercase tracking-wider">Calibre</th>
+                    <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Estrías/Giro</th>
+                    <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Marca</th>
+                    <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Estado</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {caseEvidences.map((record) => (
+                    <tr key={record.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="p-4 pl-8 font-bold text-slate-700">
+                        {record.calibre}
+                      </td>
+                      <td className="p-4 text-slate-600 font-medium">{record.estrias} / {record.twist.split(' ')[0]}</td>
+                      <td className="p-4 text-slate-600 font-medium">{record.marca}</td>
+                      <td className="p-4">
+                        <Chip 
+                          label={record.status} 
+                          size="small"
+                          sx={{ 
+                            fontWeight: 600,
+                            bgcolor: '#f1f5f9',
+                            color: '#475569',
+                            borderRadius: '8px'
+                          }} 
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </DataCard>
       </Box>
     );
   }

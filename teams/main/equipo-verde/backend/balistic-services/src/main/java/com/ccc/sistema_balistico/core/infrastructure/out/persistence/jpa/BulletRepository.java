@@ -29,7 +29,7 @@ public interface BulletRepository extends JpaRepository<BulletEntity, Long> {
     );
 
     @Query("SELECT b FROM BulletEntity b WHERE b.isDelete = false AND " +
-           "(LOWER(b.caseFile) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "(LOWER(REPLACE(REPLACE(b.caseFile, '-', ''), ' ', '')) LIKE LOWER(CONCAT('%', REPLACE(REPLACE(:query, '-', ''), ' ', ''), '%')) OR " +
            "LOWER(b.manufacturer) LIKE LOWER(CONCAT('%', :query, '%')))")
     Page<BulletEntity> searchByQuery(@Param("query") String query, Pageable pageable);
 }

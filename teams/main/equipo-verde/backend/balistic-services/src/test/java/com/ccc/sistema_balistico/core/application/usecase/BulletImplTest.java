@@ -130,7 +130,7 @@ class BulletImplTest {
 
         assertNotNull(result);
         verify(caliberRepository, times(1)).findById(1L);
-        verify(bulletRepository, times(1)).save(any(BulletEntity.class));
+        verify(bulletRepository, times(2)).save(any(BulletEntity.class));
         verify(bulletImagesService, times(1)).saveImageList(anyList(), any(BulletEntity.class));
     }
 

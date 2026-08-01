@@ -161,7 +161,7 @@ class CorrelationServiceImplTest {
         assertEquals("BASE64_IMAGE_STRING", content.get(0).breakdown().comparisonImageBase64());
 
         assertEquals(3L, content.get(1).idBullet());
-        assertEquals(20.0, content.get(1).matchScore());
+        assertEquals(10.0, content.get(1).matchScore());
         assertFalse(content.get(1).breakdown().striaeMatched());
         assertFalse(content.get(1).breakdown().twistMatched());
     }

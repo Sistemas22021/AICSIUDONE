@@ -5,7 +5,10 @@ import lombok.*;
 
 import java.util.UUID;
 
+import org.hibernate.envers.Audited;
+
 @Entity
+@Audited
 @Getter
 @Setter
 @AllArgsConstructor
