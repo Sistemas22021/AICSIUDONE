@@ -2,6 +2,9 @@ package com.guardia.core.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Array;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
@@ -52,6 +55,11 @@ public class FirmaConductual {
 
     @Column(name = "elementos_distintivos", columnDefinition = "TEXT")
     private String elementosDistintivos;
+
+    @Column(name = "embedding")
+    @JdbcTypeCode(SqlTypes.VECTOR)
+    @Array(length = 3072)
+    private float[] embedding;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "analista_id", nullable = false)

@@ -3,6 +3,9 @@ package com.guardia.core.model;
 import com.guardia.core.model.enums.EstadoPropuestaMO;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Array;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -68,6 +71,11 @@ public class PropuestaModusOperandi {
 
     @Column(name = "modelo_chat", length = 80)
     private String modeloChat;
+
+    @Column(name = "embedding")
+    @JdbcTypeCode(SqlTypes.VECTOR)
+    @Array(length = 3072)
+    private float[] embedding;
 
     @Column(name = "fecha_generacion", nullable = false)
     private LocalDateTime fechaGeneracion;

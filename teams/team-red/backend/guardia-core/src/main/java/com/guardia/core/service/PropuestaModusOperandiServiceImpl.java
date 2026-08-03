@@ -15,7 +15,10 @@ import com.guardia.core.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.ai.embedding.EmbeddingModel;
 
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -33,6 +36,7 @@ public class PropuestaModusOperandiServiceImpl implements PropuestaModusOperandi
 
     private final PropuestaModusOperandiRepository propuestaRepository;
     private final UsuarioRepository usuarioRepository;
+    private final EmbeddingModel embeddingModel;
 
     @Override
     @Transactional(readOnly = true)
@@ -59,6 +63,7 @@ public class PropuestaModusOperandiServiceImpl implements PropuestaModusOperandi
         propuesta.setAnalistaRevisor(analista);
         propuesta.setFechaRevision(LocalDateTime.now());
         propuesta.setRevisadoPorExperto(true);
+        indexarMOValidado(propuesta);
 
         return toResponse(propuestaRepository.save(propuesta));
     }
@@ -83,6 +88,7 @@ public class PropuestaModusOperandiServiceImpl implements PropuestaModusOperandi
         propuesta.setJustificacionRevision(request.justificacion());
         propuesta.setFechaRevision(LocalDateTime.now());
         propuesta.setRevisadoPorExperto(true);
+        indexarMOValidado(propuesta);
 
         return toResponse(propuestaRepository.save(propuesta));
     }
@@ -100,6 +106,23 @@ public class PropuestaModusOperandiServiceImpl implements PropuestaModusOperandi
         propuesta.setRevisadoPorExperto(true);
 
         return toResponse(propuestaRepository.save(propuesta));
+    }
+
+    private void indexarMOValidado(PropuestaModusOperandi propuesta) {
+        String texto = construirTextoMOParaEmbedding(propuesta);
+        if (!texto.isBlank()) {
+            propuesta.setEmbedding(embeddingModel.embed(texto));
+        }
+    }
+
+    private String construirTextoMOParaEmbedding(PropuestaModusOperandi p) {
+        return Stream.of(
+                        p.getCaracteristicasComunes(),
+                        p.getPosibleFirma(),
+                        p.getConsistenciaHorarioZona(),
+                        p.getResumenGenerado())
+                .filter(valor -> valor != null && !valor.isBlank())
+                .collect(Collectors.joining("\n"));
     }
 
     private PropuestaModusOperandi findById(Long propuestaId) {

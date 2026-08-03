@@ -21,11 +21,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.ai.embedding.EmbeddingModel;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -40,6 +42,7 @@ class PropuestaModusOperandiServiceImplTest {
 
     @Mock private PropuestaModusOperandiRepository propuestaRepository;
     @Mock private UsuarioRepository usuarioRepository;
+    @Mock private EmbeddingModel embeddingModel;
 
     @InjectMocks
     private PropuestaModusOperandiServiceImpl propuestaService;
@@ -173,7 +176,8 @@ class PropuestaModusOperandiServiceImplTest {
             when(propuestaRepository.findById(50L)).thenReturn(Optional.of(propuestaEjemplo));
             when(usuarioRepository.findById(analistaId)).thenReturn(Optional.of(analistaEjemplo));
             when(propuestaRepository.save(any(PropuestaModusOperandi.class))).thenAnswer(inv -> inv.getArgument(0));
-
+            when(embeddingModel.embed(anyString())).thenReturn(new float[]{0.1f});
+            
             PropuestaModusOperandiResponse resultado = propuestaService.corregir(50L, request);
 
             assertThat(resultado.estado()).isEqualTo(EstadoPropuestaMO.CORREGIDA);

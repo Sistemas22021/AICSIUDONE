@@ -11,9 +11,12 @@ import com.guardia.core.repository.ExpedienteRepository;
 import com.guardia.core.repository.FirmaConductualRepository;
 import com.guardia.core.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -31,6 +34,7 @@ public class FirmaConductualServiceImpl implements FirmaConductualService {
     private final FirmaConductualRepository firmaConductualRepository;
     private final ExpedienteRepository expedienteRepository;
     private final UsuarioRepository usuarioRepository;
+    private final EmbeddingModel embeddingModel;
 
     @Override
     public FirmaConductualResponse registrarONuevaVersion(Long expedienteId, FirmaConductualRequest request) {
@@ -55,6 +59,11 @@ public class FirmaConductualServiceImpl implements FirmaConductualService {
         if (!nueva.tieneAlMenosUnCampo()) {
             throw new BusinessException(
                     "Debe completar al menos uno de los campos de la firma conductual.");
+        }
+
+        String textoParaEmbedding = construirTextoEmbedding(nueva);
+        if (!textoParaEmbedding.isBlank()) {
+            nueva.setEmbedding(embeddingModel.embed(textoParaEmbedding));
         }
 
         FirmaConductual vigenteActual = firmaConductualRepository
@@ -109,4 +118,16 @@ public class FirmaConductualServiceImpl implements FirmaConductualService {
                 f.getAnalista().getFullName(),
                 f.getFechaRegistro());
     }
+
+    private String construirTextoEmbedding(FirmaConductual f) {
+        return Stream.of(
+                        f.getComportamientoPreDelictivo(),
+                        f.getMetodoAproximacion(),
+                        f.getMetodoAtaque(),
+                        f.getComportamientoPostDelictivo(),
+                        f.getElementosDistintivos())
+                .filter(valor -> valor != null && !valor.isBlank())
+                .collect(Collectors.joining("\n"));
+    }
+
 }

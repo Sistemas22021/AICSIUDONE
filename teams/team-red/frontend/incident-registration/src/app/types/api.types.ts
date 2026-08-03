@@ -252,3 +252,12 @@ export interface FirmaConductualPayload {
   comportamientoPostDelictivo?: string
   elementosDistintivos?: string
 }
+
+export interface PatronBusquedaResultado {
+  expedienteId: number
+  folio: string
+  tipoDelito: string | null
+  fechaHecho: string | null
+  similitudPorcentaje: number
+  investigadorAsignado: string
+}

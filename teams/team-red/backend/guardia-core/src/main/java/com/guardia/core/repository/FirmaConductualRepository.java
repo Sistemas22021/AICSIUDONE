@@ -1,6 +1,7 @@
 package com.guardia.core.repository;
 
 import com.guardia.core.model.FirmaConductual;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -29,4 +30,12 @@ public interface FirmaConductualRepository extends JpaRepository<FirmaConductual
             ORDER BY fecha_registro DESC
             """, nativeQuery = true)
     List<FirmaConductual> buscarPorTexto(@Param("texto") String texto);
+
+    @Query("""
+            SELECT f, cosine_distance(f.embedding, :embedding)
+            FROM FirmaConductual f
+            WHERE f.vigente = true AND f.embedding IS NOT NULL
+            ORDER BY cosine_distance(f.embedding, :embedding) ASC
+            """)
+    List<Object[]> buscarPorEmbedding(@Param("embedding") float[] embedding, Pageable pageable);
 }
