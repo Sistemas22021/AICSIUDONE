@@ -40,4 +40,11 @@ public interface ExpedienteRepository extends JpaRepository<Expediente, Long>,
             WHERE a.id = :idA AND b.id = :idB
             """)
     Double calcularDistanciaCoseno(@Param("idA") Long idA, @Param("idB") Long idB);
+
+    @Query("""
+            SELECT DISTINCT e.creadoPor.id
+            FROM Expediente e
+            WHERE e.id IN :ids AND e.creadoPor IS NOT NULL
+            """)
+    List<UUID> findCreadoPorIdsByIdIn(@Param("ids") List<Long> ids);
 }

@@ -30,6 +30,7 @@ public class DeteccionModusOperandiServiceImpl implements DeteccionModusOperandi
     private final PropuestaModusOperandiRepository propuestaRepository;
     private final EmbeddingModel embeddingModel;
     private final ChatClient chatClient;
+    private final AlertaPatronService alertaPatronService;
 
     @Value("${zac.mo.top-k:5}")
     private int topK;
@@ -46,11 +47,13 @@ public class DeteccionModusOperandiServiceImpl implements DeteccionModusOperandi
     public DeteccionModusOperandiServiceImpl(ExpedienteRepository expedienteRepository,
                                              PropuestaModusOperandiRepository propuestaRepository,
                                              EmbeddingModel embeddingModel,
-                                             ChatModel chatModel) {
+                                             ChatModel chatModel,
+                                             AlertaPatronService alertaPatronService) {
         this.expedienteRepository = expedienteRepository;
         this.propuestaRepository = propuestaRepository;
         this.embeddingModel = embeddingModel;
         this.chatClient = ChatClient.create(chatModel);
+        this.alertaPatronService = alertaPatronService;
     }
 
     @Override
@@ -68,12 +71,12 @@ public class DeteccionModusOperandiServiceImpl implements DeteccionModusOperandi
                 return;
             }
 
-            // CA1: generar y persistir el embedding de la descripción del hecho.
+            // generar y persistir el embedding de la descripción del hecho.
             float[] embedding = embeddingModel.embed(expediente.getDescripcionHecho());
             expediente.setEmbedding(embedding);
             expedienteRepository.save(expediente);
 
-            // CA de HU3: un MO ya revisado por un experto no puede ser sobreescrito
+            // un MO ya revisado por un experto no puede ser sobreescrito
             // automáticamente por una nueva corrida del análisis.
             PropuestaModusOperandi vigenteActual = propuestaRepository
                     .findByExpedienteIdAndVigenteTrue(expedienteId)
@@ -84,7 +87,7 @@ public class DeteccionModusOperandiServiceImpl implements DeteccionModusOperandi
                 return;
             }
 
-            // CA2: comparar el embedding contra expedientes anteriores y recuperar los más similares.
+            // comparar el embedding contra expedientes anteriores y recuperar los más similares.
             List<Object[]> candidatos = expedienteRepository.buscarSimilaresPorEmbedding(
                     expedienteId, embedding, PageRequest.of(0, topK));
 
@@ -104,7 +107,7 @@ public class DeteccionModusOperandiServiceImpl implements DeteccionModusOperandi
                 propuestaRepository.save(vigenteActual);
             }
 
-            // CA6: si no hay coincidencias suficientes, registrar "MO sin coincidencias previas".
+            // si no hay coincidencias suficientes, registrar "MO sin coincidencias previas".
             if (similares.isEmpty()) {
                 PropuestaModusOperandi sinCoincidencias = PropuestaModusOperandi.builder()
                         .expediente(expediente)
@@ -122,7 +125,7 @@ public class DeteccionModusOperandiServiceImpl implements DeteccionModusOperandi
                 return;
             }
 
-            // CA3-CA4: consultar al LLM qué tienen en común los casos similares.
+            // consultar al LLM qué tienen en común los casos similares.
             AnalisisMoIA resultadoIA = generarAnalisisConIA(expediente, similares);
 
             PropuestaModusOperandi propuesta = PropuestaModusOperandi.builder()
@@ -146,10 +149,12 @@ public class DeteccionModusOperandiServiceImpl implements DeteccionModusOperandi
             log.info("[MO] Expediente {}: propuesta generada con {} casos similares y confianza {}.",
                     expediente.getFolio(), similares.size(), resultadoIA.nivelConfianza());
 
-            // NOTA: la generación de la alerta interna (HU6) se conecta aquí en una
-            // iteración futura, escuchando la creación de una PropuestaModusOperandi
-            // con >=2 similares y nivelConfianza por encima del umbral. Fuera de
-            // alcance de esta entrega (HU2/HU3).
+            // evalúa si el patrón encontrado amerita una alerta interna (>=2
+            // expedientes relacionados y confianza por encima del umbral configurado)
+            // y, de ser así, la genera de forma asíncrona. Este servicio no conoce las
+            // reglas de umbral, deduplicación ni destinatarios: esa responsabilidad es
+            // exclusiva de AlertaPatronService (SRP / DIP).
+            alertaPatronService.evaluarYGenerarAlerta(propuesta.getId());
 
         } catch (Exception ex) {
             log.error("[MO] Error analizando Modus Operandi para expediente id={}", expedienteId, ex);

@@ -9,10 +9,11 @@ import { RegistroDelHecho } from './components/sections/RegistroDelHecho'
 import { ExpedientesPanel } from './components/ExpedientesPanel'
 import { EscenaDelCrimen } from './components/sections/EscenaDelCrimen'
 import { InteligenciaMOTab } from './components/sections/ModusOperandi/InteligenciaMOTab'
+import { AlertasPatronPanel } from './components/sections/Alertas/AlertasPatronPanel'
 import { ExpedienteActivoProvider } from './context/ExpedienteActivoContext'
 import type { ExpedienteActivo } from './types/api.types'
 
-type ActiveTab = 'registro' | 'escena' | 'inteligencia'
+type ActiveTab = 'registro' | 'escena' | 'inteligencia' | 'alertas'
 
 function MainApp() {
     const [activeTab, setActiveTab] = useState<ActiveTab>('registro')
@@ -31,6 +32,7 @@ function MainApp() {
         { id: 'registro' as ActiveTab, label: 'A — REGISTRO DEL HECHO', visible: isOficial },
         { id: 'escena' as ActiveTab, label: 'B — ESCENA Y EVIDENCIA', visible: isAnalista },
         { id: 'inteligencia' as ActiveTab, label: 'C — INTELIGENCIA IA / MODUS OPERANDI', visible: isAnalista },
+        { id: 'alertas' as ActiveTab, label: 'D — ALERTAS DE PATRÓN MO', visible: isOficial || isAnalista },
     ]
 
     const tabsVisibles = tabsDisponibles.filter(tab => tab.visible)
@@ -107,6 +109,13 @@ function MainApp() {
                         <div className="pb-6">
                             <InteligenciaMOTab />
                         </div>
+                    </RoleGuard>
+                )}
+
+                {/* Tab D: Alertas de Patrón de MO (HU6) - OFICIAL (Guardia) y ANALISTA (Investigador) */}
+                {activeTab === 'alertas' && (
+                    <RoleGuard allowedRoles={['OFICIAL', 'ANALISTA']}>
+                        <AlertasPatronPanel />
                     </RoleGuard>
                 )}
             </div>
