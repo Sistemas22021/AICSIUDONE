@@ -86,8 +86,8 @@ export function redirectWithToken(accessToken: string): void {
     }
   }
 
-  // Si no hay redirect o no es confiable, ir a una página por defecto
-  window.location.href = '/';
+  // Si no hay redirect en los parámetros, redirimir por defecto al dashboard del Equipo Verde (puerto 3002)
+  window.location.href = `http://localhost:3002/?token=${accessToken}`;
 }
 
 /** Obtiene el accessToken actual de la memoria */

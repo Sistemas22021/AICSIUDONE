@@ -50,7 +50,8 @@ public class SecurityConfig {
                     // Endpoints de autenticación — sin token
                     .requestMatchers("/api/v1/auth/register",
                                      "/api/v1/auth/login",
-                                     "/api/v1/auth/refresh").permitAll()
+                                     "/api/v1/auth/refresh",
+                                     "/api/v1/auth/logout").permitAll()
                     // Health check de Actuator
                     .requestMatchers("/actuator/health").permitAll()
                     // Todo lo demás requiere autenticación

@@ -53,3 +53,35 @@ export function redirectToLogin(): void {
   const currentUrl = window.location.href;
   window.location.href = `${LOGIN_MFE_URL}?redirect=${encodeURIComponent(currentUrl)}`;
 }
+
+export async function logout(): Promise<void> {
+  clearToken();
+  try {
+    await fetch(`${API_GATEWAY_URL}/api/v1/auth/logout`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+  } catch {
+    // Ignorar posible error de red
+  }
+  redirectToLogin();
+}
+
+export function getUserInfo(): { username: string; role: string; initials: string } {
+  const token = getAccessToken();
+  if (!token) return { username: 'USUARIO', role: 'Investigador / Detective', initials: 'US' };
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const username: string = (payload.sub || payload.username || 'Usuario').toString();
+    let role = 'Investigador / Detective';
+    const unLower = username.toLowerCase();
+    if (unLower.includes('perito')) role = 'Perito Balístico (Gestor)';
+    else if (unLower.includes('admin')) role = 'Admin del Sistema (TI)';
+    else if (unLower.includes('fiscal')) role = 'Fiscalía / M. Público';
+
+    const initials = username.substring(0, 2).toUpperCase();
+    return { username: username.toUpperCase(), role, initials };
+  } catch {
+    return { username: 'USUARIO', role: 'División Forense', initials: 'UF' };
+  }
+}

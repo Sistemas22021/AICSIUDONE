@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { getUserInfo, logout } from '../services/tokenService';
 import { 
   Box, 
   Drawer, 
@@ -13,14 +14,16 @@ import {
   IconButton, 
   Typography,
   useTheme,
-  useMediaQuery
+  useMediaQuery,
+  Tooltip
 } from '@mui/material';
 import { 
   Menu as MenuIcon, 
   PlusCircle, 
   Search, 
   ShieldCheck,
-  FolderOpen
+  FolderOpen,
+  LogOut
 } from 'lucide-react';
 
 const drawerWidth = 260;
@@ -34,6 +37,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const userInfo = getUserInfo();
 
   const toggleDrawer = () => {
     setOpen(!open);
@@ -76,14 +80,26 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               SIS-BALISTICA <span className="text-slate-400 font-medium ml-2 text-sm border-l pl-2 border-slate-200">DIVISIÓN FORENSE</span>
             </Typography>
           </Box>
-          <Box className="flex items-center gap-4">
+          <Box className="flex items-center gap-3">
             <Box className="text-right">
-              <Typography variant="body2" className="font-bold text-slate-900">Perito A. Córdoba</Typography>
-              <Typography variant="caption" className="text-slate-500">ID: 8829-2026</Typography>
+              <Typography variant="body2" className="font-bold text-slate-900">{userInfo.username}</Typography>
+              <Typography variant="caption" className="text-indigo-600 font-semibold">{userInfo.role}</Typography>
             </Box>
-            <Box className="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center text-slate-600 font-bold">
-              AC
-            </Box>
+            <Tooltip title="Usuario Autenticado">
+              <Box className="w-10 h-10 bg-indigo-50 border border-indigo-200 rounded-full flex items-center justify-center text-indigo-700 font-bold shadow-sm">
+                {userInfo.initials}
+              </Box>
+            </Tooltip>
+            <Tooltip title="Cerrar Sesión y Cambiar de Cuenta">
+              <IconButton 
+                onClick={logout} 
+                size="small"
+                sx={{ ml: 1, bgcolor: '#f1f5f9', '&:hover': { bgcolor: '#fee2e2', color: '#dc2626' } }}
+                className="transition-colors text-slate-600"
+              >
+                <LogOut size={20} />
+              </IconButton>
+            </Tooltip>
           </Box>
         </Toolbar>
       </AppBar>

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   Box, TextField, MenuItem, Button, Typography, Snackbar,
   CircularProgress, LinearProgress, IconButton, Paper, Chip
@@ -44,7 +43,6 @@ const premiumInputStyles = {
 };
 
 export const ExpedientePage = () => {
-  const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<'list' | 'form' | 'evidences'>('list');
   const [selectedCaseNumber, setSelectedCaseNumber] = useState<string>('');
   const [expedientes, setExpedientes] = useState<ExpedienteDTO[]>([]);

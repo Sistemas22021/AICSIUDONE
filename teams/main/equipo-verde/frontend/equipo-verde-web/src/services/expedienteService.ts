@@ -1,4 +1,5 @@
 import { ExpedienteDTO, ExpedientePageResponse } from '../types/expediente';
+import { fetchWithAuth as fetch } from './apiClient';
 
 const BASE_URL = '/api/v1/expedients';
 

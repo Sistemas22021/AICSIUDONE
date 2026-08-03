@@ -28,7 +28,7 @@ public class FileExceptionHandler {
                 .path(request.getDescription(false))
                 .build();
 
-        return new ResponseEntity<>(apiError,HttpStatus.CONTENT_TOO_LARGE);
+        return new ResponseEntity<>(apiError,HttpStatus.INTERNAL_SERVER_ERROR);
     }
     @ExceptionHandler(ImageNotFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleImageNotFound(ImageNotFoundException ex, WebRequest request) {
@@ -42,7 +42,7 @@ public class FileExceptionHandler {
                 .path(request.getDescription(false))
                 .build();
 
-        return new ResponseEntity<>(apiError,HttpStatus.CONTENT_TOO_LARGE);
+        return new ResponseEntity<>(apiError,HttpStatus.NOT_FOUND);
     }
     @ExceptionHandler(FileTooLargeException.class)
     public ResponseEntity<ApiErrorResponse> handleFileTooLarge(FileTooLargeException ex, WebRequest request) {
@@ -50,13 +50,13 @@ public class FileExceptionHandler {
 
         ApiErrorResponse apiError = ApiErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
-                .status(HttpStatus.CONTENT_TOO_LARGE.value())
-                .error("File size not allowed [CONTENT_TOO_LARGE]")
+                .status(HttpStatus.PAYLOAD_TOO_LARGE.value())
+                .error("File size not allowed [PAYLOAD_TOO_LARGE]")
                 .message("File size exceed 5MB")
                 .path(request.getDescription(false))
                 .build();
 
-        return new ResponseEntity<>(apiError,HttpStatus.CONTENT_TOO_LARGE);
+        return new ResponseEntity<>(apiError,HttpStatus.PAYLOAD_TOO_LARGE);
     }
     @ExceptionHandler(FileUploadException.class)
     public ResponseEntity<ApiErrorResponse> handleFileUpload(FileUploadException ex, WebRequest request) {

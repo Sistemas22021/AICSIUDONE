@@ -5,6 +5,8 @@
  * Base URL del API: /api/v1/bullet  →  http://localhost:8080/api/v1/bullet
  */
 
+import { fetchWithAuth as fetch } from './apiClient';
+
 const BASE_URL = '/api/v1/bullet';
 const CALIBER_URL = '/api/v1/caliber';
 

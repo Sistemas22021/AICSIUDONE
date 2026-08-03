@@ -553,8 +553,10 @@ export const RegistroPage = () => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   size="small"
-                  InputProps={{
-                    startAdornment: <Search size={18} className="text-slate-400 mr-2" />
+                  slotProps={{
+                    input: {
+                      startAdornment: <Search size={18} className="text-slate-400 mr-2" />
+                    }
                   }}
                   sx={{
                     '& .MuiOutlinedInput-root': {
