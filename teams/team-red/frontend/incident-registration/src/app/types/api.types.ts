@@ -226,6 +226,38 @@ export interface RechazarPropuestaMoPayload {
   justificacion: string
 }
 
+// ─── Alertas de patrón (HU6) ───────────────────────────────────────────────────
+
+export type EstadoAlertaPatron =
+    | 'PENDIENTE'
+    | 'REVISADA'
+    | 'DESCARTADA'
+
+export interface AlertaPatron {
+  id: number
+  expedienteOrigenId: number
+  expedienteOrigenFolio: string
+  propuestaOrigenId: number
+  expedientesRelacionados: ExpedienteSimilarMO[]
+  resumenPatron: string
+  nivelConfianza: number
+  estado: EstadoAlertaPatron
+  fechaGeneracion: string
+  atendidaPorId: string | null
+  atendidaPorNombre: string | null
+  fechaAtencion: string | null
+  motivoDescarte: string | null
+}
+
+export interface RevisarAlertaPayload {
+  usuarioId: string
+}
+
+export interface DescartarAlertaPayload {
+  usuarioId: string
+  motivo?: string
+}
+
 // ─── Firma conductual ─────────────────────────────────────────────────────────
 
 export interface FirmaConductual {

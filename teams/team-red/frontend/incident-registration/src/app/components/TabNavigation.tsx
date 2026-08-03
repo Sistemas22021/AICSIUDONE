@@ -1,5 +1,5 @@
-// Pestañas A / B / C para navegar entre los tres módulos
-type ActiveTab = 'registro' | 'escena' | 'inteligencia'
+// Pestañas A / B / C / D para navegar entre los cuatro módulos
+type ActiveTab = 'registro' | 'escena' | 'inteligencia' | 'alertas'
 
 interface TabNavigationProps {
     activeTab: ActiveTab
@@ -11,7 +11,6 @@ export const TabNavigation = ({ activeTab, onTabChange, tabs }: TabNavigationPro
     <div className="w-[95%] max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pb-3">
         <div className="flex gap-1 border-b-2 border-cyan-400/30 overflow-x-auto scrollbar-thin">
             {tabs.map((tab) => {
-                // ✅ DECLARAR isActive AQUÍ
                 const isActive = activeTab === tab.id
                 return (
                     <button

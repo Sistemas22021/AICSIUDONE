@@ -106,7 +106,13 @@ public class RoleValidationHandler implements HandlerInterceptor {
             }
 
             // Puede ver involucrados (GET)
-            return method.equals("GET") && uri.startsWith("/api/v1/involucrados");
+            if (method.equals("GET") && uri.startsWith("/api/v1/involucrados")) {
+                return true;
+            }
+
+            // Panel del Guardia y acciones sobre alertas de patrón de MO (HU6, CA3):
+            // ver el panel/bandeja (GET) y marcar una alerta revisada/descartada (PATCH).
+            return uri.startsWith("/api/v1/alertas") && (method.equals("GET") || method.equals("PATCH"));
         }
 
         // ─── ANALISTA: Escenas, Evidencias y MO ────────────────────────────
@@ -144,6 +150,12 @@ public class RoleValidationHandler implements HandlerInterceptor {
             // Propuestas MO - CRUD completo
             if (uri.startsWith("/api/v1/propuestas-mo")) {
                 return true;
+            }
+
+            // Panel del Guardia / bandeja del Investigador y acciones sobre alertas
+            // de patrón de MO (HU6, CA3): ver (GET) y marcar revisada/descartada (PATCH).
+            if (uri.startsWith("/api/v1/alertas")) {
+                return method.equals("GET") || method.equals("PATCH");
             }
 
             // Ver expedientes (solo lectura)
