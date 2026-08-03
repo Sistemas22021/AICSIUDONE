@@ -1,5 +1,6 @@
 import { EvidenceRecord } from '../types/evidence';
 import { MatchingEngine, MatchResult } from './matchingEngine';
+import { fetchWithAuth as fetch } from './apiClient';
 
 export interface CorrelationResult {
   targetEvidence: EvidenceRecord;

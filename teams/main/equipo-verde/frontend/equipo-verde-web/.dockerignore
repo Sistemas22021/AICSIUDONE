@@ -1,0 +1,9 @@
+node_modules
+dist
+.vercel
+.vite
+*.local
+*.log
+.idea
+.vscode
+*.timestamp-*.mjs

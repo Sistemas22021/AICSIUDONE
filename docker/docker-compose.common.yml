@@ -45,7 +45,9 @@ services:
       - "8888:8888"
     environment:
       - EUREKA_HOST=eureka-server
-      # CONFIG_REPO_PATH apunta al directorio config-repo del monorepo
+      # SPRING_PROFILES_ACTIVE=native permite leer del sistema de archivos local sin exigir un subrepositorio git.
+      - SPRING_PROFILES_ACTIVE=native
+      - SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS=file:///workspace/config-repo
       - CONFIG_REPO_PATH=/workspace/config-repo
     volumes:
       # Monta el config-repo del monorepo dentro del contenedor

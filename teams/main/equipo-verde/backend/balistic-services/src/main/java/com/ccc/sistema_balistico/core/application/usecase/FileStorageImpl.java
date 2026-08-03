@@ -5,7 +5,7 @@ import com.ccc.sistema_balistico.core.domain.exceptions.custom.storage.FileTooLa
 import com.ccc.sistema_balistico.core.domain.exceptions.custom.storage.ImageNotFoundException;
 import jakarta.annotation.PostConstruct;
 import org.apache.tomcat.util.http.fileupload.FileUploadException;
-import org.jspecify.annotations.NonNull;
+import org.springframework.lang.NonNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;

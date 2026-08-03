@@ -54,12 +54,15 @@ public class GatewayConfig {
                         .filters(f -> f.filter(jwtAuthFilter))
                         .uri("lb://AUTH-SERVICE"))
 
-                // ─── Aquí otros equipos agregarán sus servicios ──────────────────
-                // Ejemplo:
-                // .route("team-alpha-products", r -> r
-                //         .path("/api/v1/products/**")
-                //         .filters(f -> f.filter(jwtAuthFilter))
-                //         .uri("lb://PRODUCTS-SERVICE"))
+                // ─── Equipo Verde — Sistema Balístico y Expedientes (Protegidos por JWT) ───
+                .route("equipo-verde-balistico", r -> r
+                        .path("/api/v1/bullets/**",
+                              "/api/v1/expedientes/**",
+                              "/api/v1/calibers/**",
+                              "/api/v1/correlations/**",
+                              "/api/v1/audit/**")
+                        .filters(f -> f.filter(jwtAuthFilter))
+                        .uri("lb://BALISTIC-SERVICES"))
 
                 .build();
     }

@@ -21,7 +21,7 @@ export function LoginForm() {
   }
 
   return (
-    <div className="relative min-h-screen bg-[#020617] flex items-center justify-center p-6 overflow-hidden">
+    <div className="relative min-h-screen bg-[#020617] flex items-center justify-center p-6 overflow-y-auto my-auto">
       
       {/* ─── Elementos de fondo (Mesh Blobs) ─── */}
       <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob" />

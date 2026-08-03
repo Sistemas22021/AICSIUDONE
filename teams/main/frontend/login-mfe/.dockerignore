@@ -1,0 +1,9 @@
+node_modules
+dist
+build
+.vercel
+.vite
+*.local
+*.log
+.idea
+.vscode

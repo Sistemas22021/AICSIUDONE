@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useState } from 'react';
-// import { resolveToken, redirectToLogin, setAccessToken } from '../services/tokenService';
+import { resolveToken, redirectToLogin, setAccessToken } from '../services/tokenService';
 
 interface AuthGuardProps {
   children: ReactNode;
@@ -11,21 +11,26 @@ export function AuthGuard({ children }: AuthGuardProps) {
   const [authState, setAuthState] = useState<AuthState>('loading');
 
   useEffect(() => {
-    // async function checkAuth() {
-    //   const token = await resolveToken();
-    //
-    //   if (token) {
-    //     setAccessToken(token);
-    //     setAuthState('authenticated');
-    //   } else {
-    //     setAuthState('unauthenticated');
-    //     redirectToLogin();
-    //   }
-    // }
+    async function checkAuth() {
+      // Soporte para modo de maquetación aislado en frontend si se indica en entorno
+      if (import.meta.env.VITE_BYPASS_AUTH === 'true') {
+        setAccessToken('dev-token-maqueta');
+        setAuthState('authenticated');
+        return;
+      }
 
-    // Modo Maquetación: Forzar inicio de sesión
-    // checkAuth();
-    setAuthState('authenticated');
+      const token = await resolveToken();
+
+      if (token) {
+        setAccessToken(token);
+        setAuthState('authenticated');
+      } else {
+        setAuthState('unauthenticated');
+        redirectToLogin();
+      }
+    }
+
+    checkAuth();
   }, []);
 
   if (authState === 'loading') {

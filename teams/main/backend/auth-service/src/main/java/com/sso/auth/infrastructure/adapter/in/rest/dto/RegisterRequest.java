@@ -17,8 +17,8 @@ public record RegisterRequest(
         String username,
 
         @NotBlank(message = "La contraseña es obligatoria")
-        @Size(min = 8, message = "La contraseña debe tener al menos 8 caracteres")
-        @Schema(description = "Contraseña en texto plano (se hashea con BCrypt)", example = "SecurePass123!")
+        @Size(min = 4, message = "La contraseña debe tener al menos 4 caracteres")
+        @Schema(description = "Contraseña en texto plano (se hashea con BCrypt)", example = "1234")
         String password,
 
         @NotBlank(message = "El nombre completo es obligatorio")

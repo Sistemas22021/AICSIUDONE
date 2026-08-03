@@ -32,3 +32,23 @@ services:
       - VITE_LOGIN_MFE_URL=http://localhost:3000
     networks:
       - sso-network
+
+  balistic-services:
+    build: ../teams/main/equipo-verde/backend/balistic-services
+    container_name: ev-balistic-services
+    ports:
+      - "8085:8080"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
+      - SSO_AUTH_JWT_SECRET=${JWT_SECRET:-este-es-un-secreto-de-desarrollo-cambiar-en-produccion-32chars}
+      - DB_URL_BALISTIC=${DB_URL_BALISTIC:-jdbc:postgresql://aws-0-ca-central-1.pooler.supabase.com:6543/postgres?pgbouncer=true&prepareThreshold=0}
+      - DB_USER_BALISTIC=${DB_USER_BALISTIC:-postgres.nknbplmujgwjsjusqrux}
+      - DB_PASSWORD_BALISTIC=${DB_PASSWORD_BALISTIC:-Verde2026**dev}
+      - AWS_S3_ENDPOINT=http://localstack:4566
+      - STORAGE_TYPE=s3
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - sso-network

@@ -4,7 +4,7 @@ import com.ccc.sistema_balistico.core.application.services.FileStorageService;
 import com.ccc.sistema_balistico.core.domain.exceptions.custom.storage.FileTooLargeException;
 import com.ccc.sistema_balistico.core.domain.exceptions.custom.storage.ImageNotFoundException;
 import org.apache.tomcat.util.http.fileupload.FileUploadException;
-import org.jspecify.annotations.NonNull;
+import org.springframework.lang.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

@@ -1,4 +1,5 @@
 // types/audit interface alignments with Backend and Frontend
+import { fetchWithAuth as fetch } from './apiClient';
 
 export interface AuditLogBackendEntry {
   id: string;

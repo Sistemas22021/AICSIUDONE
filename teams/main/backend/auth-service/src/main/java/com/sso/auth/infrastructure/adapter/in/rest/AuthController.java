@@ -115,6 +115,23 @@ public class AuthController {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // POST /api/v1/auth/logout
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @PostMapping("/logout")
+    @Operation(summary = "Cerrar sesión",
+               description = "Elimina el HttpOnly Cookie 'refresh_token' estableciendo su tiempo de vida a 0.")
+    public ResponseEntity<Void> logout(HttpServletResponse response) {
+        Cookie cookie = new Cookie(REFRESH_TOKEN_COOKIE, "");
+        cookie.setHttpOnly(true);
+        cookie.setSecure(false);
+        cookie.setPath("/api/v1/auth/refresh");
+        cookie.setMaxAge(0);
+        response.addCookie(cookie);
+        return ResponseEntity.ok().build();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Exception Handlers — mapean excepciones de dominio a HTTP
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -140,7 +157,7 @@ public class AuthController {
     private void setRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
         Cookie cookie = new Cookie(REFRESH_TOKEN_COOKIE, refreshToken);
         cookie.setHttpOnly(true);   // Inaccesible desde JavaScript → protege contra XSS
-        cookie.setSecure(true);     // Solo se envía por HTTPS (deshabilitado en dev con HTTP)
+        cookie.setSecure(false);    // Deshabilitado en dev para permitir cookies por HTTP (localhost)
         cookie.setPath("/api/v1/auth/refresh"); // Solo se envía al endpoint de refresh
         cookie.setMaxAge(COOKIE_MAX_AGE_SECONDS);
         response.addCookie(cookie);
