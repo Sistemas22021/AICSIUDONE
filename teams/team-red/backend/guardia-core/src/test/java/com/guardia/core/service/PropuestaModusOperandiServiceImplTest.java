@@ -27,10 +27,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 /**
@@ -176,8 +176,9 @@ class PropuestaModusOperandiServiceImplTest {
             when(propuestaRepository.findById(50L)).thenReturn(Optional.of(propuestaEjemplo));
             when(usuarioRepository.findById(analistaId)).thenReturn(Optional.of(analistaEjemplo));
             when(propuestaRepository.save(any(PropuestaModusOperandi.class))).thenAnswer(inv -> inv.getArgument(0));
+            // Con campos ya no vacíos tras la corrección, el MO validado se indexa semánticamente.
             when(embeddingModel.embed(anyString())).thenReturn(new float[]{0.1f});
-            
+
             PropuestaModusOperandiResponse resultado = propuestaService.corregir(50L, request);
 
             assertThat(resultado.estado()).isEqualTo(EstadoPropuestaMO.CORREGIDA);

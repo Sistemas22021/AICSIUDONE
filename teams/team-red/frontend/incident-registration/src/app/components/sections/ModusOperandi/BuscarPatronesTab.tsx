@@ -55,6 +55,7 @@ export const BuscarPatronesTab = () => {
         }
     }
 
+    // CA5: vista de expediente completo (MO validado + firma conductual) desde un resultado.
     if (seleccionado) {
         return (
             <div>

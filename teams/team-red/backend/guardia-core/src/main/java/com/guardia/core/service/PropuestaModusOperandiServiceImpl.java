@@ -13,15 +13,15 @@ import com.guardia.core.model.enums.EstadoPropuestaMO;
 import com.guardia.core.repository.PropuestaModusOperandiRepository;
 import com.guardia.core.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.ai.embedding.EmbeddingModel;
 
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -108,6 +108,12 @@ public class PropuestaModusOperandiServiceImpl implements PropuestaModusOperandi
         return toResponse(propuestaRepository.save(propuesta));
     }
 
+    /**
+     * Calcula y persiste (en memoria; el save lo hace el método llamante) el
+     * embedding del MO ya validado por el experto, para la HU "Buscar patrones
+     * por MO y firma conductual". Se llama sólo desde aprobar()/corregir(),
+     * nunca desde rechazar(): un MO rechazado no es un patrón confirmado.
+     */
     private void indexarMOValidado(PropuestaModusOperandi propuesta) {
         String texto = construirTextoMOParaEmbedding(propuesta);
         if (!texto.isBlank()) {

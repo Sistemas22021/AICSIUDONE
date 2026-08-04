@@ -72,6 +72,14 @@ public class PropuestaModusOperandi {
     @Column(name = "modelo_chat", length = 80)
     private String modeloChat;
 
+    /**
+     * Embedding semántico del MO ya validado por un experto (características
+     * comunes + posible firma + consistencia horario/zona + resumen). Se
+     * calcula únicamente cuando la propuesta pasa a APROBADA o CORREGIDA
+     * (HU "Buscar patrones por MO y firma conductual"), nunca sobre propuestas
+     * PENDIENTE/SIN_COINCIDENCIAS/RECHAZADA para no ensuciar el índice con MO
+     * no confirmado por un analista.
+     */
     @Column(name = "embedding")
     @JdbcTypeCode(SqlTypes.VECTOR)
     @Array(length = 3072)

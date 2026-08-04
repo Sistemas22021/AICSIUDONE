@@ -1,3 +1,4 @@
+// Ruta destino: src/test/java/com/guardia/core/service/PatronBusquedaServiceImplTest.java
 package com.guardia.core.service;
 
 import com.guardia.core.dto.request.PatronBusquedaRequest;
@@ -61,6 +62,7 @@ class PatronBusquedaServiceImplTest {
 
     @BeforeEach
     void setUp() {
+        // Arrange común: los campos @Value no se resuelven sin un ApplicationContext real.
         ReflectionTestUtils.setField(service, "topKPorCriterio", 50);
         ReflectionTestUtils.setField(service, "limiteMaximo", 100);
 
@@ -79,8 +81,10 @@ class PatronBusquedaServiceImplTest {
         @Test
         @DisplayName("Debe lanzar BusinessException cuando no se indica ningún criterio de búsqueda")
         void debeLanzarExcepcionSinCriterios() {
+            // Arrange
             PatronBusquedaRequest request = new PatronBusquedaRequest(null, "   ", null);
 
+            // Act & Assert
             assertThatThrownBy(() -> service.buscar(request))
                     .isInstanceOf(BusinessException.class)
                     .hasMessageContaining("al menos un criterio");
@@ -90,13 +94,16 @@ class PatronBusquedaServiceImplTest {
         @Test
         @DisplayName("Debe retornar lista vacía cuando ningún criterio arroja coincidencias")
         void debeRetornarListaVaciaSinCoincidencias() {
+            // Arrange
             when(embeddingModel.embed(anyString())).thenReturn(new float[]{0.1f});
             when(propuestaRepository.buscarPorEmbeddingMOValidado(any(float[].class), anyList(), any(Pageable.class)))
                     .thenReturn(List.of());
 
+            // Act
             List<PatronBusquedaResultado> resultado =
                     service.buscar(new PatronBusquedaRequest("robo a mano armada", null, null));
 
+            // Assert
             assertThat(resultado).isEmpty();
             verifyNoInteractions(expedienteRepository);
         }
@@ -104,6 +111,7 @@ class PatronBusquedaServiceImplTest {
         @Test
         @DisplayName("Debe buscar sólo por MO validado cuando sólo se indica textoMO, sin tocar firma conductual")
         void debeBuscarSoloPorMO() {
+            // Arrange: distancia 0.2 -> similitud 80%
             Expediente exp = expediente(1L, "EXP-2026-AAAA1111");
             PropuestaModusOperandi propuestaValidada = PropuestaModusOperandi.builder()
                     .id(10L).expediente(exp).estado(EstadoPropuestaMO.APROBADA).build();
@@ -116,9 +124,11 @@ class PatronBusquedaServiceImplTest {
                     .thenReturn(List.<Object[]>of(new Object[]{propuestaValidada, 0.2}));
             when(expedienteRepository.findAllById(List.of(1L))).thenReturn(List.of(exp));
 
+            // Act
             List<PatronBusquedaResultado> resultado =
                     service.buscar(new PatronBusquedaRequest("entra por la ventana trasera", null, null));
 
+            // Assert
             assertThat(resultado).hasSize(1);
             assertThat(resultado.get(0).folio()).isEqualTo("EXP-2026-AAAA1111");
             assertThat(resultado.get(0).similitudPorcentaje()).isCloseTo(80.0, within(0.001));
@@ -129,6 +139,7 @@ class PatronBusquedaServiceImplTest {
         @Test
         @DisplayName("Debe promediar el puntaje cuando un expediente coincide en ambos criterios")
         void debeCombinarPuntajesCuandoCoincideEnAmbos() {
+            // Arrange: MO -> distancia 0.2 (80%), firma -> distancia 0.0 (100%) => promedio 90%
             Expediente exp = expediente(2L, "EXP-2026-BBBB2222");
             PropuestaModusOperandi propuestaValidada = PropuestaModusOperandi.builder()
                     .id(11L).expediente(exp).estado(EstadoPropuestaMO.CORREGIDA).build();
@@ -142,9 +153,11 @@ class PatronBusquedaServiceImplTest {
                     .thenReturn(List.<Object[]>of(new Object[]{firma, 0.0}));
             when(expedienteRepository.findAllById(List.of(2L))).thenReturn(List.of(exp));
 
+            // Act
             List<PatronBusquedaResultado> resultado = service.buscar(
                     new PatronBusquedaRequest("caracteristicas comunes del MO", "elementos distintivos", null));
 
+            // Assert
             assertThat(resultado).hasSize(1);
             assertThat(resultado.get(0).similitudPorcentaje()).isCloseTo(90.0, within(0.001));
         }
@@ -152,6 +165,7 @@ class PatronBusquedaServiceImplTest {
         @Test
         @DisplayName("Debe usar el puntaje disponible cuando un expediente sólo aparece en un criterio")
         void debeUsarPuntajeDisponibleCuandoSoloCoincideEnUnCriterio() {
+            // Arrange: expA sólo tiene MO indexado, expB sólo tiene firma indexada
             Expediente expA = expediente(3L, "EXP-2026-CCCC3333");
             Expediente expB = expediente(4L, "EXP-2026-DDDD4444");
             PropuestaModusOperandi propuestaA = PropuestaModusOperandi.builder()
@@ -165,9 +179,11 @@ class PatronBusquedaServiceImplTest {
                     .thenReturn(List.<Object[]>of(new Object[]{firmaB, 0.3})); // 70%
             when(expedienteRepository.findAllById(anyList())).thenReturn(List.of(expA, expB));
 
+            // Act
             List<PatronBusquedaResultado> resultado =
                     service.buscar(new PatronBusquedaRequest("patrón MO", "patrón firma", null));
 
+            // Assert: ninguno de los dos se promedia con el otro criterio (no comparten expediente)
             assertThat(resultado).hasSize(2);
             assertThat(resultado)
                     .extracting(PatronBusquedaResultado::folio, PatronBusquedaResultado::similitudPorcentaje)
@@ -179,6 +195,7 @@ class PatronBusquedaServiceImplTest {
         @Test
         @DisplayName("Debe ordenar los resultados de forma descendente por similitud y respetar el límite")
         void debeOrdenarDescendenteYLimitar() {
+            // Arrange: tres expedientes con similitudes 60%, 95% y 80%
             Expediente exp1 = expediente(1L, "EXP-2026-0001");
             Expediente exp2 = expediente(2L, "EXP-2026-0002");
             Expediente exp3 = expediente(3L, "EXP-2026-0003");
@@ -197,9 +214,11 @@ class PatronBusquedaServiceImplTest {
             when(expedienteRepository.findAllById(List.of(2L, 3L)))
                     .thenReturn(List.of(exp2, exp3));
 
+            // Act: limite = 2, debe devolver sólo los dos mejores, en orden descendente
             List<PatronBusquedaResultado> resultado =
                     service.buscar(new PatronBusquedaRequest("patrón de robo", null, 2));
 
+            // Assert
             assertThat(resultado).hasSize(2);
             assertThat(resultado.get(0).folio()).isEqualTo("EXP-2026-0002");
             assertThat(resultado.get(1).folio()).isEqualTo("EXP-2026-0003");
@@ -210,6 +229,7 @@ class PatronBusquedaServiceImplTest {
         @Test
         @DisplayName("Debe acotar el límite solicitado al límite máximo configurado")
         void debeAcotarLimiteAlMaximoConfigurado() {
+            // Arrange
             ReflectionTestUtils.setField(service, "limiteMaximo", 1);
             Expediente exp1 = expediente(1L, "EXP-2026-0001");
             Expediente exp2 = expediente(2L, "EXP-2026-0002");
@@ -221,9 +241,11 @@ class PatronBusquedaServiceImplTest {
                     .thenReturn(List.<Object[]>of(new Object[]{p1, 0.3}, new Object[]{p2, 0.1}));
             when(expedienteRepository.findAllById(List.of(2L))).thenReturn(List.of(exp2));
 
+            // Act: se solicitan 50 resultados, pero el máximo configurado es 1
             List<PatronBusquedaResultado> resultado =
                     service.buscar(new PatronBusquedaRequest("patrón de robo", null, 50));
 
+            // Assert
             assertThat(resultado).hasSize(1);
             assertThat(resultado.get(0).folio()).isEqualTo("EXP-2026-0002");
         }

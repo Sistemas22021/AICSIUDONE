@@ -56,6 +56,12 @@ public class FirmaConductual {
     @Column(name = "elementos_distintivos", columnDefinition = "TEXT")
     private String elementosDistintivos;
 
+    /**
+     * Embedding semántico de los 5 campos combinados (HU "Buscar patrones por
+     * MO y firma conductual"). Se recalcula en cada nueva versión registrada.
+     * Mismo modelo/dimensión que {@link Expediente#getEmbedding()} para poder
+     * comparar contra la misma familia de vectores (gemini-embedding-001, 3072).
+     */
     @Column(name = "embedding")
     @JdbcTypeCode(SqlTypes.VECTOR)
     @Array(length = 3072)

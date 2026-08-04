@@ -3,9 +3,9 @@ package com.guardia.core.repository;
 import com.guardia.core.model.PropuestaModusOperandi;
 import com.guardia.core.model.enums.EstadoPropuestaMO;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -22,6 +22,14 @@ public interface PropuestaModusOperandiRepository extends JpaRepository<Propuest
     /** Historial completo (vigente + versiones anteriores), más reciente primero. HU3 CA5. */
     List<PropuestaModusOperandi> findByExpedienteIdOrderByVersionDesc(Long expedienteId);
 
+    /**
+     * Búsqueda semántica por similitud vectorial sobre el MO ya validado por
+     * un experto (HU "Buscar patrones por MO y firma conductual", CA1/CA2).
+     * Sólo se consideran propuestas vigentes, con embedding calculado y en un
+     * estado de validación real (APROBADA o CORREGIDA); una RECHAZADA también
+     * queda "revisadoPorExperto = true" pero no representa un MO confirmado,
+     * por lo que se excluye explícitamente vía el filtro de estado.
+     */
     @Query("""
             SELECT p, cosine_distance(p.embedding, :embedding)
             FROM PropuestaModusOperandi p
@@ -31,6 +39,6 @@ public interface PropuestaModusOperandiRepository extends JpaRepository<Propuest
             ORDER BY cosine_distance(p.embedding, :embedding) ASC
             """)
     List<Object[]> buscarPorEmbeddingMOValidado(@Param("embedding") float[] embedding,
-                                                @Param("estadosValidados") List<EstadoPropuestaMO> estadosValidados,
-                                                Pageable pageable);
+                                                 @Param("estadosValidados") List<EstadoPropuestaMO> estadosValidados,
+                                                 Pageable pageable);
 }

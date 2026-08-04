@@ -31,6 +31,11 @@ public interface FirmaConductualRepository extends JpaRepository<FirmaConductual
             """, nativeQuery = true)
     List<FirmaConductual> buscarPorTexto(@Param("texto") String texto);
 
+    /**
+     * Búsqueda semántica por similitud vectorial (HU "Buscar patrones por MO
+     * y firma conductual", CA2). Sólo considera la versión vigente de cada
+     * expediente y sólo aquellas que ya tienen embedding calculado.
+     */
     @Query("""
             SELECT f, cosine_distance(f.embedding, :embedding)
             FROM FirmaConductual f

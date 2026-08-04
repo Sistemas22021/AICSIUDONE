@@ -253,6 +253,8 @@ export interface FirmaConductualPayload {
   elementosDistintivos?: string
 }
 
+// ─── Búsqueda de patrones (MO validado + firma conductual) ───────────────────
+
 export interface PatronBusquedaResultado {
   expedienteId: number
   folio: string

@@ -31,9 +31,18 @@ import java.util.stream.Collectors;
 /**
  * Implementación de la búsqueda de patrones (HU "Buscar patrones por MO y
  * firma conductual"). Genera el embedding del/los texto(s) de búsqueda y
- * consulta, vía pgvector (cosine_distance), el índice vectorial de MO
- * validado y/o de firma conductual, combinando los resultados cuando ambos
- * criterios están presentes.
+ * consulta, vía pgvector (cosine_distance), los embeddings de MO validado
+ * y/o de firma conductual, combinando los resultados cuando ambos criterios
+ * están presentes.
+ *
+ * <p>Nota de rendimiento: pgvector no permite indexar (HNSW/IVFFlat) columnas
+ * de más de 2000 dimensiones, y estos embeddings son de 3072
+ * (gemini-embedding-001). A la escala exigida por el CA6 (hasta 10,000
+ * expedientes) un sequential scan con cosine_distance + LIMIT resuelve la
+ * consulta muy por debajo de 5s, así que no se creó índice vectorial. Ver
+ * db/migrations/V_20260803__buscar_patrones_mo_firma.sql para el detalle y
+ * la opción de truncar a <=2000 dimensiones (MRL) si el volumen crece mucho
+ * en el futuro.</p>
  */
 public class PatronBusquedaServiceImpl implements PatronBusquedaService {
 

@@ -15,10 +15,10 @@ import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -61,6 +61,8 @@ public class FirmaConductualServiceImpl implements FirmaConductualService {
                     "Debe completar al menos uno de los campos de la firma conductual.");
         }
 
+        // HU "Buscar patrones por MO y firma conductual" (CA2): la firma conductual
+        // queda indexada semánticamente en cada versión registrada.
         String textoParaEmbedding = construirTextoEmbedding(nueva);
         if (!textoParaEmbedding.isBlank()) {
             nueva.setEmbedding(embeddingModel.embed(textoParaEmbedding));
@@ -102,6 +104,18 @@ public class FirmaConductualServiceImpl implements FirmaConductualService {
                 .stream().map(this::toResponse).toList();
     }
 
+    /** Combina los 5 campos de la firma conductual en un solo texto para generar su embedding. */
+    private String construirTextoEmbedding(FirmaConductual f) {
+        return Stream.of(
+                        f.getComportamientoPreDelictivo(),
+                        f.getMetodoAproximacion(),
+                        f.getMetodoAtaque(),
+                        f.getComportamientoPostDelictivo(),
+                        f.getElementosDistintivos())
+                .filter(valor -> valor != null && !valor.isBlank())
+                .collect(Collectors.joining("\n"));
+    }
+
     private FirmaConductualResponse toResponse(FirmaConductual f) {
         return new FirmaConductualResponse(
                 f.getId(),
@@ -118,16 +132,4 @@ public class FirmaConductualServiceImpl implements FirmaConductualService {
                 f.getAnalista().getFullName(),
                 f.getFechaRegistro());
     }
-
-    private String construirTextoEmbedding(FirmaConductual f) {
-        return Stream.of(
-                        f.getComportamientoPreDelictivo(),
-                        f.getMetodoAproximacion(),
-                        f.getMetodoAtaque(),
-                        f.getComportamientoPostDelictivo(),
-                        f.getElementosDistintivos())
-                .filter(valor -> valor != null && !valor.isBlank())
-                .collect(Collectors.joining("\n"));
-    }
-
 }
