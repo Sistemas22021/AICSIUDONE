@@ -11,11 +11,14 @@ import com.guardia.core.repository.ExpedienteRepository;
 import com.guardia.core.repository.FirmaConductualRepository;
 import com.guardia.core.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +34,7 @@ public class FirmaConductualServiceImpl implements FirmaConductualService {
     private final FirmaConductualRepository firmaConductualRepository;
     private final ExpedienteRepository expedienteRepository;
     private final UsuarioRepository usuarioRepository;
+    private final EmbeddingModel embeddingModel;
 
     @Override
     public FirmaConductualResponse registrarONuevaVersion(Long expedienteId, FirmaConductualRequest request) {
@@ -55,6 +59,13 @@ public class FirmaConductualServiceImpl implements FirmaConductualService {
         if (!nueva.tieneAlMenosUnCampo()) {
             throw new BusinessException(
                     "Debe completar al menos uno de los campos de la firma conductual.");
+        }
+
+        // HU "Buscar patrones por MO y firma conductual" (CA2): la firma conductual
+        // queda indexada semánticamente en cada versión registrada.
+        String textoParaEmbedding = construirTextoEmbedding(nueva);
+        if (!textoParaEmbedding.isBlank()) {
+            nueva.setEmbedding(embeddingModel.embed(textoParaEmbedding));
         }
 
         FirmaConductual vigenteActual = firmaConductualRepository
@@ -91,6 +102,18 @@ public class FirmaConductualServiceImpl implements FirmaConductualService {
     public List<FirmaConductualResponse> buscarPorTexto(String texto) {
         return firmaConductualRepository.buscarPorTexto(texto)
                 .stream().map(this::toResponse).toList();
+    }
+
+    /** Combina los 5 campos de la firma conductual en un solo texto para generar su embedding. */
+    private String construirTextoEmbedding(FirmaConductual f) {
+        return Stream.of(
+                        f.getComportamientoPreDelictivo(),
+                        f.getMetodoAproximacion(),
+                        f.getMetodoAtaque(),
+                        f.getComportamientoPostDelictivo(),
+                        f.getElementosDistintivos())
+                .filter(valor -> valor != null && !valor.isBlank())
+                .collect(Collectors.joining("\n"));
     }
 
     private FirmaConductualResponse toResponse(FirmaConductual f) {

@@ -9,6 +9,7 @@ const SUB_TABS: { id: SubTab; label: string }[] = [
     { id: 'analisis', label: 'Análisis de MO' },
     { id: 'validar',  label: 'Validar MO' },
     { id: 'firma',    label: 'Firma Conductual' },
+    { id: 'buscar',   label: 'Buscar Patrones' },
     { id: 'casos',    label: 'Agrupar delitos en casos' },
 ]
 

@@ -5,6 +5,7 @@ import { AnalisisMOTab } from './AnalisisMOTab'
 import { ValidarMOTab } from './ValidarMOTab'
 import { CasosPanel } from './CasosPanel'
 import { FirmaConductualTab } from '../FirmaConductual/FirmaConductualTab'
+import { BuscarPatronesTab } from './BuscarPatronesTab'
 
 type SubTab = 'analisis' | 'validar' | 'buscar' | 'firma' | 'casos'
 
@@ -17,6 +18,7 @@ export const InteligenciaMOTab = () => {
             {subTab === 'analisis' && <AnalisisMOTab />}
             {subTab === 'validar' && <ValidarMOTab />}
             {subTab === 'firma' && <FirmaConductualTab />}
+            {subTab === 'buscar' && <BuscarPatronesTab />}
             {subTab === 'casos' && <CasosPanel />}
         </NeonPanel>
     )

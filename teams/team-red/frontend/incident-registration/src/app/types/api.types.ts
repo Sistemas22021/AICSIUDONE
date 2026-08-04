@@ -284,3 +284,14 @@ export interface FirmaConductualPayload {
   comportamientoPostDelictivo?: string
   elementosDistintivos?: string
 }
+
+// ─── Búsqueda de patrones (MO validado + firma conductual) ───────────────────
+
+export interface PatronBusquedaResultado {
+  expedienteId: number
+  folio: string
+  tipoDelito: string | null
+  fechaHecho: string | null
+  similitudPorcentaje: number
+  investigadorAsignado: string
+}

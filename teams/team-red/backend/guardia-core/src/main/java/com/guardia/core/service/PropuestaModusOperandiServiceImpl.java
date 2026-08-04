@@ -13,12 +13,15 @@ import com.guardia.core.model.enums.EstadoPropuestaMO;
 import com.guardia.core.repository.PropuestaModusOperandiRepository;
 import com.guardia.core.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +36,7 @@ public class PropuestaModusOperandiServiceImpl implements PropuestaModusOperandi
 
     private final PropuestaModusOperandiRepository propuestaRepository;
     private final UsuarioRepository usuarioRepository;
+    private final EmbeddingModel embeddingModel;
 
     @Override
     @Transactional(readOnly = true)
@@ -59,6 +63,7 @@ public class PropuestaModusOperandiServiceImpl implements PropuestaModusOperandi
         propuesta.setAnalistaRevisor(analista);
         propuesta.setFechaRevision(LocalDateTime.now());
         propuesta.setRevisadoPorExperto(true);
+        indexarMOValidado(propuesta);
 
         return toResponse(propuestaRepository.save(propuesta));
     }
@@ -83,6 +88,7 @@ public class PropuestaModusOperandiServiceImpl implements PropuestaModusOperandi
         propuesta.setJustificacionRevision(request.justificacion());
         propuesta.setFechaRevision(LocalDateTime.now());
         propuesta.setRevisadoPorExperto(true);
+        indexarMOValidado(propuesta);
 
         return toResponse(propuestaRepository.save(propuesta));
     }
@@ -100,6 +106,29 @@ public class PropuestaModusOperandiServiceImpl implements PropuestaModusOperandi
         propuesta.setRevisadoPorExperto(true);
 
         return toResponse(propuestaRepository.save(propuesta));
+    }
+
+    /**
+     * Calcula y persiste (en memoria; el save lo hace el método llamante) el
+     * embedding del MO ya validado por el experto, para la HU "Buscar patrones
+     * por MO y firma conductual". Se llama sólo desde aprobar()/corregir(),
+     * nunca desde rechazar(): un MO rechazado no es un patrón confirmado.
+     */
+    private void indexarMOValidado(PropuestaModusOperandi propuesta) {
+        String texto = construirTextoMOParaEmbedding(propuesta);
+        if (!texto.isBlank()) {
+            propuesta.setEmbedding(embeddingModel.embed(texto));
+        }
+    }
+
+    private String construirTextoMOParaEmbedding(PropuestaModusOperandi p) {
+        return Stream.of(
+                        p.getCaracteristicasComunes(),
+                        p.getPosibleFirma(),
+                        p.getConsistenciaHorarioZona(),
+                        p.getResumenGenerado())
+                .filter(valor -> valor != null && !valor.isBlank())
+                .collect(Collectors.joining("\n"));
     }
 
     private PropuestaModusOperandi findById(Long propuestaId) {
