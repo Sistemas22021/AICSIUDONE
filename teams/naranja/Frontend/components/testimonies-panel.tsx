@@ -6,6 +6,7 @@ import { Sparkles, FileText } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Eye, Edit3, Volume2, Check, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { api } from '@/lib/api'
 
 interface Testimony {
   sessionId: string;
@@ -39,17 +40,8 @@ export function TestimoniesPanel() {
     setDetailData(null)
 
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'
-      
-      // 1. Un solo viaje para traer texto y metadatos del audio
-      const response = await fetch(`${baseUrl}/api/v1/testimonies/${sessionId}/details`)
-      
-      if (response.ok) {
-        const data: TestimonyDetails = await response.json()
+        const { data } = await api.get<TestimonyDetails>(`/api/v1/testimonies/${sessionId}/details`)
         setDetailData(data)
-      } else {
-        console.error('Error al recuperar los detalles:', response.status)
-      }
     } catch (error) {
       console.error('Error fetching testimony details:', error)
     } finally {
@@ -60,21 +52,17 @@ export function TestimoniesPanel() {
   useEffect(() => {
     const fetchTestimonies = async () => {
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'
-        if (!baseUrl) {
+
+        const { data } = await api.get<Testimony[]>(`/api/v1/testimonies/history`)
+
+        if (!data) {
           console.error('Error: NEXT_PUBLIC_BACKEND_URL no está definida.')
           setIsLoading(false)
           return
         }
 
-        const response = await fetch(`${baseUrl}/api/v1/testimonies/history`)
-        
-        if (response.ok) {
-          const data: Testimony[] = await response.json()
-          setTestimonies(data)
-        } else {
-          console.error('Error en la respuesta del servidor:', response.status)
-        }
+        setTestimonies(data)
+
       } catch (error) {
         console.error('Error fetching testimonies:', error)
       } finally {

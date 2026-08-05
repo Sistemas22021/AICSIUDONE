@@ -1,0 +1,110 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# docker-compose.equipo-verde.yml
+#
+# Este archivo EXTIENDE docker-compose.common.yml.
+# Usar el siguiente comando para levantar TODO el ecosistema:
+#
+#   docker compose \
+#     -f docker/docker-compose.common.yml \
+#     -f docker/docker-compose.equipo-naranja.yml \
+#     up --build
+#
+# Para bajar todo:
+#   docker compose \
+#     -f docker/docker-compose.common.yml \
+#     -f docker/docker-compose.equipo-naranja.yml \
+#     down
+# ─────────────────────────────────────────────────────────────────────────────
+
+include:
+  - docker-compose.common.yml
+
+services:
+  postgres-db:
+    image: postgres:16-alpine
+    container_name: sso-postgres
+    ports:
+      - "15432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=sso_db
+      - POSTGRES_USER=${DATASOURCE_USERNAME}
+      - POSTGRES_PASSWORD=${DATASOURCE_PASSWORD}
+      - EUREKA_HOST=${EUREKA_HOST}
+    networks:
+      - sso-network
+
+  login-mfe:
+    build:
+      context: ../teams/main/frontend/login-mfe
+      dockerfile: Dockerfile
+      args:
+        VITE_API_GATEWAY_URL: ${VITE_API_GATEWAY_URL:-http://localhost:8090}
+    image: sso/login-mfe:local
+    container_name: sso-login-mfe
+    ports:
+      - "3000:80"  # nginx sirve el build de React en el puerto 80 del contenedor
+    networks:
+      - sso-network
+
+  naranja-backend:
+    build:
+      context: ../teams/naranja/Backend
+      dockerfile: Dockerfile
+    image: naranja-backend:latest
+    container_name: naranja-backend
+    ports:
+      - "18081:8080"
+    environment:
+      - DB_PASSWD=${DATASOURCE_PASSWORD}
+      - DB_URL=${DATASOURCE_URL}
+      - DB_USER=${DATASOURCE_USERNAME}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - JWT_TOKEN=${JWT_SECRET}
+    networks:
+      - sso-network
+
+  naranja-frontend:
+    build:
+      context: ../teams/naranja/Frontend
+      dockerfile: Dockerfile
+      args:
+        # Build-time: se hornean en el JS del navegador. Si estas URLs
+        # cambian entre ambientes (dev/staging/prod), hay que reconstruir
+        # la imagen con --build-arg distintos para cada uno — cambiarlas
+        # solo en "environment:" abajo NO tiene efecto sobre el bundle
+        # ya compilado.
+        NEXT_PUBLIC_API_GATEWAY_URL: ${VITE_API_GATEWAY_URL}
+        NEXT_PUBLIC_LOGIN_MFE_URL: ${VITE_LOGIN_MFE_URL}
+    image: naranja-frontend:latest
+    container_name: naranja-frontend
+    ports:
+      - "3001:3000"
+    expose:
+      - "3000"   # ya no se publica al host directamente; solo Caddy le habla por la red interna
+    environment:
+      - GLADIA_API_KEY=${GLADIA_API_KEY}
+    networks:
+      - sso-network
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ../teams/naranja/Frontend/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - naranja-frontend
+    networks:
+      - sso-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:

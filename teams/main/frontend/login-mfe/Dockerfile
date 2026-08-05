@@ -14,6 +14,10 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci --prefer-offline
 
+ARG VITE_API_GATEWAY_URL
+
+ENV VITE_API_GATEWAY_URL=$VITE_API_GATEWAY_URL
+
 # Copiar el resto y compilar
 COPY . .
 RUN npm run build

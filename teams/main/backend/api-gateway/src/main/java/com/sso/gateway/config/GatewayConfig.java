@@ -54,6 +54,11 @@ public class GatewayConfig {
                         .filters(f -> f.filter(jwtAuthFilter))
                         .uri("lb://AUTH-SERVICE"))
 
+                .route("equipo-naranja-testimonios", r -> r
+                        .path("/api/v1/testimonies/**")
+                        .filters(f -> f.filter(jwtAuthFilter))
+                        .uri("lb://CUSTODIA-360"))
+
                 // ─── Aquí otros equipos agregarán sus servicios ──────────────────
                 // Ejemplo:
                 // .route("team-alpha-products", r -> r

@@ -1,0 +1,11 @@
+# Reemplaza "custodia360.tudominio.com" por tu dominio real.
+#custodia360.tudominio.com {
+#    reverse_proxy naranja-frontend:3000
+#}
+
+# --- Para pruebas locales sin dominio/DNS real, comenta el bloque de
+#     arriba y usa este en su lugar: ---
+#
+:80 {
+    reverse_proxy naranja-frontend:3000
+}

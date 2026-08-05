@@ -15,6 +15,7 @@ import { Loader2, CloudUpload, BrainCircuit, CheckCircle2, Sparkles, Copy, FileT
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { validateDetaineeData } from '@/lib/detainee-validator'
+import { api, getAccessToken } from '@/lib/api'
 
 interface AiReport {
   sessionId: string;
@@ -72,23 +73,11 @@ export function TranscriptionPanel() {
       const transcription = textSnapshotRef.current
       formData.append('audio', audioBlob, `audio_testimonio_${Date.now()}.webm`)
       formData.append('transcription', transcription)
-      
       formData.append('cedula', cedula)
       formData.append('caseNumber', expediente)
     
-      const backendUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'}/api/v1/testimonies`
+      const { data } = await api.post<AiReport>('/api/v1/testimonies', formData)
 
-      const response = await fetch(backendUrl, {
-        method: 'POST',
-        body: formData, 
-      })
-      console.log(`URL: ${backendUrl}`)
-
-      if (!response.ok) {
-        throw new Error(`Error en el servidor: ${response.status}`)
-      }
-
-      const data: AiReport = await response.json()
       setReport(data);
       setIsModalOpen(true)
 
@@ -153,7 +142,10 @@ export function TranscriptionPanel() {
 
       const res = await fetch('/api/gladia/session', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${getAccessToken()}`,
+        },
         body: JSON.stringify({ language: 'es' })
       })
 

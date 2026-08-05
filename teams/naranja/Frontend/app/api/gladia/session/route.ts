@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
+  const authHeader = request.headers.get('authorization')
+  if (!authHeader?.startsWith('Bearer ')) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  }
   try {
     const body = await request.json().catch(() => ({}));
     const language = body.language || 'es';
