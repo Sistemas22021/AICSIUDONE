@@ -44,6 +44,7 @@ services:
     ports:
       - "8888:8888"
     environment:
+      - SPRING_PROFILES_ACTIVE=native
       - EUREKA_HOST=eureka-server
       # CONFIG_REPO_PATH apunta al directorio config-repo del monorepo
       - CONFIG_REPO_PATH=/workspace/config-repo

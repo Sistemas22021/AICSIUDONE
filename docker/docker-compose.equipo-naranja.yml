@@ -62,6 +62,9 @@ services:
       - DB_USER=${DATASOURCE_USERNAME}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - JWT_TOKEN=${JWT_SECRET}
+      - EUREKA_HOST=${EUREKA_HOST}
+    volumes:
+      - custodia_storage_data:/app/storage
     networks:
       - sso-network
 
@@ -108,3 +111,4 @@ volumes:
   postgres_data:
   caddy_data:
   caddy_config:
+  custodia_storage_data:

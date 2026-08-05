@@ -1,33 +1,36 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { getAccessToken, setAccessToken, redirectToLogin } from '@/lib/api';
 
-// 1. Componente interno que maneja la lógica con useSearchParams
 function AuthGuardLogic({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      // 1. Verificar si viene regresando del Login MFE con un token en la URL
+    const checkAuth = () => {
       const tokenFromUrl = searchParams.get('token');
 
       if (tokenFromUrl) {
+        // 1. Guardar el token en almacenamiento persistente (localStorage / cookie)
         setAccessToken(tokenFromUrl);
-        // Limpiar la URL para no dejar expuesto el token
+
+        // 2. Limpiar el 'token' de la URL de forma silenciosa sin disparar re-renders de Next.js
         const newParams = new URLSearchParams(searchParams.toString());
         newParams.delete('token');
-        const cleanUrl = pathname + (newParams.toString() ? `?${newParams.toString()}` : '');
-        router.replace(cleanUrl);
+        const queryString = newParams.toString();
+        const cleanUrl = pathname + (queryString ? `?${queryString}` : '');
+
+        // Reemplaza la URL en la barra de direcciones de forma síncrona
+        window.history.replaceState(null, '', cleanUrl);
+
         setIsAuthorized(true);
         return;
       }
 
-      // 2. Si no hay token en la URL ni en memoria, redirigir al Login MFE
+      // 3. Si no venía en la URL, verificar el token persistido
       const currentToken = getAccessToken();
       if (!currentToken) {
         redirectToLogin();
@@ -38,7 +41,7 @@ function AuthGuardLogic({ children }: { children: React.ReactNode }) {
     };
 
     checkAuth();
-  }, [pathname, searchParams, router]);
+  }, [pathname, searchParams]);
 
   if (!isAuthorized) {
     return (
@@ -51,7 +54,6 @@ function AuthGuardLogic({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// 2. Export principal envuelto en Suspense
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   return (
     <Suspense
